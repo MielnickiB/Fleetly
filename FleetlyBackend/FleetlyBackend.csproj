@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Fleetly\Fleetly.Shared\Fleetly.Shared.csproj" />
+    <ProjectReference Include="..\Fleetly.Shared\Fleetly.Shared.csproj" />
   </ItemGroup>
 
 </Project>
