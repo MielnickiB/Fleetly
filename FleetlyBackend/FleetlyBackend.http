@@ -1,0 +1,6 @@
+@FleetlyBackend_HostAddress = http://localhost:5225
+
+GET {{FleetlyBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
