@@ -1,0 +1,33 @@
+﻿@page "/login"
+@using Fleetly.Shared.Dto.AuthDtos
+@using FleetlyWeb.Services
+@inject IAuthService Auth
+@inject NavigationManager Nav
+
+<h3>Logowanie</h3>
+
+<input @bind="Email" placeholder="Email" />
+<input @bind="Password" type="password" placeholder="Hasło" />
+<p>@test</p>
+
+<button @onclick="OnLogin">Zaloguj</button>
+
+@code {
+    string Email = "";
+    string Password = "";
+    string test = "";
+
+    async Task OnLogin()
+    {
+        var result = await Auth.Login(new UserLoginDto
+        {
+            Email = Email,
+            Password = Password
+        });
+
+        if (result is true)
+        {
+            test = "Udało się zalogować";
+        }
+    }
+}
