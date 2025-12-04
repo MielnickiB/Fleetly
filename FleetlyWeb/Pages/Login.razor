@@ -1,0 +1,74 @@
+﻿@page "/login"
+@using Fleetly.Shared.Dto.AuthDtos
+@using FleetlyWeb.Services
+@inject IAuthService Auth
+@inject NavigationManager Nav
+
+<h3>Logowanie</h3>
+
+<div class="mb-2">
+    <input class="form-control" @bind="Email" placeholder="Email" />
+</div>
+<div class="mb-2">
+    <input class="form-control" @bind="Password" type="password" placeholder="Hasło" />
+</div>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <div class="alert alert-danger">@ErrorMessage</div>
+}
+
+<button class="btn btn-primary" @onclick="OnLogin" disabled="@isLoading">
+    @if (isLoading)
+    {
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        <span class="ms-2">Trwa logowanie...</span>
+    }
+    else
+    {
+        <span>Zaloguj</span>
+    }
+</button>
+
+@code {
+    string Email = "";
+    string Password = "";
+    string? ErrorMessage;
+    bool isLoading;
+
+    async Task OnLogin()
+    {
+        isLoading = true;
+        ErrorMessage = null;
+
+        try
+        {
+            // Auth.Login zwraca string? — null = sukces, inny string = komunikat błędu
+            var error = await Auth.Login(new UserLoginDto
+            {
+                Email = Email,
+                Password = Password
+            });
+
+            if (string.IsNullOrEmpty(error))
+            {
+                // sukces — przejdź na stronę główną (lub inną)
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                ErrorMessage = error;
+            }
+        }
+        catch (Exception ex)
+        {
+            // awaryjny komunikat — przyda się podczas problemów z siecią itp.
+            ErrorMessage = "Wystąpił błąd podczas logowania: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+}

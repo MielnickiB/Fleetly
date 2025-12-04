@@ -19,7 +19,7 @@ namespace FleetlyBackend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
 
@@ -29,11 +29,11 @@ namespace FleetlyBackend.Controllers
             try
             {
                 var result = await authService.LoginAsync(request);
-                return result is null ? NotFound("Użytkownik nie znaleziony.") : Ok(result);
+                return result is null ? NotFound("Email lub hasło są niepoprawne.") : Ok(result);
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { error = ex.Message });
+                return Unauthorized(ex.Message);
             }
         }
     }

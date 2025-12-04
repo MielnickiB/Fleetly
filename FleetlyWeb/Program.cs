@@ -1,38 +1,28 @@
-using FleetlyWeb.Client.Pages;
-using FleetlyWeb.Components;
+using FleetlyWeb;
+using FleetlyWeb.Services;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddScoped(sp => new HttpClient
+var apiUrl = builder.Configuration.GetValue<string>("ApiUrl") ?? "http://localhost:5225/";
+
+builder.Services.AddScoped<ILocalStorage, LocalStorage>();
+builder.Services.AddScoped<TokenHandler>();
+
+builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<CustomAuthStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CustomAuthStateProvider>());
+
+builder.Services.AddHttpClient<ApiClient>(client =>
 {
-    BaseAddress = new Uri("https://localhost:7133")
-});
+    client.BaseAddress = new Uri(apiUrl);
+})
+.AddHttpMessageHandler<TokenHandler>();
 
-// Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveWebAssemblyComponents();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseWebAssemblyDebugging();
-}
-else
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-
-app.UseStaticFiles();
-app.UseAntiforgery();
-
-app.MapRazorComponents<App>()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(FleetlyWeb.Client._Imports).Assembly);
-
-app.Run();
+await builder.Build().RunAsync();
