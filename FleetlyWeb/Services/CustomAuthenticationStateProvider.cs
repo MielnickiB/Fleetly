@@ -19,7 +19,21 @@ namespace FleetlyWeb.Services
             if (string.IsNullOrWhiteSpace(userJson))
                 return EmptyState();
 
-            var user = JsonSerializer.Deserialize<UserResponseDto>(userJson);
+            UserResponseDto? user;
+            try
+            {
+                user = JsonSerializer.Deserialize<UserResponseDto>(userJson);
+            }
+            catch (JsonException)
+            {
+                return EmptyState();
+            }
+            catch (ArgumentNullException)
+            {
+                return EmptyState();
+            }
+            if (user == null)
+                return EmptyState();
 
             var identity = new ClaimsIdentity(
             [
