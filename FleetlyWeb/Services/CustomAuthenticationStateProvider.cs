@@ -35,11 +35,15 @@ namespace FleetlyWeb.Services
             if (user == null)
                 return EmptyState();
 
+            if (string.IsNullOrWhiteSpace(user.Email) || string.IsNullOrEmpty(user.RoleName))
+                return EmptyState();
+
+
             var identity = new ClaimsIdentity(
             [
             new Claim(ClaimTypes.NameIdentifier, user!.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.RoleName ?? "")
+            new Claim(ClaimTypes.Role, user.RoleName)
             ], "jwt");
 
             var principal = new ClaimsPrincipal(identity);

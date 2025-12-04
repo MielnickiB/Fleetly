@@ -14,11 +14,11 @@ namespace FleetlyWeb.Services
 
             if (resp is null)
             {
-                return "Brak odpowiedzi z serwera. Spróbuje ponownie";
+                return "Brak odpowiedzi z serwera. Spróbuj ponownie";
             }
             if (!resp.Success)
             {
-                return resp.Error ?? "Nieznany błąd podczas logowania.";
+                return resp.Error ?? "Nie udało się zalogować. Spróbuje ponownie";
             }
 
             var authResult = resp.Data;
