@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@page "/register"
 @layout LoginLayout
 @using Fleetly.Shared.Dto.AuthDtos
 @using FleetlyWeb.Services
@@ -6,7 +6,7 @@
 @inject IAuthService Auth
 @inject NavigationManager Nav
 
-<MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4">Logowanie</MudText>
+<MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4">Rejestracja</MudText>
 
 <EditForm Model="_model" OnValidSubmit="SubmitAsync">
     <DataAnnotationsValidator />
@@ -23,8 +23,26 @@
                   Variant="Variant.Outlined"
                   Margin="Margin.Dense"
                   AdornmentIcon="@PasswordInputIcon"
-                  OnAdornmentClick="ShowPassword" 
+                  OnAdornmentClick="ShowPassword"
                   AdornmentAriaLabel="Show Password" />
+    <MudTextField T="string"
+                  InputType="@PasswordInput"
+                  For="@(() => _model.PasswordConfirm)"
+                  @bind-Value="_model.PasswordConfirm"
+                  Label="Powierdź Hasło"
+                  Required="true"
+                  Class="mb-3"
+                  Adornment="Adornment.End"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  AdornmentIcon="@PasswordInputIcon"
+                  OnAdornmentClick="ShowPassword"
+                  AdornmentAriaLabel="Show Password" />
+    <MudTextField T="string" For="@(() => _model.Details.Name)" @bind-Value="_model.Details.Name" Label="Imię" Required="true" Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    <MudTextField T="string" For="@(() => _model.Details.Surname)" @bind-Value="_model.Details.Surname" Label="Nazwisko" Required="true" Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    <MudTextField T="string" For="@(() => _model.Details.PhoneNumber)" @bind-Value="_model.Details.PhoneNumber" Required="true" HelperTextOnFocus="true" HelperText="Wpisz np: 123123123" Label="Numer Telefonu" Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    <MudTextField T="string" For="@(() => _model.Details.Company)" @bind-Value="_model.Details.Company" Label="Nazwa firmy" Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    <ValidationMessage For="@(() => _model.Details)" />
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
@@ -37,16 +55,16 @@
         }
         else
         {
-            <MudText Typo="Typo.button">Zaloguj się</MudText>
+            <MudText Typo="Typo.button">Zarejestruj się</MudText>
         }
     </MudButton>
     <MudText Class="mt-4" Align="Align.Center">
-        Nie masz konta? <MudLink Href="/register">Zarejestruj się</MudLink>
+        Masz już konto? <MudLink Href="/">Zaloguj się</MudLink>
     </MudText>
 </EditForm>
 
 @code {
-    private UserLoginDto _model = new UserLoginDto();
+    private UserRegisterDto _model = new UserRegisterDto();
     private string? errorMessage;
     private bool _isLoading;
     private bool _isShowingPassword;
@@ -60,7 +78,7 @@
         try
         {
             _isLoading = true;
-            var error = await Auth.Login(_model);
+            var error = await Auth.Register(_model);
 
             if (string.IsNullOrEmpty(error))
             {
@@ -80,7 +98,7 @@
             _isLoading = false;
             if (success)
             {
-                Nav.NavigateTo("/home", replace: true);
+                Nav.NavigateTo("/", replace: true);
             }
             StateHasChanged();
         }

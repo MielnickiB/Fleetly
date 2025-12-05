@@ -4,12 +4,14 @@ namespace Fleetly.Shared.Dto.UserDetailsDtos
 {
     public class UserDetailsDto
     {
-        [Required]
+        [Required(ErrorMessage = "Imię użytkownika jest wymagane!")]
         public string Name { get; set; } = null!;
-        [Required]
+
+        [Required(ErrorMessage = "Nazwisko użytkownika jest wymagane!")]
         public string Surname { get; set; } = null!;
-        [Required]
-        [Phone]
+
+        [Required(ErrorMessage = "Numer telefonu użytkownika jest wymagany!")]
+        [Phone(ErrorMessage = "Nieprawidłowy format numeru telefonu!")]
         public string PhoneNumber { get; set; } = null!;
         public string? Company { get; set; }
     }

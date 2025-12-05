@@ -7,6 +7,6 @@ namespace FleetlyWeb.Services
     {
         public Task<string?> Login(UserLoginDto dto);
         public Task Logout();
-        public Task<UserResponseDto?> Register(UserRegisterDto dto);
+        public Task<string?> Register(UserRegisterDto dto);
     }
 }
