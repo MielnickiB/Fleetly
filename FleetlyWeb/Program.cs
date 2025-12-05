@@ -3,12 +3,15 @@ using FleetlyWeb.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using MudBlazor.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 var apiUrl = builder.Configuration.GetValue<string>("ApiUrl") ?? "http://localhost:5225/";
+
+builder.Services.AddMudServices();
 
 builder.Services.AddScoped<ILocalStorage, LocalStorage>();
 builder.Services.AddScoped<TokenHandler>();
@@ -24,5 +27,7 @@ builder.Services.AddHttpClient<ApiClient>(client =>
 .AddHttpMessageHandler<TokenHandler>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+//builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 await builder.Build().RunAsync();

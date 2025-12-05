@@ -29,7 +29,7 @@ namespace FleetlyBackend.Controllers
             try
             {
                 var result = await authService.LoginAsync(request);
-                return result is null ? NotFound("Email lub hasło są niepoprawne.") : Ok(result);
+                return result is null ? NotFound("Nieprawidłowy email lub hasło") : Ok(result);
             }
             catch (UnauthorizedAccessException ex)
             {

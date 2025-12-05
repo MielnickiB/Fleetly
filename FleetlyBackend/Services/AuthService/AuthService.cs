@@ -24,7 +24,7 @@ namespace FleetlyBackend.Services.AuthService
             if (user is null) return null;
 
             var verify = _hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-            if (verify == PasswordVerificationResult.Failed) throw new UnauthorizedAccessException("Hasło lub email jest niepoprawne");
+            if (verify == PasswordVerificationResult.Failed) throw new UnauthorizedAccessException("Nieporawny email lub hasło");
 
             return CreateResponseToken(user);
         }

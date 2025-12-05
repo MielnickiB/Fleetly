@@ -4,10 +4,10 @@ namespace Fleetly.Shared.Dto.AuthDtos
 {
     public class UserLoginDto
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Adres email jest wymagany")]
+        [EmailAddress(ErrorMessage = "Niepoprawny format adresu email")]
         public string Email { get; set; } = string.Empty;
-        [Required]
+        [Required(ErrorMessage = "Hasło jest wymagane")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
     }

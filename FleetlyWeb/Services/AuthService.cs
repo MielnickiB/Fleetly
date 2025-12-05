@@ -38,13 +38,25 @@ namespace FleetlyWeb.Services
             _state.NotifyAuthStateChanged();
         }
 
-        public async Task<UserResponseDto?> Register(UserRegisterDto dto)
+        public async Task<string?> Register(UserRegisterDto dto)
         {
             var resp = await _api.PostAsync<UserRegisterDto, UserResponseDto>("api/Auth/register", dto);
-            if (resp is null || !resp.Success)
-                return null;
+            if (resp is null)
+            {
+                return "Brak odpowiedzi z serwera. Spróbuj ponownie";
+            }
+            if (!resp.Success)
+            {
+                return resp.Error ?? "Nie udało się zarejestrować. Spróbuje ponownie";
+            }
 
-            return resp.Data;
+            var authResult = resp.Data;
+            if (authResult is not null)
+            {
+                return null;
+            }
+
+            return resp.Error;
         }
     }
 }
