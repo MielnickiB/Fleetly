@@ -47,7 +47,7 @@ namespace FleetlyWeb.Services
             }
             if (!resp.Success)
             {
-                return resp.Error ?? "Nie udało się zarejestrować. Spróbuje ponownie";
+                return resp.Error ?? "Nie udało się zarejestrować. Spróbuj ponownie";
             }
 
             var authResult = resp.Data;

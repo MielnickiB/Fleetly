@@ -11,7 +11,7 @@ namespace Fleetly.Shared.Dto.UserDetailsDtos
         public string Surname { get; set; } = null!;
 
         [Required(ErrorMessage = "Numer telefonu użytkownika jest wymagany!")]
-        [Phone(ErrorMessage = "Nieporawny format numeru telefonu!")]
+        [Phone(ErrorMessage = "Nieprawidłowy format numeru telefonu!")]
         public string PhoneNumber { get; set; } = null!;
         public string? Company { get; set; }
     }

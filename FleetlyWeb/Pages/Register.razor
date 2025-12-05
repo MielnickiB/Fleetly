@@ -29,7 +29,7 @@
                   InputType="@PasswordInput"
                   For="@(() => _model.PasswordConfirm)"
                   @bind-Value="_model.PasswordConfirm"
-                  Label="Hasło"
+                  Label="Powierdź Hasło"
                   Required="true"
                   Class="mb-3"
                   Adornment="Adornment.End"
@@ -41,7 +41,7 @@
     <MudTextField T="string" For="@(() => _model.Details.Name)" @bind-Value="_model.Details.Name" Label="Imię" Required="true" Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense" />
     <MudTextField T="string" For="@(() => _model.Details.Surname)" @bind-Value="_model.Details.Surname" Label="Nazwisko" Required="true" Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense" />
     <MudTextField T="string" For="@(() => _model.Details.PhoneNumber)" @bind-Value="_model.Details.PhoneNumber" Required="true" HelperTextOnFocus="true" HelperText="Wpisz np: 123123123" Label="Numer Telefonu" Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense" />
-    <MudTextField T="string" For="@(() => _model.Details.Company)" @bind-Value="_model.Details.Company" Label="Nazwa fimry" Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    <MudTextField T="string" For="@(() => _model.Details.Company)" @bind-Value="_model.Details.Company" Label="Nazwa firmy" Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense" />
     <ValidationMessage For="@(() => _model.Details)" />
 
     @if (!string.IsNullOrEmpty(errorMessage))
@@ -106,7 +106,7 @@
 
     void ShowPassword()
     {
-        @if (_isShowingPassword)
+        if (_isShowingPassword)
         {
             _isShowingPassword = false;
             PasswordInputIcon = Icons.Material.Filled.VisibilityOff;

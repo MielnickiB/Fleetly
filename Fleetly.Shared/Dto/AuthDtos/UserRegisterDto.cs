@@ -18,7 +18,7 @@ namespace Fleetly.Shared.Dto.AuthDtos
         [Compare("Password", ErrorMessage = "Hasła nie są zgodne!")]
         public string PasswordConfirm { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Sczegółowe dane użytkownika są wymagane!")]
+        [Required(ErrorMessage = "Szczegółowe dane użytkownika są wymagane!")]
         public UserDetailsDto Details { get; set; } = new UserDetailsDto();
     }
 }
