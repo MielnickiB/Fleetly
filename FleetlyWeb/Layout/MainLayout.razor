@@ -1,18 +1,80 @@
 ﻿@inherits LayoutComponentBase
 
-<MudLayout>
-    <MudAppBar Color="Color.Primary">Fleetly</MudAppBar>
+<MudThemeProvider Theme="@FleetlyWeb.Theme.FleetlyTheme.Default" />
 
-    <MudDrawer Open="true" Anchor="Anchor.Start" Elevation="2">
-        <NavMenu />
+<MudLayout>
+
+    <MudAppBar Elevation="4" Color="Color.Surface" Dense="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMini" Color="Color.Inherit" Class="d-none d-sm-inline-flex" />
+        <MudText Typo="Typo.h5" Class="ml-2">Fleetly</MudText>
+
+        <MudSpacer />
+
+        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
+        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Class="d-none d-sm-inline-flex" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleDrawer" Color="Color.Inherit" Class="d-sm-none" />
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen"
+               Variant="@_drawerVariant"
+               ClipMode="DrawerClipMode.Always"
+               Elevation="4"
+               OpenMiniOnHover="true"
+               Breakpoint="Breakpoint.Md"
+               Anchor="@_anchor"
+               Color="Color.Surface"
+               Class="drawer">
+
+        <MudNavMenu>
+
+            <MudNavLink Href="/home" Icon="@Icons.Material.Filled.Home" Match="NavLinkMatch.All">
+                Strona główna
+            </MudNavLink>
+
+            <MudNavLink Href="/orders" Icon="@Icons.Material.Filled.ListAlt">
+                Zlecenia
+            </MudNavLink>
+
+            <MudNavLink Href="/vehicles" Icon="@Icons.Material.Filled.LocalShipping">
+                Pojazdy
+            </MudNavLink>
+
+            <MudNavLink Href="/profile" Icon="@Icons.Material.Filled.Person">
+                Użytkownicy
+            </MudNavLink>
+
+        </MudNavMenu>
+
     </MudDrawer>
 
     <MudMainContent>
-        @Body
+        <MudContainer Class="mt-4">
+            @Body
+        </MudContainer>
     </MudMainContent>
+
 </MudLayout>
 
-<MudThemeProvider />
-<MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+<MudPopoverProvider />
+
+@code {
+    private bool _drawerOpen = false;
+    private DrawerVariant _drawerVariant = DrawerVariant.Mini;
+    private Anchor _anchor = Anchor.Start;
+
+    private void ToggleDrawer()
+    {
+        _drawerVariant = DrawerVariant.Temporary;
+        _drawerOpen = !_drawerOpen;
+        _anchor = Anchor.End;
+    }
+
+    private void ToggleMini()
+    {
+        _drawerVariant = DrawerVariant.Mini;
+        _drawerOpen = !_drawerOpen;
+        _anchor = Anchor.Start;
+    }
+}

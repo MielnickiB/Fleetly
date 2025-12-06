@@ -101,3 +101,21 @@ a, .btn-link {
 code {
     color: #c02d76;
 }
+
+.drawer {
+    transition: width 0.4s ease;
+}
+
+.login-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+}
+
