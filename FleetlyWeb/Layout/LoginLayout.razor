@@ -1,14 +1,21 @@
 ﻿@inherits LayoutComponentBase
 
+<MudThemeProvider Theme="@FleetlyWeb.Theme.FleetlyTheme.Default" />
+
 <MudLayout>
-    <MudContainer MaxWidth="MaxWidth.Medium" Class="d-flex align-items-center justify-content-center" Style="min-height:100vh;">
-        <MudPaper Elevation="5" Class="pa-6 rounded-lg" Style="width:100%;max-width:420px;">
+
+    <MudAppBar Elevation="4" Color="Color.Surface" Dense="true">
+        <MudText Typo="Typo.h5">Fleetly</MudText>
+    </MudAppBar>
+
+    <MudMainContent Class="login-content">
+        <MudPaper Elevation="5" Class="pa-6 rounded-lg login-card">
             @Body
         </MudPaper>
-    </MudContainer>
+    </MudMainContent>
+
 </MudLayout>
 
-<MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />

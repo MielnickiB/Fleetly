@@ -1,18 +1,61 @@
 ﻿@inherits LayoutComponentBase
 
-<MudLayout>
-    <MudAppBar Color="Color.Primary">Fleetly</MudAppBar>
+<MudThemeProvider Theme="@FleetlyWeb.Theme.FleetlyTheme.Default" />
 
-    <MudDrawer Open="true" Anchor="Anchor.Start" Elevation="2">
+<MudLayout>
+
+    <MudAppBar Elevation="4" Color="Color.Surface" Dense="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMini" Color="Color.Inherit" Class="d-none d-sm-inline-flex" />
+        <MudText Typo="Typo.h5" Class="ml-2">Fleetly</MudText>
+
+        <MudSpacer />
+
+        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
+        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Class="d-none d-sm-inline-flex" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleTemporary" Color="Color.Inherit" Class="d-sm-none" />
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_miniOpen"
+               Variant="DrawerVariant.Mini"
+               Anchor="Anchor.Start"
+               ClipMode="DrawerClipMode.Always"
+               Elevation="4"
+               OpenMiniOnHover="true"
+               Breakpoint="Breakpoint.Sm"
+               Color="Color.Surface"
+               Class="drawer d-none d-sm-inline-flex"
+               aria-hidden="@(!_miniOpen)">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudDrawer @bind-Open="_temporaryOpen"
+               Variant="DrawerVariant.Temporary"
+               Anchor="Anchor.End"
+               ClipMode="DrawerClipMode.Always"
+               Elevation="4"
+               Breakpoint="Breakpoint.Sm"
+               Color="Color.Surface"
+               Class="drawer d-sm-none"
+               aria-hidden="@(!_temporaryOpen)">
         <NavMenu />
     </MudDrawer>
 
     <MudMainContent>
-        @Body
+        <MudContainer Class="mt-4" MaxWidth="MaxWidth.Large">
+            @Body
+        </MudContainer>
     </MudMainContent>
+
 </MudLayout>
 
-<MudThemeProvider />
-<MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
+<MudPopoverProvider />
+
+@code {
+    private bool _miniOpen = true;
+    private bool _temporaryOpen = false;
+
+    private void ToggleMini() => _miniOpen = !_miniOpen;
+    private void ToggleTemporary() => _temporaryOpen = !_temporaryOpen;
+}

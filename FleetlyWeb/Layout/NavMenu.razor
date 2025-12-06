@@ -1,29 +1,6 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">FleetlyWeb</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
-
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/home" Match="NavLinkMatch.Prefix">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-    </nav>
-</div>
-
-@code {
-    private bool collapseNavMenu = true;
-
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
-}
+﻿<MudNavMenu>
+    <MudNavLink Href="/home" Icon="@Icons.Material.Filled.Home" Match="NavLinkMatch.Prefix">Strona główna</MudNavLink>
+    <MudNavLink Href="/orders" Icon="@Icons.Material.Filled.ListAlt" Match="NavLinkMatch.Prefix">Zlecenia</MudNavLink>
+    <MudNavLink Href="/vehicles" Icon="@Icons.Material.Filled.LocalShipping" Match="NavLinkMatch.Prefix">Pojazdy</MudNavLink>
+    <MudNavLink Href="/users" Icon="@Icons.Material.Filled.Person" Match="NavLinkMatch.Prefix">Użytkownicy</MudNavLink>
+</MudNavMenu>
