@@ -4,7 +4,7 @@ namespace FleetlyWeb.Theme;
 
 public static class FleetlyTheme
 {
-    public static MudTheme Default = new() 
+    public static readonly MudTheme Default = new() 
     { 
         PaletteLight = new PaletteLight()
         {
@@ -32,7 +32,7 @@ public static class FleetlyTheme
         {
             Default = new DefaultTypography
             {
-                FontFamily = ["Roboto", "sans-serif"]
+                FontFamily = ["Inter", "sans-serif"]
             }
         }
 
