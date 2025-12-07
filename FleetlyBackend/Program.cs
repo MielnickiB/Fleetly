@@ -22,15 +22,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.Filters;
-using System.Text.Json.Serialization;
 using FleetlyBackend.Services.OrderService;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddControllers();
 // Add services to the container.
-builder.Services.AddControllers()
-    .AddJsonOptions(o =>
-        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -94,6 +91,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.Zero
         };
     });
+
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 
 builder.Services.AddCors(options =>
 {

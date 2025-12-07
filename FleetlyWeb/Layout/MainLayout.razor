@@ -16,15 +16,13 @@
     </MudAppBar>
 
     <MudDrawer @bind-Open="_miniOpen"
-               Variant="DrawerVariant.Mini"
+               Variant="DrawerVariant.Temporary"
                Anchor="Anchor.Start"
                ClipMode="DrawerClipMode.Always"
                Elevation="4"
-               OpenMiniOnHover="true"
-               Breakpoint="Breakpoint.Sm"
+               Breakpoint="Breakpoint.None"
                Color="Color.Surface"
-               Class="drawer d-none d-sm-inline-flex"
-               aria-hidden="@(!_miniOpen)">
+               Class="drawer d-none d-sm-inline-flex">
         <NavMenu />
     </MudDrawer>
 
@@ -35,13 +33,12 @@
                Elevation="4"
                Breakpoint="Breakpoint.Sm"
                Color="Color.Surface"
-               Class="drawer d-sm-none"
-               aria-hidden="@(!_temporaryOpen)">
+               Class="drawer d-sm-none">
         <NavMenu />
     </MudDrawer>
 
     <MudMainContent>
-        <MudContainer Class="mt-4" MaxWidth="MaxWidth.Large">
+        <MudContainer Class="mt-4" MaxWidth="MaxWidth.ExtraLarge">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -53,7 +50,7 @@
 <MudPopoverProvider />
 
 @code {
-    private bool _miniOpen = true;
+    private bool _miniOpen = false;
     private bool _temporaryOpen = false;
 
     private void ToggleMini() => _miniOpen = !_miniOpen;

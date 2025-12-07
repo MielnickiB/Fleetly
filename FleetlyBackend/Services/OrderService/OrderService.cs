@@ -12,6 +12,7 @@ using Fleetly.Shared.Dto.ExpenseDtos;
 using Fleetly.Shared.Dto.OrderDtos;
 using Fleetly.Shared.Dto.NotificationDtos;
 using Fleetly.Shared.Dto.InvoiceDtos;
+using Fleetly.Shared.Dto;
 using Fleetly.Shared.Enums;
 
 namespace FleetlyBackend.Services.OrderService
@@ -59,20 +60,29 @@ namespace FleetlyBackend.Services.OrderService
             return order.ToResponseDto();
         }
 
-        public async Task<List<OrderResponseDto>> GetAllOrders(int page, int pageSize)
+        public async Task<PagedResult<OrderResponseDto>> GetAllOrders(int page, int pageSize)
         {
             var (skip, take) = PaginationHelper.Calculate(page, pageSize);
 
-            var orders = await _context.Orders
-                .AsNoTracking()
+            var query = _context.Orders
                 .IncludeAllOrderRelations()
+                .AsQueryable();
+
+            var totalCount = await query.CountAsync();
+
+            var orders = await query
+                .AsNoTracking()
                 .OrderByDescending(o => o.CreatedAt)
                 .Skip(skip)
                 .Take(take)
                 .Select(o => o.ToResponseDto())
                 .ToListAsync();
 
-            return orders;
+            return new PagedResult<OrderResponseDto>
+            {
+                Items = orders,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<List<OrderResponseDto>> GetAllOrdersForClient(int clientId, int page, int pageSize)
@@ -751,9 +761,9 @@ namespace FleetlyBackend.Services.OrderService
         public static IQueryable<Order> IncludeAllOrderRelations(this IQueryable<Order> query)
         {
             return query
-                .Include(o => o.Client)
-                .Include(o => o.Worker)
-                .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel)
+                .Include(o => o.Client).ThenInclude(c => c.Details)
+                .Include(o => o.Worker).ThenInclude(w => w.Details)
+                .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
                 .Include(o => o.StartLocation)
                 .Include(o => o.ServiceLocation)
                 .Include(o => o.EndLocation)

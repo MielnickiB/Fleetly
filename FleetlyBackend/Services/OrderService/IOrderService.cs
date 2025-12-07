@@ -1,4 +1,5 @@
-﻿using Fleetly.Shared.Dto.ExpenseDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.ExpenseDtos;
 using Fleetly.Shared.Dto.OrderDtos;
 
 namespace FleetlyBackend.Services.OrderService
@@ -8,7 +9,7 @@ namespace FleetlyBackend.Services.OrderService
         public Task<OrderResponseDto?> GetOrderById(int orderId);
         public Task<OrderResponseDto?> GetOrderForClientById(int orderId, int clientId);
         public Task<OrderResponseDto?> GetOrderForWorkerById(int orderId, int workerId);
-        public Task<List<OrderResponseDto>> GetAllOrders(int page = 1, int pageSize = 10);
+        public Task<PagedResult<OrderResponseDto>> GetAllOrders(int page = 1, int pageSize = 10);
         public Task<List<OrderResponseDto>> GetAllOrdersForClient(int clientId, int page = 1, int pageSize = 10);
         public Task<List<OrderResponseDto>> GetAllOrdersForWorker(int workerId, int page = 1, int pageSize = 10);
         public Task<List<OrderResponseDto>> GetAvailableOrdersForWorker(int page = 1, int pageSize = 10);

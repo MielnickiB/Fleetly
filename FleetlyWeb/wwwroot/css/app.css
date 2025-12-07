@@ -119,3 +119,6 @@ code {
     max-width: 420px;
 }
 
+.blurry-bg {
+    backdrop-filter: blur(10px);
+}

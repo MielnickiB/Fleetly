@@ -1,5 +1,5 @@
-﻿using Fleetly.Shared.Dto.OrderDtos;
-using FleetlyBackend.Models;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.OrderDtos;
 using FleetlyBackend.Services.OrderService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +14,7 @@ public class AdminOrderController(IOrderService service) : ControllerBase
     private readonly IOrderService _service = service;
 
     [HttpGet]
-    public async Task<ActionResult<List<OrderResponseDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<ActionResult<PagedResult<OrderResponseDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         return Ok(await _service.GetAllOrders(page, pageSize));
     }

@@ -1,6 +1,28 @@
-﻿<MudNavMenu>
-    <MudNavLink Href="/home" Icon="@Icons.Material.Filled.Home" Match="NavLinkMatch.Prefix">Strona główna</MudNavLink>
-    <MudNavLink Href="/orders" Icon="@Icons.Material.Filled.ListAlt" Match="NavLinkMatch.Prefix">Zlecenia</MudNavLink>
-    <MudNavLink Href="/vehicles" Icon="@Icons.Material.Filled.LocalShipping" Match="NavLinkMatch.Prefix">Pojazdy</MudNavLink>
-    <MudNavLink Href="/users" Icon="@Icons.Material.Filled.Person" Match="NavLinkMatch.Prefix">Użytkownicy</MudNavLink>
+﻿@inject AuthenticationStateProvider AuthStateProvider
+@using FleetlyWeb.Helpers
+
+@code {
+    private ClaimsPrincipal? User;
+
+    protected override async Task OnInitializedAsync()
+    {
+        User = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
+    }
+}
+
+<MudNavMenu>
+
+    <MudNavLink Href="/home" Icon="@Icons.Material.Filled.Home">Strona główna</MudNavLink>
+
+    @if (User?.IsAdmin() ?? false)
+    {
+        <MudNavLink Href="/orders" Icon="@Icons.Material.Filled.ListAlt">Wszystkie zlecenia</MudNavLink>
+        <MudNavLink Href="/orders/toAccept" Icon="@Icons.Material.Filled.Approval">Zlecenia do przyjęcia</MudNavLink>
+        <MudNavLink Href="/orders/toReview" Icon="@Icons.Material.Filled.ReadMore">Zlecenie do zakończenia</MudNavLink>
+        <MudNavLink Href="/orders/finished" Icon="@Icons.Material.Filled.Beenhere">Zakończone zlecenia</MudNavLink>
+        <MudNavLink Href="/users" Icon="@Icons.Material.Filled.Person">Użytkownicy</MudNavLink>
+    }
+
+    <MudNavLink Href="/vehicles" Icon="@Icons.Material.Filled.CarRental">Pojazdy</MudNavLink>
+
 </MudNavMenu>

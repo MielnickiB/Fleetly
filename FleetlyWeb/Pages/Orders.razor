@@ -1,0 +1,107 @@
+﻿@page "/orders"
+@attribute [Authorize(Roles = "Admin")]
+@using Fleetly.Shared.Dto.OrderDtos
+@inject IOrderService OrderService
+@inject IDialogService Dialog
+
+<MudContainer Class="d-flex justify-center align-center" MaxWidth="MaxWidth.ExtraLarge">
+    <MudDataGrid @ref="_ordersGrid"
+                 T="OrderResponseDto"
+                 Items="_orders"
+                 Striped="true"
+                 Bordered="true"
+                 Loading="@_isLoading"
+                 Filterable="true"
+                 FilterMode="@DataGridFilterMode.ColumnFilterRow"
+                 ColumnResizeMode="ResizeMode.Container"
+                 Class="pa-4"
+                 RowClick="OnRowClick"
+                 RowStyle="cursor:pointer; font-weight:bold;">
+        <ToolBarContent>
+            <MudText Typo="Typo.h5" Style="font-weight:bold">Lista zleceń</MudText>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" StickyLeft="true"/>
+            <PropertyColumn Property="x => x.Type" Title="Typ zlecenia" Editable="false" />
+            <PropertyColumn Property="x => x.Status" Title="Status zlecenia" Editable="false" />
+            <PropertyColumn Property="x => x.ClientName" Title="Klient" Editable="false" />
+            <PropertyColumn Property="x => x.WorkerName" Title="Przypisany pracownik" Editable="false" />
+            <PropertyColumn Property="x => x.VehicleRegistrationNumber" Title="Nr rejestracyjny" Editable="false" />
+            <PropertyColumn Property="x => x.StartLocationCity" Title="Miasto początkowe" Editable="false" />
+            <PropertyColumn Property="x => x.EndLocationCity" Title="Miasto końcowe" Editable="false" />
+            <PropertyColumn Property="x => x.StartTime" Title="Data i godzina pobrania" Editable="false" />
+            <PropertyColumn Property="x => x.Deadline" Title="Data i godzina dostarczenia" Editable="false" />
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="OrderResponseDto"
+                              RowsPerPageString="Wierszy na stronę"
+                              InfoFormat="{first_item}-{last_item} z {all_items}"
+                              PageSizeOptions="new int[] { 5, 10, 20, 50 }" />
+        </PagerContent>
+    </MudDataGrid>
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-4" ShowCloseIcon="true">
+            @_errorMessage
+        </MudAlert>
+    }
+</MudContainer>
+
+@code {
+    private IEnumerable<OrderResponseDto> _ordersMasterList = Enumerable.Empty<OrderResponseDto>();
+    private List<OrderResponseDto> _orders = new();
+    private MudDataGrid<OrderResponseDto> _ordersGrid = default!;
+    private string _errorMessage = string.Empty;
+    private bool _isLoading = true;
+    private string? _searchString = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var result = await OrderService.GetAllOrdersAsync();
+            if (result == null)
+            {
+                _errorMessage = "Wystąpił problem podczas pobierania zleceń.";
+                return;
+            }
+            if (result.TotalCount > 0)
+            {
+                _ordersMasterList = result.Items;
+            }
+            else
+            {
+                _errorMessage = "Nie znaleziono żadnych zleceń";
+            }
+            _orders = _ordersMasterList.ToList();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Wystąpił problem podczas pobierania zleceń: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OnRowClick(DataGridRowClickEventArgs<OrderResponseDto> args)
+    {
+        var order = args.Item;
+        var parameters = new DialogParameters
+        {
+            ["Order"] = order
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            BackgroundClass = "blurry-bg"
+        };
+
+        Dialog.ShowAsync<OrderDetailsDialog>("Szczegóły zlecenia", parameters, options);
+    }
+}

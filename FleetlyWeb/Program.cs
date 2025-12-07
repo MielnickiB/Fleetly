@@ -27,7 +27,6 @@ builder.Services.AddHttpClient<ApiClient>(client =>
 .AddHttpMessageHandler<TokenHandler>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
-
-//builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 await builder.Build().RunAsync();
