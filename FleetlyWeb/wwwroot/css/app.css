@@ -122,3 +122,27 @@ code {
 .blurry-bg {
     backdrop-filter: blur(10px);
 }
+
+.card-primary-header {
+    background-color: var(--mud-palette-primary);
+    color: #fff;
+    padding: 8px 16px;
+    text-transform: uppercase;
+}
+
+.row-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+}
+
+.row-title {
+    font-weight: 600;
+}
+
+.row-value {
+    text-align: center;
+    margin-left: 16px;
+    word-break: break-word;
+}

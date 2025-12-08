@@ -2,7 +2,7 @@
 @attribute [Authorize(Roles = "Admin")]
 @using Fleetly.Shared.Dto.OrderDtos
 @inject IOrderService OrderService
-@inject IDialogService Dialog
+@inject NavigationManager Nav
 
 <MudContainer Class="d-flex justify-center align-center" MaxWidth="MaxWidth.ExtraLarge">
     <MudDataGrid @ref="_ordersGrid"
@@ -15,13 +15,15 @@
                  FilterMode="@DataGridFilterMode.ColumnFilterRow"
                  ColumnResizeMode="ResizeMode.Container"
                  Class="pa-4"
-                 RowClick="OnRowClick"
-                 RowStyle="cursor:pointer; font-weight:bold;">
+                 Height="80vh"
+                 EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
+                 RowStyle="cursor:pointer; font-weight:bold;"
+                 RowClick="OnRowClick">
         <ToolBarContent>
             <MudText Typo="Typo.h5" Style="font-weight:bold">Lista zleceń</MudText>
         </ToolBarContent>
         <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" StickyLeft="true"/>
+            <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" StickyLeft="true" />
             <PropertyColumn Property="x => x.Type" Title="Typ zlecenia" Editable="false" />
             <PropertyColumn Property="x => x.Status" Title="Status zlecenia" Editable="false" />
             <PropertyColumn Property="x => x.ClientName" Title="Klient" Editable="false" />
@@ -36,7 +38,7 @@
             <MudDataGridPager T="OrderResponseDto"
                               RowsPerPageString="Wierszy na stronę"
                               InfoFormat="{first_item}-{last_item} z {all_items}"
-                              PageSizeOptions="new int[] { 5, 10, 20, 50 }" />
+                              PageSizeOptions="new int[] { 10, 15, 20, 50 }" />
         </PagerContent>
     </MudDataGrid>
     @if (!string.IsNullOrEmpty(_errorMessage))
@@ -53,7 +55,7 @@
     private MudDataGrid<OrderResponseDto> _ordersGrid = default!;
     private string _errorMessage = string.Empty;
     private bool _isLoading = true;
-    private string? _searchString = string.Empty;
+    private bool _isCellEditMode;
 
     protected override async Task OnInitializedAsync()
     {
@@ -88,20 +90,21 @@
 
     private void OnRowClick(DataGridRowClickEventArgs<OrderResponseDto> args)
     {
-        var order = args.Item;
-        var parameters = new DialogParameters
-        {
-            ["Order"] = order
-        };
+        // var order = args.Item;
+        // var parameters = new DialogParameters
+        // {
+        //     ["Order"] = order
+        // };
 
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            CloseOnEscapeKey = true,
-            BackgroundClass = "blurry-bg"
-        };
+        // var options = new DialogOptions
+        // {
+        //     MaxWidth = MaxWidth.Medium,
+        //     FullWidth = true,
+        //     CloseOnEscapeKey = true,
+        //     BackgroundClass = "blurry-bg"
+        // };
 
-        Dialog.ShowAsync<OrderDetailsDialog>("Szczegóły zlecenia", parameters, options);
+        // Dialog.ShowAsync<OrderDetailsDialog>("Szczegóły zlecenia", parameters, options);
+        Nav.NavigateTo($"/orders/{args.Item.Id}");
     }
 }

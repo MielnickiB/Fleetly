@@ -6,5 +6,6 @@ namespace FleetlyWeb.Services
     public interface IOrderService
     {
         Task<PagedResult<OrderResponseDto>> GetAllOrdersAsync();
+        Task<OrderResponseDto?> GetOrderByIdAsync(int orderId);
     }
 }

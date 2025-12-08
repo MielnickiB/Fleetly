@@ -8,11 +8,16 @@ namespace Fleetly.Shared.Dto.OrderDtos
         public int Id { get; set; }
         public int ClientId { get; set; }
         public string ClientName { get; set; } = string.Empty;
+        public string ClientCompanyName { get; set; } = string.Empty;
+        public string ClientPhoneNumber { get; set; } = string.Empty;
+        public string ClientEmail { get; set; } = string.Empty;
         public int? WorkerId { get; set; }
-        public string? WorkerName { get; set; }
+        public string WorkerName { get; set; } = string.Empty;
         public int VehicleId { get; set; }
         public string VehicleName { get; set; } = string.Empty;
         public string VehicleRegistrationNumber { get; set; } = string.Empty;
+        public int VehicleMileage { get; set; }
+        public string VehicleVin { get; set; } = string.Empty;
         public OrderStatus Status { get; set; }
         public OrderType Type { get; set; }
         public string? Details { get; set; }

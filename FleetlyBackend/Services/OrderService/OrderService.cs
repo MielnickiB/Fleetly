@@ -185,6 +185,26 @@ namespace FleetlyBackend.Services.OrderService
             if (userId.HasValue && order.ClientId != userId.Value)
                 throw new UnauthorizedAccessException("Nie możesz edytować zlecenia innego klienta.");
 
+            if (order.WorkerId.HasValue)
+            {
+                var oldWorkerId = order.WorkerId.Value;
+
+                if (dto.WorkerId is not null && order.WorkerId != dto.WorkerId)
+                {
+                    order.WorkerId = dto.WorkerId.Value;
+                    await NotifyWorker(oldWorkerId,
+                        NotificationType.UnseatedFromOrder,
+                        $"Zostałeś wypisany ze zlecenia {order.Id}",
+                        $"Twoje przypisanie do zlecenia zostało cofnięte przez administratora.",
+                        order.Id);
+                    await NotifyWorker(dto.WorkerId.Value,
+                        NotificationType.AssignedToOrder,
+                        $"Zostałeś przypisany do zlecenia {order.Id}",
+                        $"Zostałeś przypisany do zlecenia przez administratora.",
+                        order.Id);
+                }
+            }
+
             if (order.Status >= OrderStatus.OrderFinishedByWorker)
                 throw new InvalidOperationException("Nie można edytować zakończonego zlecenia.");
 

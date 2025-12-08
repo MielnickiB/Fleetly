@@ -3,6 +3,7 @@
     public class OrderUpdateDto
     {
         public int? VehicleId { get; set; }
+        public int? WorkerId { get; set; }
         public int? StartLocationId { get; set; }
         public int? ServiceLocationId { get; set; }
         public int? EndLocationId { get; set; }

@@ -23,6 +23,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.Filters;
 using FleetlyBackend.Services.OrderService;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -112,6 +113,18 @@ builder.Services.AddCors(options =>
 
 
 var app = builder.Build();
+
+var imagesPath = Path.Combine(app.Environment.ContentRootPath, "Uploads", "Images");
+if (!Directory.Exists(imagesPath))
+{
+    Directory.CreateDirectory(imagesPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(imagesPath),
+    RequestPath = "/Uploads/Images"
+});
 
 using (var scope = app.Services.CreateScope())
 {

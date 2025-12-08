@@ -12,24 +12,31 @@ namespace FleetlyBackend.Mappings
                 Id = o.Id,
                 ClientId = o.ClientId,
                 ClientName = o.Client.Details.Name + " " + o.Client.Details.Surname,
+                ClientCompanyName = o.Client.Details.Company ?? "Nie dotyczy",
+                ClientPhoneNumber = o.Client.Details.PhoneNumber,
+                ClientEmail = o.Client.Email,
                 WorkerId = o.WorkerId,
-                WorkerName = o.Worker != null ? o.Worker.Details.Name + " " + o.Worker.Details.Surname : null,
+                WorkerName = o.Worker != null ? o.Worker.Details.Name + " " + o.Worker.Details.Surname : "Nie przypisano",
                 VehicleId = o.VehicleId,
                 VehicleName = o.Vehicle.BrandModel.CarBrand.BrandName + " " + o.Vehicle.BrandModel.ModelName,
                 VehicleRegistrationNumber = o.Vehicle.RegistrationNumber,
+                VehicleMileage = o.Vehicle.Mileage ?? 0,
+                VehicleVin = o.Vehicle.VIN ?? "Nie podano",
                 Status = o.Status,
                 Type = o.Type,
                 Details = o.Details,
 
                 StartLocationId = o.StartLocationId,
                 StartLocationCity = o.StartLocation.City,
-                StartLocationAddress = o.StartLocation.Street + " " + o.StartLocation.BuildingNumber + "/" + o.StartLocation.ApartmentNumber,
+                StartLocationAddress = FormatAddress(o.StartLocation.Street, o.StartLocation.BuildingNumber, o.StartLocation.ApartmentNumber),
                 ServiceLocationId = o.ServiceLocationId,
                 ServiceLocationCity = o.ServiceLocation?.City,
-                ServiceLocationAddress = o.ServiceLocation != null ? o.ServiceLocation.Street + " " + o.ServiceLocation.BuildingNumber + "/" + o.ServiceLocation.ApartmentNumber : null,
+                ServiceLocationAddress = o.ServiceLocation != null
+                    ? FormatAddress(o.ServiceLocation.Street, o.ServiceLocation.BuildingNumber, o.ServiceLocation.ApartmentNumber)
+                    : null,
                 EndLocationId = o.EndLocationId,
                 EndLocationCity = o.EndLocation.City,
-                EndLocationAddress = o.EndLocation.Street + " " + o.EndLocation.BuildingNumber + "/" + o.EndLocation.ApartmentNumber,
+                EndLocationAddress = FormatAddress(o.EndLocation.Street, o.EndLocation.BuildingNumber, o.EndLocation.ApartmentNumber),
                 RangeOfKm = o.RangeOfKm,
 
                 Salary = o.Salary,
@@ -53,5 +60,11 @@ namespace FleetlyBackend.Mappings
                 CreatedAt = o.CreatedAt,
                 UpdatedAt = o.UpdatedAt
             };
+
+        private static string FormatAddress(string street, string buildingNumber, string? apartmentNumber)
+        {
+            var apt = string.IsNullOrWhiteSpace(apartmentNumber) ? string.Empty : "/" + apartmentNumber.Trim();
+            return $"{street} {buildingNumber}{apt}".Trim();
+        }
     }
 }

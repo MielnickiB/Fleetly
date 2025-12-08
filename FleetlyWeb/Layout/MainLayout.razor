@@ -5,7 +5,7 @@
 <MudLayout>
 
     <MudAppBar Elevation="4" Color="Color.Surface" Dense="true">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMini" Color="Color.Inherit" Class="d-none d-sm-inline-flex" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleOpen" Color="Color.Inherit" Class="d-none d-sm-inline-flex" />
         <MudText Typo="Typo.h5" Class="ml-2">Fleetly</MudText>
 
         <MudSpacer />
@@ -15,7 +15,7 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleTemporary" Color="Color.Inherit" Class="d-sm-none" />
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_miniOpen"
+    <MudDrawer @bind-Open="_open"
                Variant="DrawerVariant.Temporary"
                Anchor="Anchor.Start"
                ClipMode="DrawerClipMode.Always"
@@ -50,9 +50,9 @@
 <MudPopoverProvider />
 
 @code {
-    private bool _miniOpen = false;
+    private bool _open = false;
     private bool _temporaryOpen = false;
 
-    private void ToggleMini() => _miniOpen = !_miniOpen;
+    private void ToggleOpen() => _open = !_open;
     private void ToggleTemporary() => _temporaryOpen = !_temporaryOpen;
 }
