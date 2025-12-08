@@ -1,0 +1,356 @@
+﻿@page "/orders/{orderId:int}"
+@using Fleetly.Shared.Dto.OrderDtos
+@using FleetlyWeb.Helpers
+@inject IConfiguration Config
+@inject IOrderService OrderService
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+    <MudText Typo="Typo.h5" style="font-weight:bold" Class="mb-2">Szczegóły zlecenia</MudText>
+
+    @if (_loading)
+    {
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+    }
+    else if (_error is not null)
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_error</MudAlert>
+    }
+    else if (_order is not null)
+    {
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6">
+                <MudCard Class="mb-4">
+                    <MudCardHeader Class="card-primary-header">
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1" Class="text-white">Podstawowe dane zlecenia</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <div class="row-line">
+                            <span class="row-title">Numer zlecenia</span>
+                            <span class="row-value">@_order.Id</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Typ zlecenia</span>
+                            <span class="row-value">@_order.Type</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Status zlecenia</span>
+                            <span class="row-value">@_order.Status</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Klient</span>
+                            <span class="row-value">@_order.ClientName</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Firma</span>
+                            <span class="row-value">@_order.ClientCompanyName</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Pracownik</span>
+                            <span class="row-value">@_order.WorkerName</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Utworzono</span>
+                            <span class="row-value">@_order.CreatedAt</span>
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudCard Class="mb-4">
+                    <MudCardHeader Class="card-primary-header">
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1" Class="text-white">Dane pojazdu</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <div class="row-line">
+                            <span class="row-title">Marka i model</span>
+                            <span class="row-value">@_order.VehicleName</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Numer rejestracyjny</span>
+                            <span class="row-value">@_order.VehicleRegistrationNumber</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Numer VIN</span>
+                            <span class="row-value">@_order.VehicleVin</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Przebieg</span>
+                            <span class="row-value">@_order.VehicleMileage</span>
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudCard Class="mb-4">
+                    <MudCardHeader Class="card-primary-header">
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1" Class="text-white">Pobranie</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <div class="row-line">
+                            <span class="row-title">Data i czas</span>
+                            <span class="row-value">@_order.StartTime</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Adres</span>
+                            <span class="row-value">@_order.StartLocationCity, @_order.StartLocationAddress</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Osoba kontaktowa</span>
+                            <span class="row-value">@_order.ClientName</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Numer telefonu</span>
+                            <span class="row-value">@_order.ClientPhoneNumber</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Email</span>
+                            <span class="row-value">@_order.ClientEmail</span>
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            @if (_order.ServiceLocationId is not null)
+            {
+                <MudItem xs="12" sm="6">
+                    <MudCard Class="mb-4">
+                        <MudCardHeader Class="card-primary-header">
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.subtitle1" Class="text-white">Serwis</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent Class="pa-0">
+                            <div class="row-line">
+                                <span class="row-title">Data i czas</span>
+                                <span class="row-value">@_order.ServiceTime</span>
+                            </div>
+                            <MudDivider />
+                            <div class="row-line">
+                                <span class="row-title">Adres</span>
+                                <span class="row-value">@_order.ServiceLocationCity, @_order.ServiceLocationAddress</span>
+                            </div>
+                            <MudDivider />
+                            <div class="row-line">
+                                <span class="row-title">Osoba kontaktowa</span>
+                                <span class="row-value">Pracownik serwisu</span>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+            <MudItem xs="12" sm="6">
+                <MudCard Class="mb-4">
+                    <MudCardHeader Class="card-primary-header">
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1" Class="text-white">Zdanie</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <div class="row-line">
+                            <span class="row-title">Data i czas</span>
+                            <span class="row-value">@_order.Deadline</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Adres</span>
+                            <span class="row-value">@_order.EndLocationCity, @_order.EndLocationAddress</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Osoba kontaktowa</span>
+                            <span class="row-value">@_order.ClientName</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Numer telefonu</span>
+                            <span class="row-value">@_order.ClientPhoneNumber</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Email</span>
+                            <span class="row-value">@_order.ClientEmail</span>
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudCard Class="mb-4">
+                    <MudCardHeader Class="card-primary-header">
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1" Class="text-white">Szczegóły zlecenia</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        @if ((User?.IsInRole("Admin") ?? false) || (User?.IsInRole("Client") ?? false))
+                        {
+                            <MudTextField Value="@_order.Details" Variant="Variant.Outlined" AutoGrow="true" Class="pa-2"></MudTextField>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body1" Class="pa-2">@_order.Details</MudText>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudCard Class="mb-4">
+                    <MudCardHeader Class="card-primary-header">
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1" Class="text-white">Rozliczenia</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <div class="row-line">
+                            <span class="row-title">Wynagrodzenie</span>
+                            <span class="row-value">@_order.Salary zł</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Dodatkowe koszty</span>
+                            <span class="row-value">@_order.AdditionalCosts zł</span>
+                        </div>
+                        <MudDivider />
+                        <div class="row-line">
+                            <span class="row-title">Koszty paliwowe</span>
+                            <span class="row-value">@_order.FuelCosts zł</span>
+                        </div>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudCard Class="mb-4">
+                    <MudCardHeader Class="card-primary-header">
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1" Class="text-white">Dodatkowe koszty</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <div class="row-line">
+                            <span class="row-title">Zdjęcie kosztu</span>
+                            <span class="row-title">Koszt w zł</span>
+                        </div>
+                        @foreach (var cost in _order.Expenses.Where(c => !c.IsFuelExpense))
+                        {
+                                <div class="row-line">
+                                    <MudLink Href="@BuildImageUrl(cost.CostPhotoUrl)" Target="_blank">Link do zdjęcia</MudLink>
+                                    <span class="row-value">@cost.Cost zł</span>
+                                </div>
+                                <MudDivider />
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudCard Class="mb-4">
+                    <MudCardHeader Class="card-primary-header">
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1" Class="text-white">Koszty paliwowe</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <div class="row-line">
+                            <span class="row-title">Zdjęcie kosztu</span>
+                            <span class="row-title">Koszt w zł</span>
+                        </div>
+                        @foreach (var cost in _order.Expenses.Where(c => c.IsFuelExpense))
+                        {
+                                <div class="row-line">
+                                    <MudLink Href="@BuildImageUrl(cost.CostPhotoUrl)" Target="_blank">Link do zdjęcia</MudLink>
+                                    <span class="row-value">@cost.Cost zł</span>
+                                </div>
+                                <MudDivider />
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+
+        <div class="mt-4 d-flex gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="_saving">Zapisz</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="@(() => Nav.NavigateTo("/orders", true))">Wróć do listy</MudButton>
+        </div>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public int OrderId { get; set; }
+
+    private ClaimsPrincipal? User;
+
+    protected override async Task OnInitializedAsync()
+    {
+        User = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
+    }
+
+    private OrderResponseDto? _order;
+    private bool _loading = true;
+    private bool _saving = false;
+    private string? _error;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _order = await OrderService.GetOrderByIdAsync(OrderId);
+            if (_order is null)
+            {
+                _error = "Nie znaleziono zlecenia.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = $"Błąd ładowania zlecenia.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        try
+        {
+            await Task.Delay(300);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private string BuildImageUrl(string fileName)
+    {
+        var baseURL = Config["BaseURL"] ?? "http://localhost:5225/";
+        var safe = System.Text.RegularExpressions.Regex.Replace(fileName, @"[^a-zA-Z0-9_\-\.]", string.Empty);
+        return $"{baseURL}Uploads/Images/{safe}";
+    }
+}

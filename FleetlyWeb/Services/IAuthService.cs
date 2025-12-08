@@ -1,5 +1,4 @@
 ﻿using Fleetly.Shared.Dto.AuthDtos;
-using Fleetly.Shared.Dto.UserDtos;
 
 namespace FleetlyWeb.Services
 {
