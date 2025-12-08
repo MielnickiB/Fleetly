@@ -22,7 +22,8 @@
                Elevation="4"
                Breakpoint="Breakpoint.None"
                Color="Color.Surface"
-               Class="drawer d-none d-sm-inline-flex">
+               Class="drawer d-none d-sm-inline-flex"
+               aria-hidden="@(!_open)">
         <NavMenu />
     </MudDrawer>
 
@@ -33,7 +34,8 @@
                Elevation="4"
                Breakpoint="Breakpoint.Sm"
                Color="Color.Surface"
-               Class="drawer d-sm-none">
+               Class="drawer d-sm-none"
+               aria-hidden="@(!_temporaryOpen)">
         <NavMenu />
     </MudDrawer>
 

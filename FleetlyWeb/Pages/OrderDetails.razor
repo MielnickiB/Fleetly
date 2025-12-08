@@ -1,6 +1,7 @@
 ﻿@page "/orders/{orderId:int}"
 @using Fleetly.Shared.Dto.OrderDtos
 @using FleetlyWeb.Helpers
+@inject IConfiguration Config
 @inject IOrderService OrderService
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthStateProvider
@@ -199,7 +200,7 @@
                 <MudCard Class="mb-4">
                     <MudCardHeader Class="card-primary-header">
                         <CardHeaderContent>
-                            <MudText Typo="Typo.subtitle1" Class="text-white">Sczegóły zlecenia</MudText>
+                            <MudText Typo="Typo.subtitle1" Class="text-white">Szczegóły zlecenia</MudText>
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent Class="pa-0">
@@ -234,7 +235,7 @@
                         </div>
                         <MudDivider />
                         <div class="row-line">
-                            <span class="row-title">Email</span>
+                            <span class="row-title">Koszty paliwowe</span>
                             <span class="row-value">@_order.FuelCosts zł</span>
                         </div>
                     </MudCardContent>
@@ -253,16 +254,13 @@
                             <span class="row-title">Zdjęcie kosztu</span>
                             <span class="row-title">Koszt w zł</span>
                         </div>
-                        @foreach (var cost in _order.Expenses)
+                        @foreach (var cost in _order.Expenses.Where(c => !c.IsFuelExpense))
                         {
-                            @if (!cost.IsFuelExpense)
-                            {
                                 <div class="row-line">
                                     <MudLink Href="@BuildImageUrl(cost.CostPhotoUrl)" Target="_blank">Link do zdjęcia</MudLink>
                                     <span class="row-value">@cost.Cost zł</span>
                                 </div>
                                 <MudDivider />
-                            }
                         }
                     </MudCardContent>
                 </MudCard>
@@ -279,16 +277,13 @@
                             <span class="row-title">Zdjęcie kosztu</span>
                             <span class="row-title">Koszt w zł</span>
                         </div>
-                        @foreach (var cost in _order.Expenses)
+                        @foreach (var cost in _order.Expenses.Where(c => c.IsFuelExpense))
                         {
-                            @if (cost.IsFuelExpense)
-                            {
                                 <div class="row-line">
                                     <MudLink Href="@BuildImageUrl(cost.CostPhotoUrl)" Target="_blank">Link do zdjęcia</MudLink>
                                     <span class="row-value">@cost.Cost zł</span>
                                 </div>
                                 <MudDivider />
-                            }
                         }
                     </MudCardContent>
                 </MudCard>
@@ -303,7 +298,7 @@
 </MudContainer>
 
 @code {
-    [Parameter] public int orderId { get; set; }
+    [Parameter] public int OrderId { get; set; }
 
     private ClaimsPrincipal? User;
 
@@ -323,7 +318,7 @@
         _error = null;
         try
         {
-            _order = await OrderService.GetOrderByIdAsync(orderId);
+            _order = await OrderService.GetOrderByIdAsync(OrderId);
             if (_order is null)
             {
                 _error = "Nie znaleziono zlecenia.";
@@ -331,7 +326,7 @@
         }
         catch (Exception ex)
         {
-            _error = $"Błąd ładowania zlecenia: {ex.Message}";
+            _error = $"Błąd ładowania zlecenia.";
         }
         finally
         {
@@ -354,7 +349,8 @@
 
     private string BuildImageUrl(string fileName)
     {
+        var baseURL = Config["BaseURL"] ?? "http://localhost:5225/";
         var safe = System.Text.RegularExpressions.Regex.Replace(fileName, @"[^a-zA-Z0-9_\-\.]", string.Empty);
-        return $"http://localhost:5225/Uploads/Images/{safe}";
+        return $"{baseURL}Uploads/Images/{safe}";
     }
 }

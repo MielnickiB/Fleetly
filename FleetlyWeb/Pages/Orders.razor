@@ -74,13 +74,13 @@
             }
             else
             {
-                _errorMessage = "Nie znaleziono żadnych zleceń";
+                _errorMessage = "Nie znaleziono żadnych zleceń.";
             }
             _orders = _ordersMasterList.ToList();
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Wystąpił problem podczas pobierania zleceń: {ex.Message}";
+            _errorMessage = $"Wystąpił problem podczas pobierania zleceń.";
         }
         finally
         {
