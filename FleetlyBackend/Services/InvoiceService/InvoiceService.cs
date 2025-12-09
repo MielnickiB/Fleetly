@@ -17,7 +17,7 @@ namespace FleetlyBackend.Services.InvoiceService
             var (skip, take) = PaginationHelper.Calculate(page, pageSize);
             var user = _http.CurrentUser();
 
-            var query = _context.Invoices.AsNoTracking().AsQueryable();
+            var query = _context.Invoices.Include(i => i.OrderId).AsNoTracking().AsQueryable();
 
             if (user.IsClient())
             {
@@ -36,12 +36,13 @@ namespace FleetlyBackend.Services.InvoiceService
         public async Task<InvoiceResponseDto?> GetById(int id)
         {
             var user = _http.CurrentUser();
-            var inv = await _context.Invoices.FindAsync(id);
+            var inv = await _context.Invoices
+                .Include(i => i.Order).FirstOrDefaultAsync(i => i.Id == id); ;
             if (inv is null)
                 return null;
             if (user.IsClient() && user.GetUserId() != inv.Order.ClientId)
                 throw new UnauthorizedAccessException("Nie masz uprawnień do przeglądania tej faktury.");
-            return inv?.ToResponseDto();
+            return inv.ToResponseDto();
         }
 
         public async Task<InvoiceResponseDto> Create(InvoiceCreateDto dto)
@@ -76,7 +77,7 @@ namespace FleetlyBackend.Services.InvoiceService
             {
                 invoice.IsPaid = dto.IsPaid.Value;
 
-                invoice.DateOfPayment = dto.IsPaid.Value == true ? DateTime.UtcNow : null;
+                invoice.DateOfPayment = dto.IsPaid.Value ? DateTime.UtcNow : null;
             }
 
             if (dto.MethodOfPayment.HasValue)
