@@ -194,32 +194,21 @@ namespace FleetlyBackend.Services.OrderService
                 if (dto.WorkerId is not null && order.WorkerId != dto.WorkerId)
                 {
                     order.WorkerId = dto.WorkerId.Value;
-                    await NotifyWorker(oldWorkerId,
-                        NotificationType.UnseatedFromOrder,
-                        $"Zostałeś wypisany ze zlecenia {order.Id}",
-                        $"Twoje przypisanie do zlecenia zostało cofnięte przez administratora.",
-                        order.Id);
-                    await NotifyWorker(dto.WorkerId.Value,
-                        NotificationType.AssignedToOrder,
-                        $"Zostałeś przypisany do zlecenia {order.Id}",
-                        $"Zostałeś przypisany do zlecenia przez administratora.",
-                        order.Id);
+                    await NotifyWorkerUnseatedByAdmin(oldWorkerId, order.Id);
+                    await NotifyWorkerAssignedByAdmin(dto.WorkerId.Value, order.Id);
                 }
             }
             else
             {
                 if (dto.WorkerId.HasValue)
                 {
-                    var worker = await _context.Users
+                    if (!await _context.Users
                         .Include(u => u.Role)
-                        .FirstOrDefaultAsync(u => u.Id == dto.WorkerId.Value)
-                        ?? throw new ArgumentException("Pracownik nie istnieje.");
+                        .AnyAsync(u => u.Id == dto.WorkerId.Value))
+                        throw new ArgumentException("Pracownik nie istnieje.");
+
                     order.WorkerId = dto.WorkerId.Value;
-                    await NotifyWorker(dto.WorkerId.Value,
-                        NotificationType.AssignedToOrder,
-                        $"Zostałeś przypisany do zlecenia {order.Id}",
-                        $"Zostałeś przypisany do zlecenia przez administratora.",
-                        order.Id);
+                    await NotifyWorkerAssignedByAdmin(dto.WorkerId.Value, order.Id);
                 }
             }
 
@@ -761,6 +750,23 @@ namespace FleetlyBackend.Services.OrderService
                 RelatedEntityId = orderId,
                 RelatedEntity = RelatedEntityType.Order
             });
+        }
+        private async Task NotifyWorkerAssignedByAdmin(int workerId, int orderId)
+        {
+            await NotifyWorker(workerId,
+                NotificationType.AssignedToOrder,
+                $"Zostałeś przypisany do zlecenia {orderId}",
+                $"Zostałeś przypisany do zlecenia przez administratora.",
+                orderId);
+        }
+
+        private async Task NotifyWorkerUnseatedByAdmin(int workerId, int orderId)
+        {
+            await NotifyWorker(workerId,
+                NotificationType.UnseatedFromOrder,
+                $"Zostałeś wypisany ze zlecenia {orderId}",
+                $"Twoje przypisanie do zlecenia zostało cofnięte przez administratora.",
+                orderId);
         }
 
         private async Task NotifyOrderAccepted(Order order, int workerId)

@@ -4,7 +4,7 @@
 @inject IOrderService OrderService
 @inject NavigationManager Nav
 
-<MudContainer Class="d-flex justify-center align-center align-content-center justify-content-center" MaxWidth="MaxWidth.ExtraLarge">
+<MudContainer Class="d-flex justify-center align-center" MaxWidth="MaxWidth.ExtraLarge">
     <MudDataGrid @ref="_ordersGrid"
                  T="OrderResponseDto"
                  Items="_orders"

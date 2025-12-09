@@ -182,7 +182,7 @@
                         <div class="row-line">
                             <span class="row-title">Osoba kontaktowa</span>
                             <span class="row-value">
-                                @if(_order.Type.Equals(OrderType.ServiceRide))
+                                @if (_order.Type.Equals(OrderType.ServiceRide))
                                 {
                                     <span>@_order.ClientName</span>
                                 }
@@ -206,7 +206,7 @@
                                 }
                                 </span>
                         </div>
-                        @if (_order.Type.Equals(OrderType.ServiceRide)){
+                        @if (_order.Type.Equals(OrderType.ServiceRide)) {
                         <MudDivider />
                         <div class="row-line">
                             <span class="row-title">Email</span>
