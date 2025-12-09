@@ -13,14 +13,14 @@ namespace FleetlyBackend.Controllers
         private readonly ICostLimitService _service = service;
 
         [HttpGet]
-        public async Task<ActionResult<List<CostLimitResponseDto>>> GetAll(int page = 1, int pageSize = 20)
+        public async Task<ActionResult<List<CostLimitResponseDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
             => Ok(await _service.GetAll(page, pageSize));
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<CostLimitResponseDto>> Get(int id)
         {
             var result = await _service.Get(id);
-            return result is null ? NotFound(new { error = "Nie znaleziono danego kosztorysu" }) : Ok(result);
+            return result is null ? NotFound("Nie znaleziono danego kosztorysu") : Ok(result);
         }
 
         [HttpPost]
