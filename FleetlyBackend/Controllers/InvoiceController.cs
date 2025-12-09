@@ -1,5 +1,4 @@
 ﻿using Fleetly.Shared.Dto.InvoiceDtos;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Services.InvoiceService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +13,7 @@ namespace FleetlyBackend.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin, Client")]
-        public async Task<ActionResult<List<InvoiceResponseDto>>> GetAll([FromQuery] int page = 1,[FromQuery] int pageSize = 10)
+        public async Task<ActionResult<List<InvoiceResponseDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
             => Ok(await _service.GetAll(page, pageSize));
 
 

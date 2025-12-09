@@ -68,11 +68,13 @@ namespace FleetlyBackend.Services.LocationService
             var user = _http.CurrentUser();
             var userId = user.GetUserId();
 
-            var loc = await _context.Locations.FindAsync(id)
-                ?? throw new ArgumentException("Nie znaleziono lokalizacji.");
+            var loc = await _context.Locations.FindAsync(id);
 
-            if (loc.UserId != userId && (user.IsClient() || user.IsWorker()))
+            if (loc is not null && loc.UserId != userId && (user.IsClient() || user.IsWorker()))
                 throw new UnauthorizedAccessException("Nie możesz modyfikować cudzej lokalizacji.");
+
+            if (loc is null)
+                throw new ArgumentException("Nie znaleziono lokalizacji.");
 
             if (!loc.IsActive)
                 throw new InvalidOperationException("Nie można modyfikować usuniętej lokalizacji.");
@@ -94,11 +96,13 @@ namespace FleetlyBackend.Services.LocationService
             var user = _http.CurrentUser();
             var userId = user.GetUserId();
 
-            var loc = await _context.Locations.FindAsync(id)
-                ?? throw new ArgumentException("Nie znaleziono lokalizacji.");
+            var loc = await _context.Locations.FindAsync(id);
 
-            if (loc.UserId != userId && (user.IsClient() || user.IsWorker()))
+            if (loc is not null && loc.UserId != userId && (user.IsClient() || user.IsWorker()))
                 throw new UnauthorizedAccessException("Nie możesz usuwać cudzej lokalizacji.");
+
+            if (loc is null)
+                throw new ArgumentException("Nie znaleziono lokalizacji.");
 
             if (!loc.IsActive)
                 throw new InvalidOperationException("Lokalizacja jest już nieaktywna.");
