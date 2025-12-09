@@ -14,136 +14,70 @@ namespace FleetlyBackend.Controllers
         private readonly ILocationService _service = service;
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<List<LocationResponseDto>>> GetAll(int page, int pageSize)
+        public async Task<ActionResult<List<LocationResponseDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-
             return Ok(await _service.GetAll(page, pageSize));
         }
 
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<LocationResponseDto>> Get(int id)
         {
-            if (id <= 0)
+            try
             {
-                return BadRequest("Niepoprawne Id.");
+                var loc = await _service.GetById(id);
+                return loc is null ? NotFound("Nie znaleziono danej lokalizacji.") : Ok(loc);
             }
-
-            var loc = await _service.GetById(id);
-            return loc is null ? NotFound("Nie znaleziono danej lokalizacji.") : Ok(loc);
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
         }
-
-        [HttpGet("my")]
-        public async Task<ActionResult<List<LocationResponseDto>>> GetUserLocations()
-        {
-            if (!User.TryGetUserId(out var userId, out var error))
-                return Unauthorized(error);
-            return Ok(await _service.GetUserLocations(userId));
-        }
-
         [HttpPost]
         public async Task<ActionResult<LocationResponseDto>> Create(LocationCreateDto dto)
         {
-            if (!User.TryGetUserId(out var userId, out var err))
-                return Unauthorized(new { error = err });
-
-                return Ok(await _service.Create(dto, userId));
+            return Ok(await _service.Create(dto));
         }
 
         [HttpPut("{id:int}")]
-        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<LocationResponseDto>> Update(int id, LocationUpdateDto dto)
         {
-            if (id <= 0)
-            {
-                return BadRequest("Niepoprawne Id.");
-            }
-
             try
             {
                 return Ok(await _service.Update(id, dto));
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return NotFound(ex.Message);
             }
-        }
-
-        [HttpPut("my/{id:int}")]
-        public async Task<ActionResult<LocationResponseDto>> UpdateMe(int id, LocationUpdateDto dto)
-        {
-            if (!User.TryGetUserId(out var userId, out var error))
-                return Unauthorized(error);
-
-            if (id <= 0)
+            catch (InvalidOperationException ex)
             {
-                return BadRequest("Niepoprawne Id.");
+                return BadRequest(ex.Message);
             }
-
-            try
+            catch (UnauthorizedAccessException)
             {
-                return Ok(await _service.Update(id, dto, userId));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { error = ex.Message });
+                return Forbid();
             }
         }
 
         [HttpDelete("{id:int}")]
-        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<bool>> Delete(int id)
         {
-            if (id <= 0)
-            {
-                return BadRequest("Niepoprawne Id.");
-            }
-
             try
             {
                 return Ok(await _service.Deactivate(id));
             }
             catch (ArgumentException ex)
             {
-                return NotFound(new { error = ex.Message });
+                return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
             }
         }
-
-        [HttpDelete("my/{id:int}")]
-        public async Task<ActionResult<LocationResponseDto>> DeleteMe(int id)
-        {
-            if (!User.TryGetUserId(out var userId, out var error))
-                return Unauthorized(error);
-            if (id <= 0)
-            {
-                return BadRequest("Niepoprawne Id.");
-            }
-            try
-            {
-                return Ok(await _service.Deactivate(id, userId));
-            }
-            catch (ArgumentException ex)
-            {
-                return NotFound(new { error = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(new { error = ex.Message });
-            }
-        }
-
     }
 }
