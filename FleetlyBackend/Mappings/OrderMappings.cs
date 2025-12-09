@@ -39,6 +39,9 @@ namespace FleetlyBackend.Mappings
                 EndLocationAddress = FormatAddress(o.EndLocation.Street, o.EndLocation.BuildingNumber, o.EndLocation.ApartmentNumber),
                 RangeOfKm = o.RangeOfKm,
 
+                EndContactName = o.EndContactName,
+                EndContactPhone = o.EndContactPhone,
+
                 Salary = o.Salary,
                 AdditionalCosts = o.AdditionalCosts,
                 FuelCosts = o.FuelCosts,

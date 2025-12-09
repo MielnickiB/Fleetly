@@ -21,6 +21,10 @@ namespace Fleetly.Shared.Dto.OrderDtos
         [Required]
         public int EndLocationId { get; set; }
 
+        public string? EndContactName { get; set; }
+        [Phone(ErrorMessage = "Podaj poprawny format numeru telefonu")]
+        public string? EndContactPhone { get; set; }
+
         [Required]
         public DateTime StartTime { get; set; }
         public DateTime? ServiceTime { get; set; }

@@ -4,7 +4,7 @@
 @inject IOrderService OrderService
 @inject NavigationManager Nav
 
-<MudContainer Class="d-flex justify-center align-center" MaxWidth="MaxWidth.ExtraLarge">
+<MudContainer Class="d-flex justify-center align-center align-content-center justify-content-center" MaxWidth="MaxWidth.ExtraLarge">
     <MudDataGrid @ref="_ordersGrid"
                  T="OrderResponseDto"
                  Items="_orders"
@@ -12,9 +12,11 @@
                  Bordered="true"
                  Loading="@_isLoading"
                  Filterable="true"
-                 FilterMode="@DataGridFilterMode.ColumnFilterRow"
+                 FilterMode="@DataGridFilterMode.Simple"
+                 FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
                  ColumnResizeMode="ResizeMode.Container"
-                 Class="pa-4"
+                 Class="pa-4 rounded-xl"
+                 Elevation="5"
                  Height="80vh"
                  EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
                  RowStyle="cursor:pointer; font-weight:bold;"
@@ -78,7 +80,7 @@
             }
             _orders = _ordersMasterList.ToList();
         }
-        catch (Exception ex)
+        catch
         {
             _errorMessage = $"Wystąpił problem podczas pobierania zleceń.";
         }
