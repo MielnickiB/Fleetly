@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Fleetly.Shared.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace Fleetly.Shared.Dto.VehicleDtos
 {
@@ -10,6 +11,9 @@ namespace Fleetly.Shared.Dto.VehicleDtos
 
         [Required]
         public string RegistrationNumber { get; set; } = null!;
+
+        [Required]
+        public FuelType FuelType { get; set; }
 
         public int? Mileage { get; set; }
         public string? VIN { get; set; }
