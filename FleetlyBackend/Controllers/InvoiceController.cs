@@ -14,7 +14,7 @@ namespace FleetlyBackend.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin, Client")]
-        public async Task<ActionResult<List<InvoiceResponseDto>>> GetAll(int page = 1, int pageSize = 10)
+        public async Task<ActionResult<List<InvoiceResponseDto>>> GetAll([FromQuery] int page = 1,[FromQuery] int pageSize = 10)
             => Ok(await _service.GetAll(page, pageSize));
 
 
@@ -46,7 +46,7 @@ namespace FleetlyBackend.Controllers
         public async Task<ActionResult<InvoiceResponseDto>> Update(int id, InvoiceUpdateDto dto)
         {
             try { return Ok(await _service.Update(id, dto)); }
-            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(ex.Message); }
         }
 
         [HttpDelete("{id:int}")]

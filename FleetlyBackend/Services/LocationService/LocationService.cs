@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto.LocationDtos;
 using FleetlyBackend.Data;
+using FleetlyBackend.Extensions;
 using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
@@ -7,16 +8,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FleetlyBackend.Services.LocationService
 {
-    public class LocationService(FleetlyContext context) : ILocationService
+    public class LocationService(FleetlyContext context, IHttpContextAccessor http) : ILocationService
     {
         private readonly FleetlyContext _context = context;
+        private readonly IHttpContextAccessor _http = http;
 
-        public async Task<List<LocationResponseDto>> GetAll(int page, int pageSize)
+        public async Task<List<LocationResponseDto>> GetAll(int page = 1, int pageSize = 10)
         {
             var (skip, safe) = PaginationHelper.Calculate(page, pageSize);
 
-            return await _context.Locations
-                .AsNoTracking()
+            var user = _http.CurrentUser();
+            var query = _context.Locations.AsNoTracking().AsQueryable();
+
+            if (user.IsClient() || user.IsWorker())
+            {
+                query = query.Where(l => l.UserId == user.GetUserId());
+            }
+
+            return await query
                 .OrderBy(l => l.Id)
                 .Skip(skip)
                 .Take(safe)
@@ -24,24 +33,20 @@ namespace FleetlyBackend.Services.LocationService
                 .ToListAsync();
         }
 
-        public async Task<List<LocationResponseDto>> GetUserLocations(int userId)
-        {
-            return await _context.Locations
-                .AsNoTracking()
-                .Where(l => l.UserId == userId)
-                .OrderBy(l => l.Id)
-                .Select(l => l.ToLocationResponseDto())
-                .ToListAsync();
-        }
-
         public async Task<LocationResponseDto?> GetById(int id)
         {
+            var user = _http.CurrentUser();
             var loc = await _context.Locations.FindAsync(id);
-            return loc?.ToLocationResponseDto();
+            if (loc is null)
+                return null;
+            if ((user.IsClient() || user.IsWorker()) && user.GetUserId() != loc.UserId)
+                throw new UnauthorizedAccessException("Nie masz uprawnień do przeglądania tej lokalizacji.");
+            return loc.ToLocationResponseDto();
         }
 
-        public async Task<LocationResponseDto> Create(LocationCreateDto dto, int currentUserId)
+        public async Task<LocationResponseDto> Create(LocationCreateDto dto)
         {
+            var currentUserId = _http.CurrentUser().GetUserId();
             var location = new Location
             {
                 UserId = currentUserId,
@@ -58,16 +63,19 @@ namespace FleetlyBackend.Services.LocationService
             return location.ToLocationResponseDto();
         }
 
-        public async Task<LocationResponseDto> Update(int id, LocationUpdateDto dto, int? currentUserId = null)
+        public async Task<LocationResponseDto> Update(int id, LocationUpdateDto dto)
         {
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
             var loc = await _context.Locations.FindAsync(id)
                 ?? throw new ArgumentException("Nie znaleziono lokalizacji.");
 
-            if (!loc.IsActive)
-                throw new ArgumentException("Nie można modyfikować usuniętej lokalizacji.");
-
-            if (currentUserId != null && loc.UserId != currentUserId)
+            if (loc.UserId != userId && (user.IsClient() || user.IsWorker()))
                 throw new UnauthorizedAccessException("Nie możesz modyfikować cudzej lokalizacji.");
+
+            if (!loc.IsActive)
+                throw new InvalidOperationException("Nie można modyfikować usuniętej lokalizacji.");
 
             if (dto.City is not null && dto.City != loc.City) loc.City = dto.City;
             if (dto.Street is not null && dto.Street != loc.Street) loc.Street = dto.Street;
@@ -81,16 +89,19 @@ namespace FleetlyBackend.Services.LocationService
             return loc.ToLocationResponseDto();
         }
 
-        public async Task<bool> Deactivate(int id, int? currentUserId = null)
+        public async Task<bool> Deactivate(int id)
         {
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
             var loc = await _context.Locations.FindAsync(id)
                 ?? throw new ArgumentException("Nie znaleziono lokalizacji.");
 
+            if (loc.UserId != userId && (user.IsClient() || user.IsWorker()))
+                throw new UnauthorizedAccessException("Nie możesz usuwać cudzej lokalizacji.");
+
             if (!loc.IsActive)
                 throw new InvalidOperationException("Lokalizacja jest już nieaktywna.");
-
-            if (currentUserId != null && loc.UserId != currentUserId)
-                throw new UnauthorizedAccessException("Nie możesz usunąć cudzej lokalizacji.");
 
             loc.IsActive = false;
             loc.UpdatedAt = DateTime.UtcNow;
