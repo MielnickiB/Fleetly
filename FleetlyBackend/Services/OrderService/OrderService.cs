@@ -163,6 +163,8 @@ namespace FleetlyBackend.Services.OrderService
                 StartTime = dto.StartTime,
                 ServiceTime = dto.ServiceTime,
                 Deadline = dto.Deadline,
+                EndContactName = dto.EndContactName,
+                EndContactPhone = dto.EndContactPhone,
                 Status = OrderStatus.PendingApproval
             };
 
@@ -192,16 +194,21 @@ namespace FleetlyBackend.Services.OrderService
                 if (dto.WorkerId is not null && order.WorkerId != dto.WorkerId)
                 {
                     order.WorkerId = dto.WorkerId.Value;
-                    await NotifyWorker(oldWorkerId,
-                        NotificationType.UnseatedFromOrder,
-                        $"Zostałeś wypisany ze zlecenia {order.Id}",
-                        $"Twoje przypisanie do zlecenia zostało cofnięte przez administratora.",
-                        order.Id);
-                    await NotifyWorker(dto.WorkerId.Value,
-                        NotificationType.AssignedToOrder,
-                        $"Zostałeś przypisany do zlecenia {order.Id}",
-                        $"Zostałeś przypisany do zlecenia przez administratora.",
-                        order.Id);
+                    await NotifyWorkerUnseatedByAdmin(oldWorkerId, order.Id);
+                    await NotifyWorkerAssignedByAdmin(dto.WorkerId.Value, order.Id);
+                }
+            }
+            else
+            {
+                if (dto.WorkerId.HasValue)
+                {
+                    if (!await _context.Users
+                        .Include(u => u.Role)
+                        .AnyAsync(u => u.Id == dto.WorkerId.Value))
+                        throw new ArgumentException("Pracownik nie istnieje.");
+
+                    order.WorkerId = dto.WorkerId.Value;
+                    await NotifyWorkerAssignedByAdmin(dto.WorkerId.Value, order.Id);
                 }
             }
 
@@ -246,6 +253,12 @@ namespace FleetlyBackend.Services.OrderService
                 var costLimit = await _costLimitService.GetByRangeOfKm(order.RangeOfKm);
                 order.Salary = costLimit.BaseSalary;
             }
+
+            if (dto.EndContactName is not null && !dto.EndContactName.Equals(order.EndContactName))
+                order.EndContactName = dto.EndContactName;
+
+            if (dto.EndContactPhone is not null && !dto.EndContactPhone.Equals(order.EndContactPhone))
+                order.EndContactPhone = dto.EndContactPhone;
 
             var newStart = dto.StartTime ?? order.StartTime;
             var newService = dto.ServiceTime ?? order.ServiceTime;
@@ -738,6 +751,23 @@ namespace FleetlyBackend.Services.OrderService
                 RelatedEntity = RelatedEntityType.Order
             });
         }
+        private async Task NotifyWorkerAssignedByAdmin(int workerId, int orderId)
+        {
+            await NotifyWorker(workerId,
+                NotificationType.AssignedToOrder,
+                $"Zostałeś przypisany do zlecenia {orderId}",
+                $"Zostałeś przypisany do zlecenia przez administratora.",
+                orderId);
+        }
+
+        private async Task NotifyWorkerUnseatedByAdmin(int workerId, int orderId)
+        {
+            await NotifyWorker(workerId,
+                NotificationType.UnseatedFromOrder,
+                $"Zostałeś wypisany ze zlecenia {orderId}",
+                $"Twoje przypisanie do zlecenia zostało cofnięte przez administratora.",
+                orderId);
+        }
 
         private async Task NotifyOrderAccepted(Order order, int workerId)
         {
@@ -759,6 +789,7 @@ namespace FleetlyBackend.Services.OrderService
                 "Rezygnacja",
                 $"Pracownik {workerId} zrezygnował ze zlecenia.", order.Id);
         }
+
         private async Task NotifyOrderCancelled(Order order)
         {
             await NotifyClient(order.ClientId, NotificationType.OrderCancelled,

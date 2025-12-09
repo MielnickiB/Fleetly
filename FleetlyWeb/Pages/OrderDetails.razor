@@ -1,6 +1,7 @@
 ﻿@page "/orders/{orderId:int}"
 @using Fleetly.Shared.Dto.OrderDtos
 @using FleetlyWeb.Helpers
+@using Fleetly.Shared.Enums
 @inject IConfiguration Config
 @inject IOrderService OrderService
 @inject NavigationManager Nav
@@ -180,18 +181,38 @@
                         <MudDivider />
                         <div class="row-line">
                             <span class="row-title">Osoba kontaktowa</span>
-                            <span class="row-value">@_order.ClientName</span>
+                            <span class="row-value">
+                                @if (_order.Type.Equals(OrderType.ServiceRide))
+                                {
+                                    <span>@_order.ClientName</span>
+                                }
+                                else
+                                {
+                                    <span>@_order.EndContactName</span>
+                                }
+                                </span>
                         </div>
                         <MudDivider />
                         <div class="row-line">
                             <span class="row-title">Numer telefonu</span>
-                            <span class="row-value">@_order.ClientPhoneNumber</span>
+                            <span class="row-value">
+                                @if (_order.Type.Equals(OrderType.ServiceRide))
+                                {
+                                    <span>@_order.ClientPhoneNumber</span>
+                                }
+                                else
+                                {
+                                    <span>@_order.EndContactPhone</span>
+                                }
+                                </span>
                         </div>
+                        @if (_order.Type.Equals(OrderType.ServiceRide)) {
                         <MudDivider />
                         <div class="row-line">
                             <span class="row-title">Email</span>
                             <span class="row-value">@_order.ClientEmail</span>
                         </div>
+                        }
                     </MudCardContent>
                 </MudCard>
             </MudItem>
@@ -256,11 +277,11 @@
                         </div>
                         @foreach (var cost in _order.Expenses.Where(c => !c.IsFuelExpense))
                         {
-                                <div class="row-line">
-                                    <MudLink Href="@BuildImageUrl(cost.CostPhotoUrl)" Target="_blank">Link do zdjęcia</MudLink>
-                                    <span class="row-value">@cost.Cost zł</span>
-                                </div>
-                                <MudDivider />
+                            <div class="row-line">
+                                <MudLink Href="@BuildImageUrl(cost.CostPhotoUrl)" Target="_blank">Link do zdjęcia</MudLink>
+                                <span class="row-value">@cost.Cost zł</span>
+                            </div>
+                            <MudDivider />
                         }
                     </MudCardContent>
                 </MudCard>
@@ -279,11 +300,11 @@
                         </div>
                         @foreach (var cost in _order.Expenses.Where(c => c.IsFuelExpense))
                         {
-                                <div class="row-line">
-                                    <MudLink Href="@BuildImageUrl(cost.CostPhotoUrl)" Target="_blank">Link do zdjęcia</MudLink>
-                                    <span class="row-value">@cost.Cost zł</span>
-                                </div>
-                                <MudDivider />
+                            <div class="row-line">
+                                <MudLink Href="@BuildImageUrl(cost.CostPhotoUrl)" Target="_blank">Link do zdjęcia</MudLink>
+                                <span class="row-value">@cost.Cost zł</span>
+                            </div>
+                            <MudDivider />
                         }
                     </MudCardContent>
                 </MudCard>

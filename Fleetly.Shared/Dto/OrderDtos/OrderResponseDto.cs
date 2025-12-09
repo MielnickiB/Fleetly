@@ -38,6 +38,9 @@ namespace Fleetly.Shared.Dto.OrderDtos
         public decimal FuelCosts { get; set; }
         public List<ExpenseResponseDto> Expenses { get; set; } = [];
 
+        public string? EndContactName { get; set; }
+        public string? EndContactPhone { get; set; }
+
         public DateTime StartTime { get; set; }
         public DateTime? ServiceTime { get; set; }
         public DateTime Deadline { get; set; }
