@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto.AvailabilityDtos;
 using FleetlyBackend.Data;
+using FleetlyBackend.Extensions;
 using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
@@ -7,16 +8,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FleetlyBackend.Services.AvailabilityService
 {
-    public class AvailabilityService(FleetlyContext context) : IAvailabilityService
+    public class AvailabilityService(FleetlyContext context, IHttpContextAccessor http) : IAvailabilityService
     {
         private readonly FleetlyContext _context = context;
+        private readonly IHttpContextAccessor _http = http;
 
         public async Task<List<AvailabilityResponseDto>> GetAll(int page, int pageSize)
         {
             var (skip, take) = PaginationHelper.Calculate(page, pageSize);
+            var user = _http.CurrentUser();
 
-            return await _context.Availabilities
-                .AsNoTracking()
+            var query = _context.Availabilities.AsNoTracking();
+
+            if (user.IsWorker())
+            {
+                var userId = user.GetUserId();
+                query = query.Where(a => a.WorkerId == userId);
+            }
+
+            return await query
                 .OrderBy(a => a.StartDate)
                 .ThenBy(a => a.StartHour)
                 .Skip(skip)
@@ -25,36 +35,21 @@ namespace FleetlyBackend.Services.AvailabilityService
                 .ToListAsync();
         }
 
-        public async Task<List<AvailabilityResponseDto>> GetWorkerAvailability(int workerId)
-        {
-            var worker = await _context.Users
-                .AsNoTracking()
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Id == workerId) ?? throw new ArgumentException("Użytkownik o podanym Id nie istnieje.");
-
-            if (!string.Equals(worker.Role.RoleName, "Worker", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("Podany użytkownik nie jest pracownikiem.");
-
-            return await _context.Availabilities
-                .AsNoTracking()
-                .Where(a => a.WorkerId == workerId)
-                .OrderBy(a => a.StartDate)
-                .ThenBy(a => a.StartHour)
-                .Select(a => a.ToResponseDto())
-                .ToListAsync();
-        }
-
         public async Task<AvailabilityResponseDto?> Get(int id)
         {
+            var user = _http.CurrentUser();
             var availability = await _context.Availabilities.FindAsync(id);
-            return availability?.ToResponseDto();
+            if (availability is null)
+                return null;
+            if (user.IsWorker() && user.GetUserId() != availability.WorkerId)
+                throw new UnauthorizedAccessException("Nie masz uprawnień do przeglądania tej dostępności.");
+            return availability.ToResponseDto();
         }
 
-        public async Task<AvailabilityResponseDto> Create(int workerId, AvailabilityCreateDto dto)
+        public async Task<AvailabilityResponseDto> Create(AvailabilityCreateDto dto)
         {
-            var workerExists = await _context.Users.AnyAsync(u => u.Id == workerId);
-            if (!workerExists)
-                throw new ArgumentException("Podany użytkownik nie istnieje.");
+            var user = _http.CurrentUser();
+            var workerId = user.GetUserId();
 
             if (dto.EndDate < dto.StartDate)
                 throw new InvalidOperationException("Data zakończenia dostępności musi być równa lub późniejsza niż data rozpoczęcia.");
@@ -95,8 +90,13 @@ namespace FleetlyBackend.Services.AvailabilityService
 
         public async Task<AvailabilityResponseDto> Update(int id, AvailabilityUpdateDto dto)
         {
+            var user = _http.CurrentUser();
+
             var entity = await _context.Availabilities.FindAsync(id)
                 ?? throw new ArgumentException("Nie znaleziono dostępności.");
+
+            if (user.GetUserId() != entity.WorkerId)
+                throw new UnauthorizedAccessException("Nie masz uprawnień do edytowania tej dostępności.");
 
             var newStartDate = dto.StartDate ?? entity.StartDate;
             var newEndDate = dto.EndDate ?? entity.EndDate;
@@ -137,7 +137,12 @@ namespace FleetlyBackend.Services.AvailabilityService
 
         public async Task<bool> Delete(int id)
         {
+            var user = _http.CurrentUser();
+
             var entity = await _context.Availabilities.FindAsync(id) ?? throw new ArgumentException("Nie znaleziono dostępności.");
+            if (user.GetUserId() != entity.WorkerId)
+                throw new UnauthorizedAccessException("Nie masz uprawnień do usunięcia tej dostępności.");
+
             _context.Availabilities.Remove(entity);
             await _context.SaveChangesAsync();
             return true;

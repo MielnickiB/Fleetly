@@ -1,5 +1,5 @@
+using Fleetly.Shared.Enums;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FleetlyBackend.Models
 {
@@ -23,6 +23,8 @@ namespace FleetlyBackend.Models
 
         [StringLength(100)]
         public string? Details { get; set; }
+
+        public FuelType FuelType { get; set; }
 
         public bool IsActive { get; set; } = true;
 
