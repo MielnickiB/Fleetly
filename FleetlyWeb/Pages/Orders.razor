@@ -18,7 +18,6 @@
                  Class="pa-4 rounded-xl"
                  Elevation="5"
                  Height="80vh"
-                 EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
                  RowStyle="cursor:pointer; font-weight:bold;"
                  RowClick="OnRowClick">
         <ToolBarContent>
@@ -57,7 +56,6 @@
     private MudDataGrid<OrderResponseDto> _ordersGrid = default!;
     private string _errorMessage = string.Empty;
     private bool _isLoading = true;
-    private bool _isCellEditMode;
 
     protected override async Task OnInitializedAsync()
     {
