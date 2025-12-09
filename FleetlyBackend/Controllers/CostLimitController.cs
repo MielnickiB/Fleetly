@@ -20,29 +20,29 @@ namespace FleetlyBackend.Controllers
         public async Task<ActionResult<CostLimitResponseDto>> Get(int id)
         {
             var result = await _service.Get(id);
-            return result is null ? NotFound("Nie znaleziono danego kosztorysu") : Ok(result);
+            return result is null ? NotFound("Nie znaleziono danego kosztorysu.") : Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult<CostLimitResponseDto>> Create(CostLimitCreateDto dto)
         {
             try { return Ok(await _service.Create(dto)); }
-            catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
         [HttpPut("{id:int}")]
         public async Task<ActionResult<CostLimitResponseDto>> Update(int id, CostLimitUpdateDto dto)
         {
             try { return Ok(await _service.Update(id, dto)); }
-            catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
-            catch (ArgumentException ex) { return NotFound(new { error = ex.Message }); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (ArgumentException ex) { return NotFound(ex.Message); }
         }
 
         [HttpDelete("{id:int}")]
         public async Task<ActionResult<bool>> Delete(int id)
         {
             try { return Ok(await _service.Delete(id)); }
-            catch (ArgumentException ex) { return NotFound(new { error = ex.Message }); }
+            catch (ArgumentException ex) { return NotFound(ex.Message); }
         }
     }
 }
