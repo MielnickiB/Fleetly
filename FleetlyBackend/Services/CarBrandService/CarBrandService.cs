@@ -11,7 +11,7 @@ namespace FleetlyBackend.Services.CarBrandService
     {
         private readonly FleetlyContext _context = context;
 
-        public async Task<List<CarBrandResponseDto>> GetAll(int page, int pageSize)
+        public async Task<List<CarBrandResponseDto>> GetAll(int page = 1, int pageSize = 10)
         {
             var (skip, safe) = PaginationHelper.Calculate(page, pageSize);
 

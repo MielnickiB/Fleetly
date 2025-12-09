@@ -7,22 +7,23 @@ namespace FleetlyBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class CarBrandController(ICarBrandService service) : ControllerBase
     {
         private readonly ICarBrandService _service = service;
 
         [HttpGet]
-        public async Task<ActionResult<List<CarBrandResponseDto>>> GetAll(int page = 1, int pageSize = 20)
+        [Authorize]
+        public async Task<ActionResult<List<CarBrandResponseDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             return Ok(await _service.GetAll(page, pageSize));
         }
 
         [HttpGet("{id:int}")]
+        [Authorize]
         public async Task<ActionResult<CarBrandResponseDto>> Get(int id)
         {
             var brand = await _service.GetById(id);
-            return brand is null ? NotFound() : Ok(brand);
+            return brand is null ? NotFound("Nie znaleziono danej marki.") : Ok(brand);
         }
 
         [HttpPost]
@@ -36,7 +37,7 @@ namespace FleetlyBackend.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
 
@@ -50,11 +51,11 @@ namespace FleetlyBackend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(new { error = ex.Message });
+                return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
 
@@ -62,9 +63,18 @@ namespace FleetlyBackend.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<bool>> Delete(int id)
         {
-            try { return Ok(await _service.Deactivate(id)); }
-            catch (ArgumentException ex) { return NotFound(new { error = ex.Message }); }
-            catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+            try
+            {
+                return Ok(await _service.Deactivate(id));
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

@@ -11,7 +11,7 @@ namespace FleetlyBackend.Services.CostLimitService
     {
         private readonly FleetlyContext _context = context;
 
-        public async Task<List<CostLimitResponseDto>> GetAll(int page, int pageSize)
+        public async Task<List<CostLimitResponseDto>> GetAll(int page = 1, int pageSize = 10)
         {
             var (skip, safe) = PaginationHelper.Calculate(page, pageSize);
 
