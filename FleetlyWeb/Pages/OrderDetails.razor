@@ -16,7 +16,7 @@
     }
     else if (_error is not null)
     {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@_error</MudAlert>
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" >@_error</MudAlert>
     }
     else if (_order is not null)
     {
@@ -345,7 +345,7 @@
                 _error = "Nie znaleziono zlecenia.";
             }
         }
-        catch (Exception ex)
+        catch
         {
             _error = $"Błąd ładowania zlecenia.";
         }
