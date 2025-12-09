@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto.InvoiceDtos;
 using FleetlyBackend.Data;
+using FleetlyBackend.Extensions;
 using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
@@ -7,15 +8,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FleetlyBackend.Services.InvoiceService
 {
-    public class InvoiceService(FleetlyContext context) : IInvoiceService
+    public class InvoiceService(FleetlyContext context, IHttpContextAccessor http) : IInvoiceService
     {
         private readonly FleetlyContext _context = context;
-        public async Task<List<InvoiceResponseDto>> GetAll(int page, int pageSize)
+        private readonly IHttpContextAccessor _http = http;
+        public async Task<List<InvoiceResponseDto>> GetAll(int page = 1, int pageSize = 10)
         {
             var (skip, take) = PaginationHelper.Calculate(page, pageSize);
+            var user = _http.CurrentUser();
 
-            return await _context.Invoices
-                .AsNoTracking()
+            var query = _context.Invoices.AsNoTracking().AsQueryable();
+
+            if (user.IsClient())
+            {
+                var clientId = user.GetUserId();
+                query = query.Where(i => i.Order.ClientId == clientId);
+            }
+
+            return await query
                 .OrderBy(i => i.Id)
                 .Skip(skip)
                 .Take(take)
@@ -23,30 +33,14 @@ namespace FleetlyBackend.Services.InvoiceService
                 .ToListAsync();
         }
 
-        public async Task<List<InvoiceResponseDto>> GetForClient(int clientId)
-        {
-            var user = await _context.Users
-                .AsNoTracking()
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(c => c.Id == clientId) 
-                ?? throw new ArgumentException("Podany klient nie istnieje.");
-
-            if (user.Role == null || user.Role.RoleName != "Client")
-                throw new InvalidOperationException("Podany użytkownik nie jest klientem.");
-
-            return await _context.Invoices
-                .AsNoTracking()
-                .Where(i => i.Order.ClientId == clientId)
-                .OrderByDescending(i => i.CreatedAt)
-                .Select(i => i.ToResponseDto())
-                .ToListAsync();
-        }
-
         public async Task<InvoiceResponseDto?> GetById(int id)
         {
-            var inv = await _context.Invoices
-                .AsNoTracking()
-                .FirstOrDefaultAsync(i => i.Id == id);
+            var user = _http.CurrentUser();
+            var inv = await _context.Invoices.FindAsync(id);
+            if (inv is null)
+                return null;
+            if (user.IsClient() && user.GetUserId() != inv.Order.ClientId)
+                throw new UnauthorizedAccessException("Nie masz uprawnień do przeglądania tej faktury.");
             return inv?.ToResponseDto();
         }
 
@@ -82,7 +76,7 @@ namespace FleetlyBackend.Services.InvoiceService
             {
                 invoice.IsPaid = dto.IsPaid.Value;
 
-                invoice.DateOfPayment = dto.IsPaid.Value ? DateTime.UtcNow : null;
+                invoice.DateOfPayment = dto.IsPaid.Value == true ? DateTime.UtcNow : null;
             }
 
             if (dto.MethodOfPayment.HasValue)

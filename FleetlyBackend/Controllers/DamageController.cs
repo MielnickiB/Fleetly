@@ -21,7 +21,7 @@ namespace FleetlyBackend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(new { error = ex.Message });
+                return NotFound( ex.Message);
             }
         }
 
@@ -29,14 +29,14 @@ namespace FleetlyBackend.Controllers
         public async Task<ActionResult<DamageResponseDto>> Get(int id)
         {
             var d = await _service.Get(id);
-            return d is null ? NotFound(new { error = "Nie znaleziono danego uszkodzenia." }) : Ok(d);
+            return d is null ? NotFound("Nie znaleziono danego uszkodzenia.") : Ok(d);
         }
 
         [HttpPost]
         public async Task<ActionResult<DamageResponseDto>> Create([FromForm] DamageCreateDto dto)
         {
             try { return Ok(await _service.Create(dto)); }
-            catch (ArgumentException ex) { return NotFound(new { error = ex.Message }); }
+            catch (ArgumentException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
@@ -44,8 +44,8 @@ namespace FleetlyBackend.Controllers
         public async Task<ActionResult<DamageResponseDto>> Update(int id, [FromForm] DamageUpdateDto dto)
         {
             try { return Ok(await _service.Update(id, dto)); }
-            catch (ArgumentException ex) { return NotFound(new { error = ex.Message }); }
-            catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+            catch (ArgumentException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
         [HttpDelete("{id:int}")]
@@ -57,11 +57,11 @@ namespace FleetlyBackend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(new { error = ex.Message });
+                return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
     }

@@ -18,7 +18,7 @@ namespace FleetlyBackend.Services.AvailabilityService
             var (skip, take) = PaginationHelper.Calculate(page, pageSize);
             var user = _http.CurrentUser();
 
-            var query = _context.Availabilities.AsNoTracking();
+            var query = _context.Availabilities.AsNoTracking().AsQueryable();
 
             if (user.IsWorker())
             {
