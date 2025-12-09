@@ -19,7 +19,7 @@ namespace FleetlyBackend.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Admin,Worker")]
+        [Authorize(Roles = "Admin, Worker")]
         public async Task<ActionResult<AvailabilityResponseDto>> Get(int id)
         {
             try
@@ -27,9 +27,9 @@ namespace FleetlyBackend.Controllers
                 var result = await _service.Get(id);
                 return result is null ? NotFound("Nie znaleziono danej dostępności") : Ok(result);
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
-                return Forbid(ex.Message);
+                return Forbid();
             }
         }
 
@@ -66,9 +66,9 @@ namespace FleetlyBackend.Controllers
             {
                 return NotFound(ex.Message);
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
-                return Forbid(ex.Message);
+                return Forbid();
             }
         }
 
@@ -84,9 +84,9 @@ namespace FleetlyBackend.Controllers
             {
                 return NotFound(ex.Message);
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
-                return Forbid(ex.Message);
+                return Forbid();
             }
         }
     }

@@ -39,7 +39,7 @@ public static class ClaimsPrincipalExtensions
     public static bool IsInRoleInsensitive(this ClaimsPrincipal user, string role)
     {
         var r = user.GetUserRole();
-        return r is not null && r.Equals(role, StringComparison.OrdinalIgnoreCase);
+        return r.Equals(role, StringComparison.OrdinalIgnoreCase);
     }
 
     public static bool IsAdmin(this ClaimsPrincipal user) => user.IsInRoleInsensitive("Admin");
