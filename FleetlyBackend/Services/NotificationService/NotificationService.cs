@@ -3,28 +3,23 @@ using FleetlyBackend.Data;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using Microsoft.EntityFrameworkCore;
+using FleetlyBackend.Extensions;
 
 namespace FleetlyBackend.Services.NotificationService
 {
-    public class NotificationService(FleetlyContext context) : INotificationService
+    public class NotificationService(FleetlyContext context, IHttpContextAccessor http) : INotificationService
     {
         private readonly FleetlyContext _context = context;
+        private readonly IHttpContextAccessor _http = http;
 
-        public async Task<List<NotificationResponseDto>> GetForUser(int userId)
-            => await _context.Notifications
+        public async Task<List<NotificationResponseDto>> GetAll()
+        {
+            return await _context.Notifications
                 .AsNoTracking()
-                .Where(n => n.UserId == userId)
+                .Where(n => n.UserId == _http.CurrentUser().GetUserId())
                 .OrderByDescending(n => n.CreatedAt)
                 .Select(n => n.ToResponseDto())
                 .ToListAsync();
-
-        public async Task<NotificationResponseDto?> Get(int id, int userId)
-        {
-            var notif = await _context.Notifications
-                .AsNoTracking()
-                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
-
-            return notif?.ToResponseDto();
         }
 
         public async Task<NotificationResponseDto> Create(NotificationCreateDto dto)
@@ -49,11 +44,15 @@ namespace FleetlyBackend.Services.NotificationService
             return n.ToResponseDto();
         }
 
-        public async Task<bool> MarkAsRead(int id, int userId)
+        public async Task<bool> MarkAsRead(int id)
         {
-            var notif = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId)
+            var user = _http.CurrentUser();
+
+            var notif = await _context.Notifications.FindAsync(id)
                 ?? throw new ArgumentException("Notyfikacja nie istnieje.");
+
+            if (notif.UserId != user.GetUserId())
+                throw new UnauthorizedAccessException("Nie masz uprawnień do modyfikowania tej notyfikacji.");
 
             notif.IsRead = true;
             notif.ReadAt = DateTime.UtcNow;
@@ -62,11 +61,15 @@ namespace FleetlyBackend.Services.NotificationService
             return true;
         }
 
-        public async Task<bool> Delete(int id, int userId)
+        public async Task<bool> Delete(int id)
         {
-            var notif = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId) 
+            var user = _http.CurrentUser();
+
+            var notif = await _context.Notifications.FindAsync(id) 
                 ?? throw new ArgumentException("Notyfikacja nie istnieje.");
+
+            if (notif.UserId != user.GetUserId())
+                throw new UnauthorizedAccessException("Nie masz uprawnień do usunięcia tej notyfikacji.");
 
             _context.Notifications.Remove(notif);
             await _context.SaveChangesAsync();
