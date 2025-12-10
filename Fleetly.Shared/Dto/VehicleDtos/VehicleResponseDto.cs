@@ -1,4 +1,6 @@
 ﻿using Fleetly.Shared.Enums;
+using Fleetly.Shared.Dto.UserDetailsDtos;
+using Fleetly.Shared.Dto.BrandModelDtos;
 
 namespace Fleetly.Shared.Dto.VehicleDtos
 {
@@ -6,7 +8,9 @@ namespace Fleetly.Shared.Dto.VehicleDtos
     {
         public int Id { get; set; }
         public int UserId { get; set; }
+        public UserDetailsDto UserDetails { get; set; } = null!;
         public int BrandModelId { get; set; }
+        public BrandModelResponseDto BrandModel { get; set; } = null!;
         public string RegistrationNumber { get; set; } = null!;
         public FuelType FuelType { get; set; }
         public int? Mileage { get; set; }
