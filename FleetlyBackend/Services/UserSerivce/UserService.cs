@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto.UserDtos;
 using FleetlyBackend.Data;
+using FleetlyBackend.Extensions;
 using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
@@ -8,10 +9,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FleetlyBackend.Services.UserSerivce
 {
-    public class UserService(FleetlyContext context, IPasswordHasher<User> hasher) : IUserService
+    public class UserService(FleetlyContext context, IPasswordHasher<User> hasher, IHttpContextAccessor http) : IUserService
     {
         private readonly FleetlyContext _context = context;
         private readonly IPasswordHasher<User> _hasher = hasher;
+        private readonly IHttpContextAccessor _http = http;
 
         public async Task<List<UserResponseDto>> GetAll(int page = 1, int pageSize = 10)
         {
@@ -20,6 +22,7 @@ namespace FleetlyBackend.Services.UserSerivce
             return await _context.Users
                 .AsNoTracking()
                 .Include(u => u.Role)
+                .Include(u => u.Details)
                 .OrderBy(u => u.Id)
                 .Skip(skip)
                 .Take(safe)
@@ -27,38 +30,37 @@ namespace FleetlyBackend.Services.UserSerivce
                 .ToListAsync();
         }
 
-        public async Task<List<UserResponseDto>> GetAllByRole(string roleName, int page, int pageSize = 10)
+        public async Task<List<UserResponseDto>> GetAllByRole(string roleName)
         {
-            var (skip, safe) = PaginationHelper.Calculate(page, pageSize);
-
             return await _context.Users
                 .AsNoTracking()
                 .Include(u => u.Role)
+                .Include(u => u.Details)
                 .Where(u => u.Role.RoleName == roleName)
                 .OrderBy(u => u.Id)
-                .Skip(skip)
-                .Take(safe)
                 .Select(u => u.ToResponseDto())
                 .ToListAsync();
         }
 
         public async Task<UserResponseDto?> GetById(int id)
         {
+            if (id <= 0) throw new ArgumentException("Id użytkownika musi być większe od 0");
+
             var user = await _context.Users
-                .AsNoTracking()
                 .Include(u => u.Role)
+                .Include(u => u.Details)
                 .Where(u => u.Id == id)
-                .FirstOrDefaultAsync();
+                .FirstAsync();
 
             return user?.ToResponseDto();
         }
-        public async Task<UserResponseDto?> GetCurrent(int userId)
+        public async Task<UserResponseDto?> Get()
         {
             var user = await _context.Users
-                .AsNoTracking()
                 .Include(u => u.Role)
-                .Where(u => u.Id == userId)
-                .FirstOrDefaultAsync();
+                .Include(u => u.Details)
+                .Where(u => u.Id == _http.CurrentUser().GetUserId())
+                .FirstAsync();
 
             return user?.ToResponseDto();
         }
@@ -68,7 +70,7 @@ namespace FleetlyBackend.Services.UserSerivce
             ArgumentNullException.ThrowIfNull(newUser);
             if (newUser.Details is null) throw new ArgumentException("Szczegóły użytkownika są wymagane.");
 
-            if (await _context.Users.AnyAsync(u => u.Email == newUser.Email)) throw new ArgumentException("Dany adres email jest już zajęty.");
+            if (await _context.Users.AnyAsync(u => u.Email == newUser.Email && u.IsActive == true)) throw new ArgumentException("Dany adres email jest już zajęty.");
 
             var user = new User
             {
@@ -101,6 +103,7 @@ namespace FleetlyBackend.Services.UserSerivce
             await _context.SaveChangesAsync();
             await _context.Users
                 .Include(u => u.Role)
+                .Include(u => u.Details)
                 .FirstAsync(u => u.Id == user.Id);
 
             return user.ToResponseDto();
@@ -108,16 +111,24 @@ namespace FleetlyBackend.Services.UserSerivce
 
         public async Task<UserResponseDto> Update(int id, UserUpdateDto dto)
         {
+            ArgumentNullException.ThrowIfNull(dto);
+            if(id <= 0) throw new ArgumentException("Id użytkownika musi być większe od 0");
+
+            var user = _http.CurrentUser();
             var u = await _context.Users
                 .Include(u => u.Role)
-                .FirstOrDefaultAsync(x => x.Id == id) ?? throw new ArgumentException("Nie znaleziono użytkownika");
+                .Include(u => u.Details)
+                .FirstAsync(x => x.Id == id) ?? throw new ArgumentException("Nie znaleziono użytkownika");
+
+            if (user.GetUserId() != u.Id && !user.IsInRole("Admin"))
+                throw new UnauthorizedAccessException("Nie masz uprawnień do edytowania tego użytkownika");
 
             if (!u.IsActive)
                 throw new InvalidOperationException("Nie można edytować nieaktywnego użytkownika");
 
             if (dto.Email is not null && dto.Email != u.Email)
             {
-                var emailInUse = await _context.Users.AnyAsync(x => x.Email == dto.Email && x.Id != u.Id);
+                var emailInUse = await _context.Users.AnyAsync(x => x.Email == dto.Email && x.Id != u.Id && x.IsActive == true);
                 if (emailInUse)
                     throw new ArgumentException("Podany adres email jest już używany przez innego użytkownika");
 
@@ -133,13 +144,26 @@ namespace FleetlyBackend.Services.UserSerivce
                 u.RoleId = (int)dto.RoleId;
             }
 
+            if (dto.DetailsUpdateDto is not null)
+            {
+                var detailsDto = dto.DetailsUpdateDto;
+                if (detailsDto.Name is not null && detailsDto.Name != u.Details.Name)
+                    u.Details.Name = detailsDto.Name;
+                if (detailsDto.Surname is not null && detailsDto.Surname != u.Details.Surname)
+                    u.Details.Surname = detailsDto.Surname;
+                if (detailsDto.PhoneNumber is not null && detailsDto.PhoneNumber != u.Details.PhoneNumber)
+                    u.Details.PhoneNumber = detailsDto.PhoneNumber;
+                if (detailsDto.Company is not null && detailsDto.Company != u.Details.Company)
+                    u.Details.Company = detailsDto.Company;
+            }
+
             u.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
             var updatedUser = await _context.Users
-                .AsNoTracking()
                 .Include(u => u.Role)
+                .Include(u => u.Details)
                 .Where(u => u.Id == id)
                 .FirstAsync();
 
@@ -148,6 +172,7 @@ namespace FleetlyBackend.Services.UserSerivce
 
         public async Task<bool> Deactivate(int id)
         {
+            if (id <= 0) throw new ArgumentException("Id użytkownika musi być większe od 0");
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Id == id) ?? throw new ArgumentException("Nie znaleziono użytkownika");
 

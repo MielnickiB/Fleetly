@@ -19,6 +19,7 @@ namespace FleetlyBackend.Services.AuthService
         {
             var user = await _context.Users
                 .Include(u => u.Role)
+                .Include(u => u.Details)
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
             if (user is null) return null;
@@ -60,6 +61,7 @@ namespace FleetlyBackend.Services.AuthService
             await _context.SaveChangesAsync();
             await _context.Users
                 .Include(u => u.Role)
+                .Include(u => u.Details)
                 .FirstAsync(u => u.Id == user.Id);
 
             return user.ToResponseDto();
