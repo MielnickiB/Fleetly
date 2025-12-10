@@ -32,14 +32,21 @@ namespace FleetlyBackend.Services.UserSerivce
 
         public async Task<List<UserResponseDto>> GetAllByRole(string roleName)
         {
-            return await _context.Users
-                .AsNoTracking()
-                .Include(u => u.Role)
-                .Include(u => u.Details)
-                .Where(u => u.Role.RoleName == roleName)
-                .OrderBy(u => u.Id)
-                .Select(u => u.ToResponseDto())
-                .ToListAsync();
+            try
+            {
+                return await _context.Users
+                    .AsNoTracking()
+                    .Include(u => u.Role)
+                    .Include(u => u.Details)
+                    .Where(u => u.Role.RoleName == roleName)
+                    .OrderBy(u => u.Id)
+                    .Select(u => u.ToResponseDto())
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException("Wystąpił błąd podczas pobierania użytkowników o podanej roli.", ex);
+            }
         }
 
         public async Task<UserResponseDto?> GetById(int id)
@@ -47,20 +54,22 @@ namespace FleetlyBackend.Services.UserSerivce
             if (id <= 0) throw new ArgumentException("Id użytkownika musi być większe od 0");
 
             var user = await _context.Users
+                .AsNoTracking()
                 .Include(u => u.Role)
                 .Include(u => u.Details)
                 .Where(u => u.Id == id)
-                .FirstAsync();
+                .FirstOrDefaultAsync();
 
             return user?.ToResponseDto();
         }
         public async Task<UserResponseDto?> Get()
         {
             var user = await _context.Users
+                .AsNoTracking()
                 .Include(u => u.Role)
                 .Include(u => u.Details)
                 .Where(u => u.Id == _http.CurrentUser().GetUserId())
-                .FirstAsync();
+                .FirstOrDefaultAsync();
 
             return user?.ToResponseDto();
         }
@@ -70,7 +79,7 @@ namespace FleetlyBackend.Services.UserSerivce
             ArgumentNullException.ThrowIfNull(newUser);
             if (newUser.Details is null) throw new ArgumentException("Szczegóły użytkownika są wymagane.");
 
-            if (await _context.Users.AnyAsync(u => u.Email == newUser.Email && u.IsActive == true)) throw new ArgumentException("Dany adres email jest już zajęty.");
+            if (await _context.Users.AnyAsync(u => u.Email == newUser.Email && u.IsActive)) throw new ArgumentException("Dany adres email jest już zajęty.");
 
             var user = new User
             {
@@ -102,6 +111,7 @@ namespace FleetlyBackend.Services.UserSerivce
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
             await _context.Users
+                .AsNoTracking()
                 .Include(u => u.Role)
                 .Include(u => u.Details)
                 .FirstAsync(u => u.Id == user.Id);
@@ -118,17 +128,20 @@ namespace FleetlyBackend.Services.UserSerivce
             var u = await _context.Users
                 .Include(u => u.Role)
                 .Include(u => u.Details)
-                .FirstAsync(x => x.Id == id) ?? throw new ArgumentException("Nie znaleziono użytkownika");
+                .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (user.GetUserId() != u.Id && !user.IsInRole("Admin"))
+            if (u is not null && user.GetUserId() != u.Id && !user.IsInRole("Admin"))
                 throw new UnauthorizedAccessException("Nie masz uprawnień do edytowania tego użytkownika");
+
+            if (u is null)
+                throw new ArgumentException("Nie znaleziono użytkownika");
 
             if (!u.IsActive)
                 throw new InvalidOperationException("Nie można edytować nieaktywnego użytkownika");
 
             if (dto.Email is not null && dto.Email != u.Email)
             {
-                var emailInUse = await _context.Users.AnyAsync(x => x.Email == dto.Email && x.Id != u.Id && x.IsActive == true);
+                var emailInUse = await _context.Users.AnyAsync(x => x.Email == dto.Email && x.Id != u.Id && x.IsActive);
                 if (emailInUse)
                     throw new ArgumentException("Podany adres email jest już używany przez innego użytkownika");
 
@@ -144,7 +157,7 @@ namespace FleetlyBackend.Services.UserSerivce
                 u.RoleId = (int)dto.RoleId;
             }
 
-            if (dto.DetailsUpdateDto is not null)
+            if (dto.DetailsUpdateDto is not null && u.Details is not null)
             {
                 var detailsDto = dto.DetailsUpdateDto;
                 if (detailsDto.Name is not null && detailsDto.Name != u.Details.Name)
@@ -162,6 +175,7 @@ namespace FleetlyBackend.Services.UserSerivce
             await _context.SaveChangesAsync();
 
             var updatedUser = await _context.Users
+                .AsNoTracking()
                 .Include(u => u.Role)
                 .Include(u => u.Details)
                 .Where(u => u.Id == id)

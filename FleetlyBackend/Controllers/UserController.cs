@@ -24,6 +24,7 @@ namespace FleetlyBackend.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<UserResponseDto>>> GetAllUsersByRole(string roleName)
         {
+            ArgumentNullException.ThrowIfNull(roleName);
             return Ok(await _service.GetAllByRole(roleName));
         }
 
