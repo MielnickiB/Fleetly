@@ -11,7 +11,7 @@ namespace FleetlyBackend.Services.UserRoleService
     {
         private readonly FleetlyContext _context = context;
 
-        public async Task<List<UserRoleResponseDto>> GetAll(int page, int pageSize)
+        public async Task<List<UserRoleResponseDto>> GetAll(int page = 1, int pageSize = 10)
         {
             var (skip, take) = PaginationHelper.Calculate(page, pageSize);
 
@@ -33,7 +33,7 @@ namespace FleetlyBackend.Services.UserRoleService
         public async Task<UserRoleResponseDto> Create(UserRoleCreateDto dto)
         {
             var exists = await _context.UserRoles
-                .AnyAsync(r => r.RoleName.ToLower() == dto.RoleName.ToLower());
+                .AnyAsync(r => r.RoleName.Equals(dto.RoleName, StringComparison.OrdinalIgnoreCase));
 
             if (exists)
                 throw new InvalidOperationException("Rola o takiej nazwie już istnieje.");
@@ -55,7 +55,7 @@ namespace FleetlyBackend.Services.UserRoleService
                 ?? throw new ArgumentException("Nie znaleziono roli.");
 
             var exists = await _context.UserRoles
-                .AnyAsync(r => r.RoleName.ToLower() == dto.RoleName.ToLower() && r.Id != id);
+                .AnyAsync(r => r.RoleName.Equals(dto.RoleName, StringComparison.OrdinalIgnoreCase) && r.Id != id);
 
             if (exists)
                 throw new InvalidOperationException("Rola o takiej nazwie już istnieje.");

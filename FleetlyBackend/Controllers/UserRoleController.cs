@@ -13,7 +13,7 @@ namespace FleetlyBackend.Controllers
         private readonly IUserRoleService _service = service;
 
         [HttpGet]
-        public async Task<ActionResult<List<UserRoleResponseDto>>> GetAll(int page = 1, int pageSize = 20)
+        public async Task<ActionResult<List<UserRoleResponseDto>>> GetAll([FromQuery] int page = 1,[FromQuery] int pageSize = 10)
         {
             return Ok(await _service.GetAll(page, pageSize));
         }
@@ -22,7 +22,7 @@ namespace FleetlyBackend.Controllers
         public async Task<ActionResult<UserRoleResponseDto>> Get(int id)
         {
             var result = await _service.Get(id);
-            return result is null ? NotFound() : Ok(result);
+            return result is null ? NotFound("Nie znaleziono danej roli.") : Ok(result);
         }
 
         [HttpPost]
@@ -30,7 +30,7 @@ namespace FleetlyBackend.Controllers
         {
             try { return Ok(await _service.Create(dto)); }
             catch (InvalidOperationException ex)
-            { return BadRequest(new { error = ex.Message }); }
+            { return BadRequest(ex.Message); }
         }
 
         [HttpPut("{id:int}")]
@@ -38,9 +38,9 @@ namespace FleetlyBackend.Controllers
         {
             try { return Ok(await _service.Update(id, dto)); }
             catch (InvalidOperationException ex)
-            { return BadRequest(new { error = ex.Message }); }
+            { return BadRequest(ex.Message); }
             catch (ArgumentException ex)
-            { return NotFound(new { error = ex.Message }); }
+            { return NotFound(ex.Message); }
         }
 
         [HttpDelete("{id:int}")]
@@ -52,11 +52,11 @@ namespace FleetlyBackend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return NotFound(new { error = ex.Message });
+                return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
     }
