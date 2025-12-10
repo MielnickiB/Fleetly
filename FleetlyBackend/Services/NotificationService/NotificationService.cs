@@ -2,7 +2,6 @@
 using FleetlyBackend.Data;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
-using FleetlyBackend.Helpers;
 using Microsoft.EntityFrameworkCore;
 using FleetlyBackend.Extensions;
 
@@ -49,13 +48,11 @@ namespace FleetlyBackend.Services.NotificationService
         {
             var user = _http.CurrentUser();
 
-            var notif = await _context.Notifications.FindAsync(id);
+            var notif = await _context.Notifications.FindAsync(id)
+                ?? throw new ArgumentException("Notyfikacja nie istnieje.");
 
-            if (notif is not null && notif.UserId != user.GetUserId() && (user.IsClient() || user.IsWorker()))
+            if (notif.UserId != user.GetUserId())
                 throw new UnauthorizedAccessException("Nie masz uprawnień do modyfikowania tej notyfikacji.");
-
-            if (notif is null)
-                throw new ArgumentException("Notyfikacja nie istnieje.");
 
             notif.IsRead = true;
             notif.ReadAt = DateTime.UtcNow;
@@ -68,12 +65,11 @@ namespace FleetlyBackend.Services.NotificationService
         {
             var user = _http.CurrentUser();
 
-            var notif = await _context.Notifications.FindAsync(id);
-            if (notif is not null && notif.UserId != user.GetUserId() && (user.IsClient() || user.IsWorker()))
-                throw new UnauthorizedAccessException("Nie masz uprawnień do usunięcia tej notyfikacji.");
+            var notif = await _context.Notifications.FindAsync(id) 
+                ?? throw new ArgumentException("Notyfikacja nie istnieje.");
 
-            if (notif is null)
-                throw new ArgumentException("Notyfikacja nie istnieje.");
+            if (notif.UserId != user.GetUserId())
+                throw new UnauthorizedAccessException("Nie masz uprawnień do usunięcia tej notyfikacji.");
 
             _context.Notifications.Remove(notif);
             await _context.SaveChangesAsync();
