@@ -27,7 +27,7 @@ namespace FleetlyBackend.Controllers
             catch (ArgumentException ex) { return NotFound(ex.Message); }
         }
 
-        [HttpPut("/read/{id:int}")]
+        [HttpPut("read/{id:int}")]
         [Authorize]
         public async Task<ActionResult<bool>> MarkAsRead(int id)
         {

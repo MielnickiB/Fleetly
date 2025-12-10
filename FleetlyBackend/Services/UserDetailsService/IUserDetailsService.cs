@@ -1,5 +1,4 @@
 ﻿using Fleetly.Shared.Dto.UserDetailsDtos;
-using FleetlyBackend.Models;
 
 namespace FleetlyBackend.Services.UserDetailsService
 {
