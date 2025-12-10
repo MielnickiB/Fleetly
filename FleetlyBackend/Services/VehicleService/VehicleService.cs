@@ -79,7 +79,7 @@ namespace FleetlyBackend.Services.VehicleService
 
             var brandExists = await _context.BrandModels.AnyAsync(b => b.Id == dto.BrandModelId);
             if (!brandExists)
-                throw new ArgumentException("Podany Model nie istnieje nie istnieje.");
+                throw new ArgumentException("Podany Model nie istnieje.");
 
             var vehicle = new Vehicle
             {
