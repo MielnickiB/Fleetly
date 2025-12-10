@@ -33,7 +33,7 @@ namespace FleetlyBackend.Services.UserRoleService
         public async Task<UserRoleResponseDto> Create(UserRoleCreateDto dto)
         {
             var exists = await _context.UserRoles
-                .AnyAsync(r => r.RoleName.Equals(dto.RoleName, StringComparison.CurrentCultureIgnoreCase));
+                .AnyAsync(r => r.RoleName.Equals(dto.RoleName, StringComparison.OrdinalIgnoreCase));
 
             if (exists)
                 throw new InvalidOperationException("Rola o takiej nazwie już istnieje.");
@@ -55,7 +55,7 @@ namespace FleetlyBackend.Services.UserRoleService
                 ?? throw new ArgumentException("Nie znaleziono roli.");
 
             var exists = await _context.UserRoles
-                .AnyAsync(r => r.RoleName.Equals(dto.RoleName, StringComparison.CurrentCultureIgnoreCase) && r.Id != id);
+                .AnyAsync(r => r.RoleName.Equals(dto.RoleName, StringComparison.OrdinalIgnoreCase) && r.Id != id);
 
             if (exists)
                 throw new InvalidOperationException("Rola o takiej nazwie już istnieje.");

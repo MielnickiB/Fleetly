@@ -22,7 +22,7 @@ namespace FleetlyBackend.Controllers
         public async Task<ActionResult<UserRoleResponseDto>> Get(int id)
         {
             var result = await _service.Get(id);
-            return result is null ? NotFound("Nie zlaziono danej roli") : Ok(result);
+            return result is null ? NotFound("Nie znaleziono danej roli.") : Ok(result);
         }
 
         [HttpPost]
