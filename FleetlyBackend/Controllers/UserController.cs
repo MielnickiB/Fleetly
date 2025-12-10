@@ -9,39 +9,53 @@ namespace FleetlyBackend.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class UsersController(IUserService service) : ControllerBase
     {
         private readonly IUserService _service = service;
 
         [HttpGet]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<List<UserResponseDto>>> GetAllUsers(int page = 1, int pageSize = 20)
+        public async Task<ActionResult<List<UserResponseDto>>> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             return Ok(await _service.GetAll(page, pageSize));
+        }
+
+        [HttpGet("role")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<List<UserResponseDto>>> GetAllUsersByRole(string roleName)
+        {
+            ArgumentNullException.ThrowIfNull(roleName);
+            return Ok(await _service.GetAllByRole(roleName));
         }
 
         [HttpGet("{id:int}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<UserResponseDto>> GetById(int id)
         {
-            if(id <= 0)
+            try
             {
-                return BadRequest(new { error = "Niepoprawne ID." });
+                var user = await _service.GetById(id);
+                return user is null ? NotFound("Użytkownik nie istnieje.") : Ok(user);
             }
-            var user = await _service.GetById(id);
-            return user is null ? NotFound("Użytkownik nie istnieje.") : Ok(user);
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-        [HttpGet("my")]
-        public async Task<ActionResult<UserResponseDto>> GetMe()
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<ActionResult<UserResponseDto>> Get()
         {
-            if(!User.TryGetUserId(out var userId, out var error))
-                return Unauthorized(error);
-
-            var user = await _service.GetCurrent(userId);
-
-            return user is null ? NotFound("Użytkownik nie istnieje.") : Ok(user);
+            try
+            {
+                var user = await _service.Get();
+                return user is null ? NotFound("Użytkownik nie istnieje.") : Ok(user);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
         }
 
         [HttpPost]
@@ -53,53 +67,28 @@ namespace FleetlyBackend.Controllers
                 return createdUser is null ? BadRequest("Nie udało się utworzyć użytkownika.") : Ok(createdUser);
             } 
             catch (ArgumentException ex) {
-                return BadRequest(new {error = ex.Message});
-            }
-        }
-
-        [HttpPut("my")]
-        public async Task<ActionResult<UserResponseDto>> UpdateMe(UserUpdateDto dto)
-        {
-            if (!User.TryGetUserId(out var userId, out var error))
-                return Unauthorized(error);
-            try {
-                return Ok(await _service.Update(userId, dto));
-            }
-            catch (ArgumentException ex) {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpPut("{id:int}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<ActionResult<UserResponseDto>> Update(int id, UserUpdateDto dto)
         {
-            if(id <= 0)
-            {
-                return BadRequest(new { error = "Niepoprawne ID." });
-            }
             try {
                 return Ok(await _service.Update(id, dto));
 
             } 
             catch (ArgumentException ex) {
-                return BadRequest(new {error = ex.Message});
+                return NotFound(ex.Message);
             }
-        }
-
-        [HttpDelete("/my")]
-        public async Task<ActionResult<bool>> DeactivateMe()
-        {
-            if (!User.TryGetUserId(out var userId, out var error))
-                return Unauthorized(error);
-            try { 
-                return Ok(await _service.Deactivate(userId)); 
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
             }
-            catch (ArgumentException ex) {
-                return BadRequest(new { error = ex.Message }); 
-            }
-            catch (InvalidOperationException ex) {
-                return BadRequest(new { error = ex.Message });
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
             }
         }
 
@@ -107,10 +96,6 @@ namespace FleetlyBackend.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<bool>> Deactivate(int id)
         {
-            if (id <= 0)
-            {
-                return BadRequest(new { error = "Niepoprawne ID." });
-            }
             try {
                 return Ok(await _service.Deactivate(id));
             }
