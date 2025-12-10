@@ -110,13 +110,14 @@ namespace FleetlyBackend.Services.UserSerivce
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            await _context.Users
+            var created = await _context.Users
                 .AsNoTracking()
                 .Include(u => u.Role)
                 .Include(u => u.Details)
-                .FirstAsync(u => u.Id == user.Id);
+                .FirstOrDefaultAsync(u => u.Id == user.Id)
+                ?? throw new InvalidOperationException("Nie udało się pobrać utworzonego użytkownika");
 
-            return user.ToResponseDto();
+            return created.ToResponseDto();
         }
 
         public async Task<UserResponseDto> Update(int id, UserUpdateDto dto)
@@ -179,7 +180,8 @@ namespace FleetlyBackend.Services.UserSerivce
                 .Include(u => u.Role)
                 .Include(u => u.Details)
                 .Where(u => u.Id == id)
-                .FirstAsync();
+                .FirstOrDefaultAsync()
+                ?? throw new InvalidOperationException("Nie udało się pobrać zaaktualizowanego użytkownika");
 
             return updatedUser.ToResponseDto();
         }

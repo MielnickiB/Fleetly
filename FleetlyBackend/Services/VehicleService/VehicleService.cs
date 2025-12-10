@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto.VehicleDtos;
 using FleetlyBackend.Data;
+using FleetlyBackend.Extensions;
 using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
@@ -7,17 +8,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FleetlyBackend.Services.VehicleService
 {
-    public class VehicleService(FleetlyContext context) : IVehicleService
+    public class VehicleService(FleetlyContext context, IHttpContextAccessor http) : IVehicleService
     {
         private readonly FleetlyContext _context = context;
+        private readonly IHttpContextAccessor _http = http;
 
-        public async Task<List<VehicleResponseDto>> GetAll(int page, int pageSize)
+        public async Task<List<VehicleResponseDto>> GetAll(int page = 1, int pageSize = 10)
         {
             var (skip, safe) = PaginationHelper.Calculate(page, pageSize);
 
-            return await _context.Vehicles
-                .AsNoTracking()
-                .Include(v => v.BrandModel)
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
+            var query = _context.Vehicles.AsNoTracking().AsQueryable();
+            if (!user.IsInRole("Admin"))
+            {
+                query = query.Where(v => v.UserId == userId);
+            }
+            return await query
+                .Include(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
+                .Include(v => v.User).ThenInclude(u => u.Details)
                 .OrderBy(v => v.Id)
                 .Skip(skip)
                 .Take(safe)
@@ -25,27 +35,35 @@ namespace FleetlyBackend.Services.VehicleService
                 .ToListAsync();
         }
 
-        public async Task<List<VehicleResponseDto>> GetUserVehicles(int userId)
-        {
-            return await _context.Vehicles
-                .AsNoTracking()
-                .Where(v => v.UserId == userId)
-                .Include(v => v.BrandModel)
-                .Select(v => v.ToResponseDto())
-                .ToListAsync();
-        }
-
         public async Task<VehicleResponseDto?> GetById(int id)
         {
+            if (id <= 0)
+                throw new ArgumentException("Nieprawidłowe ID pojazdu.");
+
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
             var v = await _context.Vehicles
-                .Include(v => v.BrandModel)
+                .AsNoTracking()
+                .Include(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
+                .Include(v => v.User).ThenInclude(u => u.Details)
                 .FirstOrDefaultAsync(v => v.Id == id);
 
-            return v?.ToResponseDto();
+            if (v is null)
+                return null;
+
+            if (!user.IsInRole("Admin") && v.UserId != userId)
+                throw new UnauthorizedAccessException("Nie masz uprawnień do przeglądania tego pojazdu.");
+
+            return v.ToResponseDto();
         }
 
-        public async Task<VehicleResponseDto> Create(int userId, VehicleCreateDto dto)
+        public async Task<VehicleResponseDto> Create(VehicleCreateDto dto)
         {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            var userId = _http.CurrentUser().GetUserId();
+
             var exists = await _context.Vehicles.AnyAsync(v =>
                 v.RegistrationNumber == dto.RegistrationNumber);
 
@@ -61,7 +79,7 @@ namespace FleetlyBackend.Services.VehicleService
 
             var brandExists = await _context.BrandModels.AnyAsync(b => b.Id == dto.BrandModelId);
             if (!brandExists)
-                throw new ArgumentException("Podany BrandModelId nie istnieje.");
+                throw new ArgumentException("Podany Model nie istnieje nie istnieje.");
 
             var vehicle = new Vehicle
             {
@@ -76,20 +94,35 @@ namespace FleetlyBackend.Services.VehicleService
 
             _context.Vehicles.Add(vehicle);
             await _context.SaveChangesAsync();
-            await _context.Entry(vehicle).Reference(v => v.BrandModel).LoadAsync();
+            var created = await _context.Vehicles
+                .AsNoTracking()
+                .Include(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
+                .Include(v => v.User).ThenInclude(u => u.Details)
+                .FirstOrDefaultAsync(v => v.Id == vehicle.Id)
+                ?? throw new InvalidOperationException("Nie udało się pobrać utworzonego pojazdu.");
 
-            return vehicle.ToResponseDto();
+            return created.ToResponseDto();
         }
 
-        public async Task<VehicleResponseDto> Update(int id, VehicleUpdateDto dto, int? userId = null)
+        public async Task<VehicleResponseDto> Update(int id, VehicleUpdateDto dto)
         {
-            var v = await _context.Vehicles
-                .Include(v => v.BrandModel)
-                .FirstOrDefaultAsync(v => v.Id == id)
-                ?? throw new ArgumentException("Nie znaleziono pojazdu.");
+            ArgumentNullException.ThrowIfNull(dto);
+            if (id <= 0)
+                throw new ArgumentException("Nieprawidłowe ID pojazdu.");
 
-            if (userId.HasValue && v.UserId != userId.Value)
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
+            var v = await _context.Vehicles
+                .Include(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
+                .Include(v => v.User).ThenInclude(u => u.Details)
+                .FirstOrDefaultAsync(v => v.Id == id);
+
+            if (v is not null && userId != v.UserId && !user.IsInRole("Admin"))
                 throw new UnauthorizedAccessException("Nie masz uprawnień do edycji tego pojazdu.");
+
+            if (v is null)
+                throw new ArgumentException("Nie znaleziono pojazdu.");
 
             if (!v.IsActive)
                 throw new InvalidOperationException("Nie można edytować nieaktywnego pojazdu.");
@@ -102,6 +135,7 @@ namespace FleetlyBackend.Services.VehicleService
                     v.RegistrationNumber == dto.RegistrationNumber);
                 if (exists)
                     throw new ArgumentException("Pojazd o takim numerze rejestracyjnym już istnieje.");
+                v.RegistrationNumber = dto.RegistrationNumber;
             }
 
             if (dto.VIN is not null)
@@ -109,37 +143,47 @@ namespace FleetlyBackend.Services.VehicleService
                 exists = await _context.Vehicles.AnyAsync(v => v.VIN == dto.VIN);
                 if (exists)
                     throw new ArgumentException("Pojazd o takim numerze VIN już istnieje.");
+                v.VIN = dto.VIN;
             }
 
             if (dto.BrandModelId.HasValue && dto.BrandModelId.Value != v.BrandModelId)
             {
                 var brandExists = await _context.BrandModels.AnyAsync(b => b.Id == dto.BrandModelId.Value);
                 if (!brandExists)
-                    throw new ArgumentException("Podany BrandModelId nie istnieje.");
+                    throw new ArgumentException("Podany model nie istnieje.");
 
                 v.BrandModelId = dto.BrandModelId.Value;
             }
-            if (dto.RegistrationNumber is not null && dto.RegistrationNumber != v.RegistrationNumber) v.RegistrationNumber = dto.RegistrationNumber;
+
             if (dto.Mileage.HasValue && dto.Mileage.Value != v.Mileage) v.Mileage = dto.Mileage.Value;
-            if (dto.VIN is not null && dto.VIN != v.VIN) v.VIN = dto.VIN;
             if (dto.Year.HasValue && dto.Year.Value != v.Year) v.Year = dto.Year.Value;
             if (dto.Details is not null && dto.Details != v.Details) v.Details = dto.Details;
 
             v.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            await _context.Entry(v).Reference(v => v.BrandModel).LoadAsync();
+            var updated = await _context.Vehicles
+                .AsNoTracking()
+                .Include(ve => ve.BrandModel).ThenInclude(bm => bm.CarBrand)
+                .Include(ve => ve.User).ThenInclude(u => u.Details)
+                .FirstOrDefaultAsync(ve => ve.Id == v.Id)
+                ?? throw new InvalidOperationException("Nie udało się pobrać zaktualizowanego pojazdu.");
 
-            return v.ToResponseDto();
+            return updated.ToResponseDto();
         }
 
-        public async Task<bool> Deactivate(int id, int? userId = null)
+        public async Task<bool> Deactivate(int id)
         {
-            var v = await _context.Vehicles.FindAsync(id)
-                ?? throw new ArgumentException("Nie znaleziono pojazdu.");
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
 
-            if (userId.HasValue && v.UserId != userId.Value)
+            var v = await _context.Vehicles.FindAsync(id);
+
+            if (v is not null && !user.IsInRole("Admin") && v.UserId != userId)
                 throw new UnauthorizedAccessException("Nie masz uprawnień do usunięcia tego pojazdu.");
+
+            if (v is null)
+                throw new ArgumentException("Nie znaleziono pojazdu.");
 
             if (!v.IsActive)
                 throw new InvalidOperationException("Pojazd jest już nieaktywny.");
