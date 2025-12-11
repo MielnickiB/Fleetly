@@ -1,10 +1,11 @@
-﻿using Fleetly.Shared.Dto.VehicleDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.VehicleDtos;
 
 namespace FleetlyBackend.Services.VehicleService
 {
     public interface IVehicleService
     {
-        Task<List<VehicleResponseDto>> GetAll(int page = 1, int pageSize = 10);
+        Task<PagedResult<VehicleResponseDto>> GetAll(VehicleFilterQuery query);
         Task<VehicleResponseDto?> GetById(int id);
         Task<VehicleResponseDto> Create(VehicleCreateDto dto);
         Task<VehicleResponseDto> Update(int id, VehicleUpdateDto dto);

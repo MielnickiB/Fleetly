@@ -1,0 +1,152 @@
+﻿@page "/vehicles"
+@attribute [Authorize(Roles = "Admin")]
+@using Fleetly.Shared.Dto
+@using Fleetly.Shared.Dto.VehicleDtos
+@using Fleetly.Shared.Enums
+@inject IVehicleService vehicleService
+@inject ISnackbar Snackbar
+
+<PageTitle>Lista Pojazdów</PageTitle>
+
+<MudContainer Class="d-flex flex-column justify-center align-center" MaxWidth="MaxWidth.Large">
+    <MudPaper Elevation="5" Class="d-flex flex-row align-center justify-center pa-5 mb-5 rounded-xl" Style="width:100%">
+        <MudText Typo="Typo.h5" Style="font-weight:bold">Lista Pojazdów</MudText>
+        <MudSpacer />
+        <MudTextField T="string"
+                      @bind-Value="_searchString"
+                      @bind-Value:event="@(() => _vehiclesGrid?.Reload())"
+                      Placeholder="Szukaj (Nr rej / Marka / Model / VIN...)"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      IconSize="Size.Medium"
+                      DebounceInterval="300" 
+                      Variant="Variant.Outlined" 
+                      Clearable />
+    </MudPaper>
+    <MudDataGrid @ref="_vehiclesGrid"
+                  ServerData="LoadServerData"
+                  T="VehicleResponseDto"
+                  Striped="true"
+                  Bordered="true"
+                  SortMode="SortMode.Single"
+                  Loading="@_isLoading"
+                  Filterable="true"
+                  FilterMode="@DataGridFilterMode.ColumnFilterRow"
+                  FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                  Class="pa-4 rounded-xl overflow-auto"
+                  Style="max-width:1200px"
+                  Elevation="5"
+                  RowStyle="cursor:pointer; font-weight:bold;">
+
+        <Columns>
+            <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.RegistrationNumber" Title="Nr rejestracyjny" Sortable="true" Filterable="true" />
+            <PropertyColumn Property="x => x.UserFullName" Title="Właściciel" Sortable="true" Filterable="true" />
+            <PropertyColumn Property="x => x.BrandModel.CarBrandName" Title="Marka" Sortable="true" Filterable="true" />
+            <PropertyColumn Property="x => x.BrandModel.ModelName" Title="Model" Sortable="true" Filterable="true" />
+
+            <PropertyColumn Property="x => x.FuelType" Title="Paliwo">
+                <MudSelect T="FuelType" MultiSelection="true" SelectAll="true" >
+                    @foreach (FuelType fuel in Enum.GetValues(typeof(FuelType)))
+                    {
+                        <MudSelectItem T="FuelType" Value="fuel">@fuel.ToString()</MudSelectItem>
+                    }
+                </MudSelect>
+            </PropertyColumn>
+            
+            <PropertyColumn Property="x => x.Year" Title="Rok prod." Sortable="true" Filterable="true" />
+            <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" Sortable="true" Filterable="true" />
+            <PropertyColumn Property="x => x.IsActive" Title="Aktywny" Sortable="true" Filterable="true" />
+            
+            <TemplateColumn Title="Akcje">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small" OnClick="@(() => ShowVehicleDetails(context.Item.Id))" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+
+        <PagerContent>
+            <MudDataGridPager T="VehicleResponseDto"
+                              RowsPerPageString="Wierszy na stronę"
+                              InfoFormat="{first_item}-{last_item} z {all_items}"
+                              PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
+        </PagerContent>
+    </MudDataGrid>
+    
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-4" ShowCloseIcon="true">
+            @_errorMessage
+        </MudAlert>
+    }
+</MudContainer>
+
+@code {
+    private MudDataGrid<VehicleResponseDto> _vehiclesGrid = default!;
+    private string _errorMessage = string.Empty;
+    private bool _isLoading = false;
+    private string? _searchString = string.Empty;
+
+    private async Task<GridData<VehicleResponseDto>> LoadServerData(GridState<VehicleResponseDto> state)
+    {
+        _isLoading = true;
+        
+        try
+        {
+            var query = new VehicleFilterQuery
+            {
+                Page = state.Page + 1,
+                PageSize = state.PageSize,
+                SearchTerm = _searchString, 
+                
+                SortBy = state.SortDefinitions.FirstOrDefault()?.SortBy,
+                SortDirection = state.SortDefinitions.FirstOrDefault()?.Descending == true ? "desc" : "asc",
+            };
+
+            var filterDefinitions = state.FilterDefinitions;
+
+            
+            query.UserFullName = filterDefinitions.FirstOrDefault(f => f.Title == "Właściciel")?.Value?.ToString();
+            
+            query.RegistrationNumber = filterDefinitions.FirstOrDefault(f => f.Title == "Nr rejestracyjny")?.Value?.ToString();
+
+            query.BrandName = filterDefinitions.FirstOrDefault(f => f.Title == "Marka")?.Value?.ToString();
+            
+            query.ModelName = filterDefinitions.FirstOrDefault(f => f.Title == "Model")?.Value?.ToString();
+
+            query.FuelType = (FuelType?)filterDefinitions.FirstOrDefault(f => f.Title == "Paliwo")?.Value;
+            
+            query.IsActive = (bool?)filterDefinitions.FirstOrDefault(f => f.Title == "Aktywny")?.Value;
+
+            var apiResponse = await vehicleService.GetAllVehiclesAsync(query);
+
+            if (!apiResponse.Success || apiResponse.Data == null)
+            {
+                _errorMessage = apiResponse.Error ?? "Błąd ładowania danych.";
+                Snackbar.Add(_errorMessage, Severity.Error);
+                return new GridData<VehicleResponseDto> { Items = new List<VehicleResponseDto>(), TotalItems = 0 };
+            }
+
+            return new GridData<VehicleResponseDto>
+            {
+                Items = apiResponse.Data.Items,
+                TotalItems = apiResponse.Data.TotalCount
+            };
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Wystąpił błąd: {ex.Message}";
+            Snackbar.Add(_errorMessage, Severity.Error);
+            return new GridData<VehicleResponseDto> { Items = new List<VehicleResponseDto>(), TotalItems = 0 };
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ShowVehicleDetails(int vehicleId)
+    {
+        Snackbar.Add($"Nawigacja do szczegółów pojazdu ID: {vehicleId}", Severity.Info);
+    }
+}

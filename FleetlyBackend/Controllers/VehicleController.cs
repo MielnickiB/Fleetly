@@ -1,6 +1,6 @@
 ﻿
+using Fleetly.Shared.Dto;
 using Fleetly.Shared.Dto.VehicleDtos;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Services.VehicleService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,10 +14,10 @@ namespace FleetlyBackend.Controllers
         private readonly IVehicleService _service = service;
 
         [HttpGet]
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<List<VehicleResponseDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        [Authorize(Roles = "Admin, Client")]
+        public async Task<ActionResult<PagedResult<VehicleResponseDto>>> GetAll([FromQuery] VehicleFilterQuery query)
         {
-            return Ok(await _service.GetAll(page, pageSize));
+            return Ok(await _service.GetAll(query));
         }
 
         [HttpGet("{id:int}")]

@@ -8,7 +8,7 @@ namespace Fleetly.Shared.Dto.VehicleDtos
     {
         public int Id { get; set; }
         public int UserId { get; set; }
-        public UserDetailsDto UserDetails { get; set; } = null!;
+        public string UserFullName { get; set; } = null!;
         public int BrandModelId { get; set; }
         public BrandModelResponseDto BrandModel { get; set; } = null!;
         public string RegistrationNumber { get; set; } = null!;
