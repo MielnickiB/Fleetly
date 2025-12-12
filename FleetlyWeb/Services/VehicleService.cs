@@ -1,6 +1,5 @@
 ﻿using Fleetly.Shared.Dto;
 using Fleetly.Shared.Dto.VehicleDtos;
-using Microsoft.AspNetCore.WebUtilities;
 
 namespace FleetlyWeb.Services
 {
@@ -8,29 +7,10 @@ namespace FleetlyWeb.Services
     {
         private readonly ApiClient _api = api;
         private const string BaseUrl = "api/Vehicle";
-        public async Task<ApiResponse<PagedResult<VehicleResponseDto>>> GetAllVehiclesAsync(VehicleFilterQuery query)
+        public async Task<ApiResponse<PagedResult<VehicleResponseDto>>> GetAllVehiclesAsync()
         {
-            var queryParams = new Dictionary<string, string?>
-            {
-                ["page"] = query.Page.ToString(),
-                ["pageSize"] = query.PageSize.ToString(),
-                ["searchTerm"] = query.SearchTerm,
-                ["sortBy"] = query.SortBy,
-                ["sortDirection"] = query.SortDirection,
-                ["userFullName"] = query.UserFullName,
-                ["brandName"] = query.BrandName,
-                ["modelName"] = query.ModelName,
-                ["fuelType"] = query.FuelType?.ToString(),
-                ["isActive"] = query.IsActive?.ToString().ToLowerInvariant(),
-            };
 
-            var filteredParams = queryParams
-                .Where(p => !string.IsNullOrEmpty(p.Value))
-                .ToDictionary(p => p.Key, p => p.Value);
-
-            var url = QueryHelpers.AddQueryString(BaseUrl, filteredParams);
-
-            var resp = await _api.GetAsync<PagedResult<VehicleResponseDto>>(url) 
+            var resp = await _api.GetAsync<PagedResult<VehicleResponseDto>>(BaseUrl) 
                 ?? throw new Exception("Brak odpowiedzi z serwera.");
 
             if (!resp.Success)
@@ -40,6 +20,7 @@ namespace FleetlyWeb.Services
 
             return resp!;
         }
+
         public async Task<ApiResponse<VehicleResponseDto?>> GetVehicleByIdAsync(int vehicleId)
         {
             var resp = await _api.GetAsync<VehicleResponseDto?>($"{BaseUrl}/{vehicleId}")

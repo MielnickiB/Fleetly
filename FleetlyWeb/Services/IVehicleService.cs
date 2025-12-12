@@ -5,7 +5,7 @@ namespace FleetlyWeb.Services
 {
     public interface IVehicleService
     {
-        Task<ApiResponse<PagedResult<VehicleResponseDto>>> GetAllVehiclesAsync(VehicleFilterQuery query);
+        Task<ApiResponse<PagedResult<VehicleResponseDto>>> GetAllVehiclesAsync();
         Task<ApiResponse<VehicleResponseDto?>> GetVehicleByIdAsync(int vehicleId);
         Task<ApiResponse<VehicleResponseDto>> CreateVehicleAsync(VehicleCreateDto dto);
         Task<ApiResponse<VehicleResponseDto>> UpdateVehicleAsync(int id, VehicleUpdateDto dto);

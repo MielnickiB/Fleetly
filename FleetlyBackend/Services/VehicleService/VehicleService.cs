@@ -15,7 +15,7 @@ namespace FleetlyBackend.Services.VehicleService
         private readonly FleetlyContext _context = context;
         private readonly IHttpContextAccessor _http = http;
 
-        public async Task<PagedResult<VehicleResponseDto>> GetAll(VehicleFilterQuery query)
+        public async Task<PagedResult<VehicleResponseDto>> GetAll()
         {
             var user = _http.CurrentUser();
             var userId = user.GetUserId();
@@ -26,66 +26,6 @@ namespace FleetlyBackend.Services.VehicleService
                 .Include(v => v.User).ThenInclude(u => u.Details)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(query.SearchTerm))
-            {
-                var term = query.SearchTerm.Trim().ToLower();
-                vehiclesQuery = vehiclesQuery.Where(v =>
-                    v.RegistrationNumber.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    v.BrandModel.ModelName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
-                    v.BrandModel.CarBrand.BrandName.Contains(term, StringComparison.OrdinalIgnoreCase)
-                );
-            }
-
-            if (!string.IsNullOrWhiteSpace(query.BrandName))
-            {
-                var brandName = query.BrandName.Trim().ToLower();
-                vehiclesQuery = vehiclesQuery.Where(v =>
-                    v.BrandModel.CarBrand.BrandName.ToLower().Contains(brandName));
-            }
-
-            if (!string.IsNullOrWhiteSpace(query.ModelName))
-            {
-                var modelName = query.ModelName.Trim().ToLower();
-                vehiclesQuery = vehiclesQuery.Where(v =>
-                    v.BrandModel.ModelName.ToLower().Contains(modelName));
-            }
-
-            if (!string.IsNullOrWhiteSpace(query.RegistrationNumber))
-            {
-                var regNumber = query.RegistrationNumber.Trim().ToLower();
-                vehiclesQuery = vehiclesQuery.Where(v =>
-                    v.RegistrationNumber.ToLower().Contains(regNumber));
-            }
-
-            if (!string.IsNullOrWhiteSpace(query.UserFullName))
-            {
-                var fullName = query.UserFullName.Trim().ToLower();
-                vehiclesQuery = vehiclesQuery.Where(v =>
-                    (v.User.Details.Name + " " + v.User.Details.Surname)
-                    .ToLower().Contains(fullName));
-            }
-
-            if (query.FuelType.HasValue)
-            {
-                vehiclesQuery = vehiclesQuery.Where(v =>
-                    v.FuelType == query.FuelType.Value);
-            }
-
-            if (query.IsActive.HasValue)
-            {
-                vehiclesQuery = vehiclesQuery.Where(v =>
-                    v.IsActive == query.IsActive.Value);
-            }
-
-            if (string.IsNullOrWhiteSpace(query.SortBy))
-            {
-                vehiclesQuery = vehiclesQuery.OrderBy(v => v.Id);
-            }
-            else
-            {
-                vehiclesQuery = ApplySorting(vehiclesQuery, query.SortBy, query.SortDirection);
-            }
-
             if (!user.IsInRole("Admin"))
             {
                 vehiclesQuery = vehiclesQuery.Where(v => v.UserId == userId);
@@ -93,11 +33,7 @@ namespace FleetlyBackend.Services.VehicleService
 
             var totalCount = await vehiclesQuery.CountAsync();
 
-            var (skip, safe) = PaginationHelper.Calculate(query.Page, query.PageSize);
-
             var vehicles = await vehiclesQuery
-                .Skip(skip)
-                .Take(safe)
                 .Select(v => v.ToResponseDto())
                 .ToListAsync();
 
