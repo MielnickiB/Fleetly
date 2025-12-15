@@ -1,5 +1,5 @@
 ﻿@page "/vehicles"
-@attribute [Authorize(Roles = "Admin")]
+@attribute [Authorize(Roles = "Admin, Client")]
 @using Fleetly.Shared.Dto
 @using Fleetly.Shared.Dto.VehicleDtos
 @using Fleetly.Shared.Enums
@@ -8,79 +8,82 @@
 
 <PageTitle>Lista Pojazdów</PageTitle>
 
-<MudContainer Class="d-flex flex-column justify-center align-center" MaxWidth="MaxWidth.Large">
-    <MudPaper Elevation="5" Class="d-flex flex-row align-center justify-center pa-5 mb-5 rounded-xl" Style="width:100%">
-        <MudText Typo="Typo.h5" Style="font-weight:bold">Lista Pojazdów</MudText>
-        <MudSpacer />
-        <MudTextField T="string"
-                      @bind-Value="_searchString"
-                      Placeholder="Szukaj (Nr rej / Marka / Model / VIN...)"
-                      Adornment="Adornment.End"
-                      AdornmentIcon="@Icons.Material.Filled.Search"
-                      IconSize="Size.Medium"
-                      DebounceInterval="300" 
-                      Variant="Variant.Outlined" 
-                      Clearable />
-    </MudPaper>
-    <MudDataGrid
-                  T="VehicleResponseDto"
-                  QuickFilter="@_quickFilter"
-                  Items="_vehicles"
-                  Striped="true"
-                  Bordered="true"
-                  SortMode="SortMode.Single"
-                  ColumnResizeMode="ResizeMode.Container"
-                  Loading="@_isLoading"
-                  Filterable="true"
-                  FilterMode="@DataGridFilterMode.Simple"
-                  FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
-                  Class="pa-4 rounded-xl"
-                   
-                  Elevation="5"
-                  RowStyle="cursor:pointer; font-weight:bold;">
+<MudGrid Justify="Justify.Center" Class="py-4">
+    <MudItem xs="12">
+        <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:bold">List pojazdów</MudText>
+        <MudPaper Elevation="5" Class="d-flex flex-row align-center justify-center pa-5 rounded-xl" Style="width:100%">
+            <MudTextField T="string"
+                          @bind-Value="_searchString"
+                          Placeholder="Szukaj (Nr rej / Marka / Model / VIN...)"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Medium"
+                          DebounceInterval="300"
+                          Variant="Variant.Outlined"
+                          Class="rounded-xl"
+                          Clearable />
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" Style="overflow-x:auto width:100%">
+        <MudDataGrid T="VehicleResponseDto"
+                     QuickFilter="@_quickFilter"
+                     Items="_vehicles"
+                     Striped="true"
+                     Bordered="true"
+                     SortMode="SortMode.Single"
+                     ColumnResizeMode="ResizeMode.Container"
+                     Loading="@_isLoading"
+                     Filterable="true"
+                     FilterMode="@DataGridFilterMode.Simple"
+                     FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                     Class="pa-4 rounded-xl"
+                     Elevation="5"
+                     RowStyle="cursor:pointer; font-weight:bold;">
+            <Columns>
+                <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" />
+                <PropertyColumn Property="x => x.RegistrationNumber" Title="Nr rejestracyjny" />
+                <PropertyColumn Property="x => x.UserFullName" Title="Właściciel" />
+                <PropertyColumn Property="x => x.BrandModel.CarBrandName" Title="Marka" />
+                <PropertyColumn Property="x => x.BrandModel.ModelName" Title="Model" />
 
-        <Columns>
-            <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" />
-            <PropertyColumn Property="x => x.RegistrationNumber" Title="Nr rejestracyjny" Sortable="true" Filterable="true" />
-            <PropertyColumn Property="x => x.UserFullName" Title="Właściciel" Sortable="true" Filterable="true" />
-            <PropertyColumn Property="x => x.BrandModel.CarBrandName" Title="Marka" Sortable="true" Filterable="true" />
-            <PropertyColumn Property="x => x.BrandModel.ModelName" Title="Model" Sortable="true" Filterable="true" />
+                <PropertyColumn Property="x => x.FuelType" Title="Paliwo">
+                    <FilterTemplate>
+                        <MudSelect T="FuelType" MultiSelection="true" SelectAll="true">
+                            @foreach (FuelType fuel in Enum.GetValues(typeof(FuelType)))
+                            {
+                                <MudSelectItem T="FuelType" Value="fuel">@fuel.ToString()</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </FilterTemplate>
+                </PropertyColumn>
 
-            <PropertyColumn Property="x => x.FuelType" Title="Paliwo">
-                <MudSelect T="FuelType" MultiSelection="true" SelectAll="true" >
-                    @foreach (FuelType fuel in Enum.GetValues(typeof(FuelType)))
-                    {
-                        <MudSelectItem T="FuelType" Value="fuel">@fuel.ToString()</MudSelectItem>
-                    }
-                </MudSelect>
-            </PropertyColumn>
-            
-            <PropertyColumn Property="x => x.Year" Title="Rok prod." Sortable="true" Filterable="true" />
-            <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" Sortable="true" Filterable="true" />
-            <PropertyColumn Property="x => x.IsActive" Title="Aktywny" Sortable="true" Filterable="true" />
-            
-            <TemplateColumn Title="Akcje">
-                <CellTemplate>
-                    <MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small" OnClick="@(() => ShowVehicleDetails(context.Item.Id))" />
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
+                <PropertyColumn Property="x => x.Year" Title="Rok prod." />
+                <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" />
+                <PropertyColumn Property="x => x.IsActive" Title="Aktywny" />
 
-        <PagerContent>
-            <MudDataGridPager T="VehicleResponseDto"
-                              RowsPerPageString="Wierszy na stronę"
-                              InfoFormat="{first_item}-{last_item} z {all_items}"
-                              PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
-        </PagerContent>
-    </MudDataGrid>
-    
+                <TemplateColumn Title="Akcje">
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small" OnClick="@(() => ShowVehicleDetails(context.Item.Id))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+
+            <PagerContent>
+                <MudDataGridPager T="VehicleResponseDto"
+                                  RowsPerPageString="Wierszy na stronę"
+                                  InfoFormat="{first_item}-{last_item} z {all_items}"
+                                  PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
+            </PagerContent>
+        </MudDataGrid>
+    </MudItem>
+
     @if (!string.IsNullOrEmpty(_errorMessage))
     {
         <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-4" ShowCloseIcon="true">
             @_errorMessage
         </MudAlert>
     }
-</MudContainer>
+</MudGrid>
 
 @code {
     private IEnumerable<VehicleResponseDto> _vehicles = Enumerable.Empty<VehicleResponseDto>();
