@@ -15,9 +15,9 @@ namespace FleetlyBackend.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin, Client")]
-        public async Task<ActionResult<PagedResult<VehicleResponseDto>>> GetAll([FromQuery] VehicleFilterQuery query)
+        public async Task<ActionResult<PagedResult<VehicleResponseDto>>> GetAll()
         {
-            return Ok(await _service.GetAll(query));
+            return Ok(await _service.GetAll());
         }
 
         [HttpGet("{id:int}")]

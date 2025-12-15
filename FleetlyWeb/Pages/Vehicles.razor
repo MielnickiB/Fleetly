@@ -14,7 +14,6 @@
         <MudSpacer />
         <MudTextField T="string"
                       @bind-Value="_searchString"
-                      @bind-Value:event="@(() => _vehiclesGrid?.Reload())"
                       Placeholder="Szukaj (Nr rej / Marka / Model / VIN...)"
                       Adornment="Adornment.End"
                       AdornmentIcon="@Icons.Material.Filled.Search"
@@ -23,18 +22,20 @@
                       Variant="Variant.Outlined" 
                       Clearable />
     </MudPaper>
-    <MudDataGrid @ref="_vehiclesGrid"
-                  ServerData="LoadServerData"
+    <MudDataGrid
                   T="VehicleResponseDto"
+                  QuickFilter="@_quickFilter"
+                  Items="_vehicles"
                   Striped="true"
                   Bordered="true"
                   SortMode="SortMode.Single"
+                  ColumnResizeMode="ResizeMode.Container"
                   Loading="@_isLoading"
                   Filterable="true"
                   FilterMode="@DataGridFilterMode.Simple"
                   FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
                   Class="pa-4 rounded-xl"
-                  Style="max-width:1200px"
+                   
                   Elevation="5"
                   RowStyle="cursor:pointer; font-weight:bold;">
 
@@ -82,12 +83,52 @@
 </MudContainer>
 
 @code {
-    private MudDataGrid<VehicleResponseDto> _vehiclesGrid = default!;
     private IEnumerable<VehicleResponseDto> _vehicles = Enumerable.Empty<VehicleResponseDto>();
-
-    private string _errorMessage = string.Empty;
     private bool _isLoading = false;
+    private string _errorMessage = string.Empty;
     private string? _searchString = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            var apiResponse = await vehicleService.GetAllVehiclesAsync();
+            if (apiResponse.Success)
+            {
+                _vehicles = apiResponse.Data!.Items!;
+            }
+            else
+            {
+                _errorMessage = $"Błąd ładowania pojazdów: {apiResponse.Error}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Wystąpił nieoczekiwany błąd: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private Func<VehicleResponseDto, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+        if (x.RegistrationNumber?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (x.BrandModel?.CarBrandName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (x.BrandModel?.ModelName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (x.VIN?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (x.UserFullName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        return false;
+    };
 
     private void ShowVehicleDetails(int vehicleId)
     {
