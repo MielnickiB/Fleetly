@@ -20,11 +20,11 @@
                           IconSize="Size.Medium"
                           DebounceInterval="300"
                           Variant="Variant.Outlined"
-                          Class="rounded-xl"
                           Clearable />
         </MudPaper>
+        <MudSwitch @bind-Value="_showInactive" Label="Pokaż niekatywne" Class="mt-4" />
     </MudItem>
-    <MudItem xs="12" Style="overflow-x:auto width:100%">
+    <MudItem xs="12" Style="overflow-x:auto;width:100%;max-height:80vh">
         <MudDataGrid T="VehicleResponseDto"
                      QuickFilter="@_quickFilter"
                      Items="_vehicles"
@@ -34,34 +34,21 @@
                      ColumnResizeMode="ResizeMode.Container"
                      Loading="@_isLoading"
                      Filterable="true"
-                     FilterMode="@DataGridFilterMode.Simple"
+                     FilterMode="@DataGridFilterMode.ColumnFilterRow"
                      FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
                      Class="pa-4 rounded-xl"
                      Elevation="5"
                      RowStyle="cursor:pointer; font-weight:bold;">
             <Columns>
-                <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" />
+                <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" StickyLeft />
                 <PropertyColumn Property="x => x.RegistrationNumber" Title="Nr rejestracyjny" />
                 <PropertyColumn Property="x => x.UserFullName" Title="Właściciel" />
                 <PropertyColumn Property="x => x.BrandModel.CarBrandName" Title="Marka" />
                 <PropertyColumn Property="x => x.BrandModel.ModelName" Title="Model" />
-
-                <PropertyColumn Property="x => x.FuelType" Title="Paliwo">
-                    <FilterTemplate>
-                        <MudSelect T="FuelType" MultiSelection="true" SelectAll="true">
-                            @foreach (FuelType fuel in Enum.GetValues(typeof(FuelType)))
-                            {
-                                <MudSelectItem T="FuelType" Value="fuel">@fuel.ToString()</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </FilterTemplate>
-                </PropertyColumn>
-
+                <PropertyColumn Property="x => x.FuelType" Title="Paliwo" />
                 <PropertyColumn Property="x => x.Year" Title="Rok prod." />
                 <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" />
-                <PropertyColumn Property="x => x.IsActive" Title="Aktywny" />
-
-                <TemplateColumn Title="Akcje">
+                <TemplateColumn Title="Akcje" StickyRight>
                     <CellTemplate>
                         <MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small" OnClick="@(() => ShowVehicleDetails(context.Item.Id))" />
                     </CellTemplate>
@@ -90,6 +77,7 @@
     private bool _isLoading = false;
     private string _errorMessage = string.Empty;
     private string? _searchString = string.Empty;
+    private bool _showInactive = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -118,6 +106,8 @@
 
     private Func<VehicleResponseDto, bool> _quickFilter => x =>
     {
+        if (!_showInactive && !x.IsActive)
+            return false;
         if (string.IsNullOrWhiteSpace(_searchString))
             return true;
         if (x.RegistrationNumber?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)

@@ -5,15 +5,13 @@
 <MudLayout Style="min-height:100vh">
 
     <MudAppBar Elevation="5" Color="Color.Surface" Dense="true">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleOpen" Color="Color.Inherit" Class="d-none d-sm-inline-flex" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleOpen" Color="Color.Inherit" />
         <MudText Typo="Typo.h5" Class="ml-2">Fleetly</MudText>
 
         <MudSpacer />
 
         <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
-        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Class="d-none d-sm-inline-flex" />
-
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleOpen" Color="Color.Inherit" Class="d-sm-none" />
+        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
     </MudAppBar>
 
     <MudDrawer @bind-Open="_open"
