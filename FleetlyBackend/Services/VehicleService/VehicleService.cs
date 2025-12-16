@@ -203,28 +203,5 @@ namespace FleetlyBackend.Services.VehicleService
             await _context.SaveChangesAsync();
             return true;
         }
-
-        private static IQueryable<Vehicle> ApplySorting(IQueryable<Vehicle> source, string sortBy, string? sortDirection)
-        {
-            Expression<Func<Vehicle, object>> keySelector = sortBy.ToLowerInvariant() switch
-            {
-                "registrationnumber" => v => v.RegistrationNumber,
-                "userfullname" => v => v.User.Details.Surname + v.User.Details.Name,
-                "brandmodel.carbrandname" or "marka" => v => v.BrandModel.CarBrand.BrandName,
-                "brandmodel.modelname" or "model" => v => v.BrandModel.ModelName,
-                "fueltype" => v => v.FuelType,
-                "isactive" => v => v.IsActive,
-                _ => v => v.Id
-            };
-
-            if (sortDirection?.ToLowerInvariant() == "desc")
-            {
-                return source.OrderByDescending(keySelector);
-            }
-            else
-            {
-                return source.OrderBy(keySelector);
-            }
-        }
     }
 }

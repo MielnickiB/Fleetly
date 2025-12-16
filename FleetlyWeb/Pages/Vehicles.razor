@@ -10,7 +10,7 @@
 
 <MudGrid Justify="Justify.Center" Class="py-4">
     <MudItem xs="12">
-        <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:bold">List pojazdów</MudText>
+        <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:bold">Lista pojazdów</MudText>
         <MudPaper Elevation="5" Class="d-flex flex-row align-center justify-center pa-5 rounded-xl" Style="width:100%">
             <MudTextField T="string"
                           @bind-Value="_searchString"
@@ -22,7 +22,7 @@
                           Variant="Variant.Outlined"
                           Clearable />
         </MudPaper>
-        <MudSwitch @bind-Value="_showInactive" Label="Pokaż niekatywne" Class="mt-4" />
+        <MudSwitch @bind-Value="_showInactive" Label="Pokaż nieaktywne" Class="mt-4" />
     </MudItem>
     <MudItem xs="12" Style="overflow-x:auto;width:100%;max-height:80vh">
         <MudDataGrid T="VehicleResponseDto"
