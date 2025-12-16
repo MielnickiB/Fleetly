@@ -28,5 +28,6 @@ builder.Services.AddHttpClient<ApiClient>(client =>
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IVehicleService, VehicleService>();
 
 await builder.Build().RunAsync();

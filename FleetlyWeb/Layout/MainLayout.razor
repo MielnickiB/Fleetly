@@ -2,42 +2,29 @@
 
 <MudThemeProvider Theme="@FleetlyWeb.Theme.FleetlyTheme.Default" />
 
-<MudLayout>
+<MudLayout Style="min-height:100vh">
 
-    <MudAppBar Elevation="4" Color="Color.Surface" Dense="true">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleOpen" Color="Color.Inherit" Class="d-none d-sm-inline-flex" />
+    <MudAppBar Elevation="5" Color="Color.Surface" Dense="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleOpen" Color="Color.Inherit" />
         <MudText Typo="Typo.h5" Class="ml-2">Fleetly</MudText>
 
         <MudSpacer />
 
         <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
-        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" Class="d-none d-sm-inline-flex" />
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleTemporary" Color="Color.Inherit" Class="d-sm-none" />
+        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
     </MudAppBar>
 
     <MudDrawer @bind-Open="_open"
-               Variant="DrawerVariant.Temporary"
+               Variant="DrawerVariant.Mini"
                Anchor="Anchor.Start"
                ClipMode="DrawerClipMode.Always"
                Elevation="4"
-               Breakpoint="Breakpoint.None"
                Color="Color.Surface"
-               Class="drawer d-none d-sm-inline-flex"
+               Breakpoint="Breakpoint.Sm"
                aria-hidden="@(!_open)">
         <NavMenu />
     </MudDrawer>
 
-    <MudDrawer @bind-Open="_temporaryOpen"
-               Variant="DrawerVariant.Temporary"
-               Anchor="Anchor.End"
-               ClipMode="DrawerClipMode.Always"
-               Elevation="4"
-               Breakpoint="Breakpoint.Sm"
-               Color="Color.Surface"
-               Class="drawer d-sm-none"
-               aria-hidden="@(!_temporaryOpen)">
-        <NavMenu />
-    </MudDrawer>
 
     <MudMainContent>
         <MudContainer Class="mt-4" MaxWidth="MaxWidth.ExtraLarge">
@@ -53,8 +40,5 @@
 
 @code {
     private bool _open = false;
-    private bool _temporaryOpen = false;
-
     private void ToggleOpen() => _open = !_open;
-    private void ToggleTemporary() => _temporaryOpen = !_temporaryOpen;
 }

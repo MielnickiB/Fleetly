@@ -1,5 +1,4 @@
 ﻿using Fleetly.Shared.Dto.VehicleDtos;
-using Fleetly.Shared.Dto.UserDetailsDtos;
 using Fleetly.Shared.Dto.BrandModelDtos;
 using FleetlyBackend.Models;
 
@@ -12,13 +11,7 @@ namespace FleetlyBackend.Mappings
             {
                 Id = v.Id,
                 UserId = v.UserId,
-                UserDetails = new UserDetailsDto
-                {
-                    Name = v.User.Details.Name,
-                    Surname = v.User.Details.Surname,
-                    PhoneNumber = v.User.Details.PhoneNumber,
-                    Company = v.User.Details?.Company
-                },
+                UserFullName = v.User.Details.Name + " " + v.User.Details.Surname,
                 BrandModelId = v.BrandModelId,
                 BrandModel = new BrandModelResponseDto
                 {
@@ -29,6 +22,7 @@ namespace FleetlyBackend.Mappings
                 },
                 RegistrationNumber = v.RegistrationNumber,
                 Mileage = v.Mileage,
+                FuelType = v.FuelType,
                 VIN = v.VIN,
                 Year = v.Year,
                 Details = v.Details,

@@ -1,10 +1,12 @@
-﻿using Fleetly.Shared.Dto.VehicleDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.VehicleDtos;
 using FleetlyBackend.Data;
 using FleetlyBackend.Extensions;
 using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace FleetlyBackend.Services.VehicleService
 {
@@ -13,26 +15,33 @@ namespace FleetlyBackend.Services.VehicleService
         private readonly FleetlyContext _context = context;
         private readonly IHttpContextAccessor _http = http;
 
-        public async Task<List<VehicleResponseDto>> GetAll(int page = 1, int pageSize = 10)
+        public async Task<PagedResult<VehicleResponseDto>> GetAll()
         {
-            var (skip, safe) = PaginationHelper.Calculate(page, pageSize);
-
             var user = _http.CurrentUser();
             var userId = user.GetUserId();
 
-            var query = _context.Vehicles.AsNoTracking().AsQueryable();
-            if (!user.IsInRole("Admin"))
-            {
-                query = query.Where(v => v.UserId == userId);
-            }
-            return await query
+            var vehiclesQuery = _context.Vehicles
+                .AsNoTracking()
                 .Include(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
                 .Include(v => v.User).ThenInclude(u => u.Details)
-                .OrderBy(v => v.Id)
-                .Skip(skip)
-                .Take(safe)
+                .AsQueryable();
+
+            if (!user.IsInRole("Admin"))
+            {
+                vehiclesQuery = vehiclesQuery.Where(v => v.UserId == userId);
+            }
+
+            var totalCount = await vehiclesQuery.CountAsync();
+
+            var vehicles = await vehiclesQuery
                 .Select(v => v.ToResponseDto())
                 .ToListAsync();
+
+            return new PagedResult<VehicleResponseDto>
+            {
+                Items = vehicles,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<VehicleResponseDto?> GetById(int id)

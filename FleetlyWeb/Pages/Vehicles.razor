@@ -1,0 +1,130 @@
+﻿@page "/vehicles"
+@attribute [Authorize(Roles = "Admin, Client")]
+@using Fleetly.Shared.Dto
+@using Fleetly.Shared.Dto.VehicleDtos
+@using Fleetly.Shared.Enums
+@inject IVehicleService vehicleService
+@inject ISnackbar Snackbar
+
+<PageTitle>Lista Pojazdów</PageTitle>
+
+<MudGrid Justify="Justify.Center" Class="py-4">
+    <MudItem xs="12">
+        <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:bold">Lista pojazdów</MudText>
+        <MudPaper Elevation="5" Class="d-flex flex-row align-center justify-center pa-5 rounded-xl" Style="width:100%">
+            <MudTextField T="string"
+                          @bind-Value="_searchString"
+                          Placeholder="Szukaj (Nr rej / Marka / Model / VIN...)"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Medium"
+                          DebounceInterval="300"
+                          Variant="Variant.Outlined"
+                          Clearable />
+        </MudPaper>
+        <MudSwitch @bind-Value="_showInactive" Label="Pokaż nieaktywne" Class="mt-4" />
+    </MudItem>
+    <MudItem xs="12" Style="overflow-x:auto;width:100%;max-height:80vh">
+        <MudDataGrid T="VehicleResponseDto"
+                     QuickFilter="@_quickFilter"
+                     Items="_vehicles"
+                     Striped="true"
+                     Bordered="true"
+                     SortMode="SortMode.Single"
+                     ColumnResizeMode="ResizeMode.Container"
+                     Loading="@_isLoading"
+                     Filterable="true"
+                     FilterMode="@DataGridFilterMode.ColumnFilterRow"
+                     FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                     Class="pa-4 rounded-xl"
+                     Elevation="5"
+                     RowStyle="cursor:pointer; font-weight:bold;">
+            <Columns>
+                <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" StickyLeft />
+                <PropertyColumn Property="x => x.RegistrationNumber" Title="Nr rejestracyjny" />
+                <PropertyColumn Property="x => x.UserFullName" Title="Właściciel" />
+                <PropertyColumn Property="x => x.BrandModel.CarBrandName" Title="Marka" />
+                <PropertyColumn Property="x => x.BrandModel.ModelName" Title="Model" />
+                <PropertyColumn Property="x => x.FuelType" Title="Paliwo" />
+                <PropertyColumn Property="x => x.Year" Title="Rok prod." />
+                <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" />
+                <TemplateColumn Title="Akcje" StickyRight>
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small" OnClick="@(() => ShowVehicleDetails(context.Item.Id))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+
+            <PagerContent>
+                <MudDataGridPager T="VehicleResponseDto"
+                                  RowsPerPageString="Wierszy na stronę"
+                                  InfoFormat="{first_item}-{last_item} z {all_items}"
+                                  PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
+            </PagerContent>
+        </MudDataGrid>
+    </MudItem>
+
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-4" ShowCloseIcon="true">
+            @_errorMessage
+        </MudAlert>
+    }
+</MudGrid>
+
+@code {
+    private IEnumerable<VehicleResponseDto> _vehicles = Enumerable.Empty<VehicleResponseDto>();
+    private bool _isLoading = false;
+    private string _errorMessage = string.Empty;
+    private string? _searchString = string.Empty;
+    private bool _showInactive = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            var apiResponse = await vehicleService.GetAllVehiclesAsync();
+            if (apiResponse.Success)
+            {
+                _vehicles = apiResponse.Data!.Items!;
+            }
+            else
+            {
+                _errorMessage = $"Błąd ładowania pojazdów: {apiResponse.Error}";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Wystąpił nieoczekiwany błąd: {ex.Message}";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private Func<VehicleResponseDto, bool> _quickFilter => x =>
+    {
+        if (!_showInactive && !x.IsActive)
+            return false;
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+        if (x.RegistrationNumber?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (x.BrandModel?.CarBrandName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (x.BrandModel?.ModelName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (x.VIN?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (x.UserFullName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        return false;
+    };
+
+    private void ShowVehicleDetails(int vehicleId)
+    {
+        Snackbar.Add($"Nawigacja do szczegółów pojazdu ID: {vehicleId}", Severity.Info);
+    }
+}
