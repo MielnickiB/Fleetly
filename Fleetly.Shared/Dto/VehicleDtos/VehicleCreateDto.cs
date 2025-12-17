@@ -17,7 +17,7 @@ namespace Fleetly.Shared.Dto.VehicleDtos
         public FuelType FuelType { get; set; }
 
         [Required(ErrorMessage = "Przebieg jest wymagany")]
-        [Range(0, 999999, ErrorMessage = "Przebieg musi być nieujemny ani większy od miliona.")]
+        [Range(0, 999999, ErrorMessage = "Przebieg musi być nieujemny i nie większy od miliona.")]
         public int Mileage { get; set; }
         public string? VIN { get; set; }
         [Required(ErrorMessage = "Rok produkcji jest wymagany")]

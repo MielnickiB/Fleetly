@@ -49,7 +49,7 @@
                                Clearable>
                         @if (_filteredModels == null || !_filteredModels.Any())
                         {
-                            <MudSelectItem T="int" Value="0" Disabled>Wybierz wpierw markę</MudSelectItem>
+                            <MudSelectItem T="int" Value="0" Disabled>Wybierz najpierw markę</MudSelectItem>
                         }
                         else
                         {
@@ -105,7 +105,7 @@
     [Parameter]
     public EventCallback OnVehicleAdded { get; set; }
 
-    private VehicleCreateDto _vehicleModel = new VehicleCreateDto();
+    private readonly VehicleCreateDto _vehicleModel = new VehicleCreateDto();
     private bool _isBusy = false;
     private IEnumerable<CarBrandResponseDto> _brands = Enumerable.Empty<CarBrandResponseDto>();
     private int? _selectedBrandId;

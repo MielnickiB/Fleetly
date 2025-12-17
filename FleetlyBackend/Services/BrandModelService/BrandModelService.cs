@@ -13,13 +13,13 @@ namespace FleetlyBackend.Services.BrandModelService
 
         public async Task<PagedResult<BrandModelResponseDto>> GetAll()
         {
+            var totalCount = await _context.BrandModels.CountAsync();
             var models = await _context.BrandModels
                 .AsNoTracking()
                 .Include(bm => bm.CarBrand)
                 .OrderBy(bm => bm.ModelName)
                 .Select(bm => bm.ToResponseDto())
                 .ToListAsync();
-            var totalCount = await _context.BrandModels.CountAsync();
             return new PagedResult<BrandModelResponseDto> { Items = models, TotalCount = totalCount };
         }
 
