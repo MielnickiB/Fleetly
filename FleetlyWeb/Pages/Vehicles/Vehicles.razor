@@ -56,7 +56,8 @@
                      Style="margin:4px"
                      FixedHeader="true"
                      Elevation="5"
-                     RowStyle="cursor:pointer; font-weight:bold;">
+                     RowStyleFunc="@_rowStyleFunc"
+                     RowStyle="font-weight:bold;">
             <Columns>
                 <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" StickyLeft />
                 <PropertyColumn Property="x => x.RegistrationNumber" Title="Nr rejestracyjny" />
@@ -68,7 +69,7 @@
                 <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" />
                 <TemplateColumn Title="Akcje" StickyRight>
                     <CellTemplate>
-                        <MudIconButton Icon="@Icons.Material.Filled.Info" Size="Size.Small" OnClick="@(() => ShowVehicleDetails(context.Item.Id))" />
+                        <MudIconButton Disabled="context.Item.IsActive ? false : true" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OpenDeleteDialogAsync(context.Item.Id))" />
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>
@@ -154,10 +155,17 @@
         return false;
     };
 
-    private void ShowVehicleDetails(int vehicleId)
+    private Func<VehicleResponseDto, int, string> _rowStyleFunc => (x, i) =>
     {
-        Snackbar.Add($"Nawigacja do szczegółów pojazdu ID: {vehicleId}", Severity.Info);
-    }
+        if (x.IsActive)
+        {
+            return "";
+        }
+        else
+        {
+            return "background-color: #f8d7da; color: #721c24;";
+        }
+    };
 
     private void CloseMe()
     {
@@ -181,6 +189,26 @@
         };
 
         var dialogRef = await DialogService.ShowAsync<AddVehicleDialog>("Dodaj pojazd", parameters, options);
+        await dialogRef.Result;
+    }
+
+    private async Task OpenDeleteDialogAsync(int vehicleId)
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            BackgroundClass = "blurry-bg"
+        };
+
+        var parameters = new DialogParameters<DeleteVehicleDialog>
+        {
+            { x => x.VehicleId, vehicleId },
+            { x => x.OnVehicleDeleted, new EventCallback(this, LoadVehicles) }
+        };
+
+        var dialogRef = await DialogService.ShowAsync<DeleteVehicleDialog>("Usuń pojazd", parameters, options);
         await dialogRef.Result;
     }
 }

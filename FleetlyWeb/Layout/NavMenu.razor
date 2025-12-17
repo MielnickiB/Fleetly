@@ -1,28 +1,48 @@
-﻿@inject AuthenticationStateProvider AuthStateProvider
-@using FleetlyWeb.Helpers
+﻿@using FleetlyWeb.Helpers
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IAuthService Auth
+@inject NavigationManager Nav
 
 @code {
     private ClaimsPrincipal? User;
+    private bool _isLoggingOut = false;
 
     protected override async Task OnInitializedAsync()
     {
         User = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
+    }
+
+    async Task LogoutAsync()
+    {
+        _isLoggingOut = true;
+        try
+        {
+            await Auth.Logout();
+            Nav.NavigateTo("/", replace: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            _isLoggingOut = false;
+            StateHasChanged();
+        }
     }
 }
 
 <MudNavMenu>
 
     <MudNavLink Href="/home" Icon="@Icons.Material.Filled.Home">Strona główna</MudNavLink>
-
+    <MudNavLink Href="/vehicles" Icon="@Icons.Material.Filled.CarRental">Pojazdy</MudNavLink>
     @if (User?.IsAdmin() ?? false)
     {
+        <MudNavLink Href="/users" Icon="@Icons.Material.Filled.Person">Użytkownicy</MudNavLink>
         <MudNavLink Href="/orders" Icon="@Icons.Material.Filled.ListAlt">Wszystkie zlecenia</MudNavLink>
         <MudNavLink Href="/orders/toAccept" Icon="@Icons.Material.Filled.Approval">Zlecenia do przyjęcia</MudNavLink>
         <MudNavLink Href="/orders/toReview" Icon="@Icons.Material.Filled.ReadMore">Zlecenia do zakończenia</MudNavLink>
-        <MudNavLink Href="/orders/finished" Icon="@Icons.Material.Filled.Beenhere">Zakończone zlecenia</MudNavLink>
-        <MudNavLink Href="/users" Icon="@Icons.Material.Filled.Person">Użytkownicy</MudNavLink>
     }
-
-    <MudNavLink Href="/vehicles" Icon="@Icons.Material.Filled.CarRental">Pojazdy</MudNavLink>
+    <MudNavLink Icon="@Icons.Material.Filled.Logout" OnClick="LogoutAsync" Disabled="@_isLoggingOut">Wyloguj się</MudNavLink>
 
 </MudNavMenu>
