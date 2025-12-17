@@ -1,24 +1,28 @@
 ﻿using Fleetly.Shared.Enums;
+using Fleetly.Shared.Validations;
 using System.ComponentModel.DataAnnotations;
 
 namespace Fleetly.Shared.Dto.VehicleDtos
 {
     public class VehicleCreateDto
     {
-        [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "BrandModelId musi być większe od 0.")]
+        [Required(ErrorMessage = "Model jest wymagany")]
+        [Range(1, int.MaxValue, ErrorMessage = "Nieprawidłowy model")]
         public int BrandModelId { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Wymagane jest podanie numeru rejestracyjnego")]
         public string RegistrationNumber { get; set; } = null!;
 
-        [Required]
+        [Required(ErrorMessage = "Typ paliwa jest wymagany")]
         public FuelType FuelType { get; set; }
 
-        public int? Mileage { get; set; }
+        [Required(ErrorMessage = "Przebieg jest wymagany")]
+        [Range(0, 999999, ErrorMessage = "Przebieg musi być nieujemny ani większy od miliona.")]
+        public int Mileage { get; set; }
         public string? VIN { get; set; }
-        public int? Year { get; set; }
+        [Required(ErrorMessage = "Rok produkcji jest wymagany")]
+        [VehicleYearValidation(minYearsBack: 30)]
+        public int Year { get; set; }
         public string? Details { get; set; }
     }
-
 }

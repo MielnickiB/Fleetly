@@ -1,5 +1,7 @@
 using FleetlyWeb;
 using FleetlyWeb.Services;
+using FleetlyWeb.Services.BrandModel;
+using FleetlyWeb.Services.CarBrand;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -29,5 +31,7 @@ builder.Services.AddHttpClient<ApiClient>(client =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
+builder.Services.AddScoped<IBrandModelService, BrandModelService>();
+builder.Services.AddScoped<ICarBrandService, CarBrandService>();
 
 await builder.Build().RunAsync();

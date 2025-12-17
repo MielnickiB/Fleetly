@@ -1,6 +1,6 @@
-﻿using Fleetly.Shared.Dto.BrandModelDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.BrandModelDtos;
 using FleetlyBackend.Data;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,18 +11,16 @@ namespace FleetlyBackend.Services.BrandModelService
     {
         private readonly FleetlyContext _context = context;
 
-        public async Task<List<BrandModelResponseDto>> GetAll(int page, int pageSize)
+        public async Task<PagedResult<BrandModelResponseDto>> GetAll()
         {
-            var (skip, safe) = PaginationHelper.Calculate(page, pageSize);
-
-            return await _context.BrandModels
+            var models = await _context.BrandModels
                 .AsNoTracking()
                 .Include(bm => bm.CarBrand)
                 .OrderBy(bm => bm.ModelName)
-                .Skip(skip)
-                .Take(safe)
                 .Select(bm => bm.ToResponseDto())
                 .ToListAsync();
+            var totalCount = await _context.BrandModels.CountAsync();
+            return new PagedResult<BrandModelResponseDto> { Items = models, TotalCount = totalCount };
         }
 
         public async Task<BrandModelResponseDto?> Get(int id)
