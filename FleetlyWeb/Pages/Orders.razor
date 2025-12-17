@@ -90,21 +90,6 @@
 
     private void OnRowClick(DataGridRowClickEventArgs<OrderResponseDto> args)
     {
-        // var order = args.Item;
-        // var parameters = new DialogParameters
-        // {
-        //     ["Order"] = order
-        // };
-
-        // var options = new DialogOptions
-        // {
-        //     MaxWidth = MaxWidth.Medium,
-        //     FullWidth = true,
-        //     CloseOnEscapeKey = true,
-        //     BackgroundClass = "blurry-bg"
-        // };
-
-        // Dialog.ShowAsync<OrderDetailsDialog>("Szczegóły zlecenia", parameters, options);
         Nav.NavigateTo($"/orders/{args.Item.Id}");
     }
 }

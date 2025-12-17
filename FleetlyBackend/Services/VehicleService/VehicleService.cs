@@ -2,11 +2,9 @@
 using Fleetly.Shared.Dto.VehicleDtos;
 using FleetlyBackend.Data;
 using FleetlyBackend.Extensions;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace FleetlyBackend.Services.VehicleService
 {
@@ -94,11 +92,12 @@ namespace FleetlyBackend.Services.VehicleService
             {
                 UserId = userId,
                 BrandModelId = dto.BrandModelId,
-                RegistrationNumber = dto.RegistrationNumber,
+                RegistrationNumber = dto.RegistrationNumber.ToUpper(),
                 Mileage = dto.Mileage,
                 VIN = dto.VIN,
                 Year = dto.Year,
-                Details = dto.Details
+                Details = dto.Details,
+                FuelType = dto.FuelType,
             };
 
             _context.Vehicles.Add(vehicle);

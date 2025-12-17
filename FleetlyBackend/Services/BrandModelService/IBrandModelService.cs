@@ -1,10 +1,11 @@
-﻿using Fleetly.Shared.Dto.BrandModelDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.BrandModelDtos;
 
 namespace FleetlyBackend.Services.BrandModelService
 {
     public interface IBrandModelService
     {
-        Task<List<BrandModelResponseDto>> GetAll(int page = 1, int pageSize = 20);
+        Task<PagedResult<BrandModelResponseDto>> GetAll();
         Task<BrandModelResponseDto?> Get(int id);
         Task<BrandModelResponseDto> Create(BrandModelCreateDto dto);
         Task<BrandModelResponseDto> Update(int id, BrandModelUpdateDto dto);

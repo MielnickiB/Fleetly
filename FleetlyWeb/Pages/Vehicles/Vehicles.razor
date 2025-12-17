@@ -5,6 +5,16 @@
 @using Fleetly.Shared.Enums
 @inject IVehicleService vehicleService
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<style>
+    .fab-container {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 1100;
+    }
+</style>
 
 <PageTitle>Lista Pojazdów</PageTitle>
 
@@ -22,21 +32,29 @@
                           Variant="Variant.Outlined"
                           Clearable />
         </MudPaper>
-        <MudSwitch @bind-Value="_showInactive" Label="Pokaż nieaktywne" Class="mt-4" />
     </MudItem>
-    <MudItem xs="12" Style="overflow-x:auto;width:100%;max-height:80vh">
+    <MudItem xs="12" Class="d-flex flex-row align-center">
+        <MudSwitch @bind-Value="_showInactive" Label="Pokaż nieaktywne" />
+        <MudSpacer />
+        <MudButton @onclick="OpenAddDialogAsync" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Class="d-none d-sm-flex">
+            Dodaj nowy pojazd
+        </MudButton>
+    </MudItem>
+    <MudItem xs="12" Style="overflow-x:auto;width:100%">
         <MudDataGrid T="VehicleResponseDto"
                      QuickFilter="@_quickFilter"
                      Items="_vehicles"
                      Striped="true"
                      Bordered="true"
                      SortMode="SortMode.Single"
-                     ColumnResizeMode="ResizeMode.Container"
+                     ColumnResizeMode="ResizeMode.Column"
                      Loading="@_isLoading"
                      Filterable="true"
-                     FilterMode="@DataGridFilterMode.ColumnFilterRow"
+                     FilterMode="@DataGridFilterMode.ColumnFilterMenu"
                      FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
                      Class="pa-4 rounded-xl"
+                     Style="margin:4px"
+                     FixedHeader="true"
                      Elevation="5"
                      RowStyle="cursor:pointer; font-weight:bold;">
             <Columns>
@@ -66,20 +84,33 @@
 
     @if (!string.IsNullOrEmpty(_errorMessage))
     {
-        <MudAlert Severity="Severity.Error" Variant="Variant.Filled" Class="mt-4" ShowCloseIcon="true">
+        <MudAlert Severity="Severity.Error" Elevation="5" Variant="Variant.Filled" Class="mt-4" ShowCloseIcon="true" CloseIconClicked="(() => CloseMe())">
             @_errorMessage
         </MudAlert>
     }
 </MudGrid>
 
+<div class="fab-container d-flex d-sm-none">
+    <MudFab OnClick="OpenAddDialogAsync"
+            StartIcon="@Icons.Material.Filled.Add"
+            Size="Size.Large"
+            Color="Color.Primary" />
+</div>
+
 @code {
     private IEnumerable<VehicleResponseDto> _vehicles = Enumerable.Empty<VehicleResponseDto>();
     private bool _isLoading = false;
     private string _errorMessage = string.Empty;
+    private bool _showErrorAlert = false;
     private string? _searchString = string.Empty;
     private bool _showInactive = false;
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadVehicles();
+    }
+
+    private async Task LoadVehicles()
     {
         try
         {
@@ -126,5 +157,30 @@
     private void ShowVehicleDetails(int vehicleId)
     {
         Snackbar.Add($"Nawigacja do szczegółów pojazdu ID: {vehicleId}", Severity.Info);
+    }
+
+    private void CloseMe()
+    {
+        _showErrorAlert = false;
+        _errorMessage = string.Empty;
+    }
+
+    private async Task OpenAddDialogAsync()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            BackgroundClass = "blurry-bg"
+        };
+
+        var parameters = new DialogParameters<AddVehicleDialog>
+        {
+            { x => x.OnVehicleAdded, new EventCallback(this, LoadVehicles) }
+        };
+
+        var dialogRef = await DialogService.ShowAsync<AddVehicleDialog>("Dodaj pojazd", parameters, options);
+        await dialogRef.Result;
     }
 }

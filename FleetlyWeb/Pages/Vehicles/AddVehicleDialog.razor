@@ -1,0 +1,216 @@
+﻿@using Fleetly.Shared.Enums
+@using Fleetly.Shared.Dto.VehicleDtos
+@using Fleetly.Shared.Dto.CarBrandDtos
+@using Fleetly.Shared.Dto.BrandModelDtos
+@using FleetlyWeb.Services.BrandModel
+@using FleetlyWeb.Services.CarBrand
+@using System.ComponentModel.DataAnnotations
+@inject ISnackbar Snackbar
+@inject IVehicleService VehicleService
+@inject IBrandModelService BrandModelService
+@inject ICarBrandService CarBrandService
+
+<MudDialog>
+    <TitleContent>
+        <MudText style="font-weight:bold" Typo="Typo.h6">Dodaj nowy pojazd</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="_vehicleModel" OnValidSubmit="Submit" @ref="_editForm">
+            <DataAnnotationsValidator />
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int?"
+                               Label="Marka Pojazdu"
+                               ValueChanged="OnBrandSelected"
+                               Required
+                               Variant="Variant.Outlined"
+                               Clearable>
+                        @if (_brands == null)
+                        {
+                            <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                        }
+                        else
+                        {
+                            @foreach (var brand in _brands.OrderBy(b => b.BrandName))
+                            {
+                                <MudSelectItem T="int?" Value="@(brand.Id)">@brand.BrandName</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int"
+                               Label="Model Pojazdu"
+                               @bind-Value="_vehicleModel.BrandModelId"
+                               For="@(() => _vehicleModel.BrandModelId)"
+                               Required="true"
+                               Variant="Variant.Outlined"
+                               Disabled="_filteredModels == null || !_filteredModels.Any()"
+                               Clearable>
+                        @if (_filteredModels == null || !_filteredModels.Any())
+                        {
+                            <MudSelectItem T="int" Value="0" Disabled>Wybierz najpierw markę</MudSelectItem>
+                        }
+                        else
+                        {
+                            @foreach (var model in _filteredModels.OrderBy(m => m.ModelName))
+                            {
+                                <MudSelectItem T="int" Value="@(model.Id)">@model.ModelName</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField T="string" Label="Numer rejestracyjny" For="@(() => _vehicleModel.RegistrationNumber)" @bind-Value="@_vehicleModel.RegistrationNumber" Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField T="string" Label="Numer VIN (opcjonalnie)" For="@(() => _vehicleModel.VIN)" @bind-Value="@_vehicleModel.VIN" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int" Label="Rok produkcji" For="@(() => _vehicleModel.Year)" @bind-Value="@_vehicleModel.Year" Required="true" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int" Label="Aktualny przebieg (km)" For="@(() => _vehicleModel.Mileage)" @bind-Value="@_vehicleModel.Mileage" Required="true" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="FuelType" Label="Typ paliwa" For="@(() => _vehicleModel.FuelType)" @bind-Value="_vehicleModel.FuelType" Required="true">
+                        @foreach (FuelType fuel in Enum.GetValues(typeof(FuelType)))
+                        {
+                            <MudSelectItem Value="fuel">@fuel.ToString()</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" Label="Szczegóły / Opis (opcjonalnie)" For="@(() => _vehicleModel.Details)" @bind-Value="@_vehicleModel.Details" AutoGrow Clearable />
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="@_isBusy">
+            @(_isBusy ? "Dodawanie..." : "Dodaj pojazd")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnVehicleAdded { get; set; }
+
+    private readonly VehicleCreateDto _vehicleModel = new VehicleCreateDto();
+    private bool _isBusy = false;
+    private IEnumerable<CarBrandResponseDto> _brands = Enumerable.Empty<CarBrandResponseDto>();
+    private int? _selectedBrandId;
+    private IEnumerable<BrandModelResponseDto> _models = Enumerable.Empty<BrandModelResponseDto>();
+    private IEnumerable<BrandModelResponseDto> _filteredModels = Enumerable.Empty<BrandModelResponseDto>();
+    private EditForm _editForm = default!;
+    private EditContext _editContext = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Enum.IsDefined(typeof(FuelType), 0))
+        {
+            _vehicleModel.FuelType = Enum.GetValues<FuelType>().First();
+        }
+
+        await LoadBrandAndModelData();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && _editForm != null && _editContext == null)
+        {
+            _editContext = _editForm.EditContext!;
+        }
+    }
+
+    private async Task LoadBrandAndModelData()
+    {
+        try
+        {
+            var brandsResponse = await CarBrandService.GetAllCarBrandsAsync();
+            if (brandsResponse.Success && brandsResponse.Data?.Items != null)
+            {
+                _brands = brandsResponse.Data.Items;
+            }
+
+            var modelsResponse = await BrandModelService.GetAllBrandModelsAsync();
+            if (modelsResponse.Success && modelsResponse.Data?.Items != null)
+            {
+                _models = modelsResponse.Data.Items;
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add($"Błąd ładowania danych, spróbuj ponownie", Severity.Error);
+        }
+    }
+
+    private void OnBrandSelected(int? brandId)
+    {
+        _selectedBrandId = brandId;
+        _filteredModels = Enumerable.Empty<BrandModelResponseDto>();
+
+        if (brandId.HasValue)
+        {
+            _filteredModels = _models.Where(m => m.CarBrandId == brandId.Value).ToList();
+        }
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    async Task SubmitForm()
+    {
+        if (_editContext is null)
+            return;
+
+        var isValid = _editContext.Validate();
+        if (!isValid)
+        {
+            Snackbar.Add("Popraw błędy w formularzu", Severity.Warning);
+            return;
+        }
+
+        await Submit();
+    }
+
+    async Task Submit()
+    {
+        _isBusy = true;
+        try
+        {
+            var res = await VehicleService.CreateVehicleAsync(_vehicleModel);
+            if (res.Success)
+            {
+                Snackbar.Add("Pojazd został pomyślnie dodany.", Severity.Success);
+
+                await OnVehicleAdded.InvokeAsync();
+
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add($"Błąd dodawania pojazdu, spróbuj ponownie", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add($"Wystąpił błąd, spróbuj ponownie", Severity.Error);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+}
