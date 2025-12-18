@@ -146,3 +146,10 @@ code {
     margin-left: 16px;
     word-break: break-word;
 }
+
+.fab-container {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1100;
+}

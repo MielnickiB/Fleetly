@@ -62,7 +62,13 @@ namespace FleetlyWeb.Services
 
         public async Task<ApiResponse<bool>> DeactivateVehicleAsync(int id)
         {
-            return await _api.DeleteAsync($"{BaseUrl}/{id}");
+            var resp = await _api.DeleteAsync($"{BaseUrl}/{id}")
+                ?? throw new Exception("Brak odpowiedzi z serwera.");
+            if (!resp.Success)
+            {
+                throw new Exception(resp.Error ?? "Nie udało się dezaktywować pojazdu.");
+            }
+            return resp;
         }
     }
 }

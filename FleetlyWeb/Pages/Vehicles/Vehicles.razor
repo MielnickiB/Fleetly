@@ -7,15 +7,6 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
-<style>
-    .fab-container {
-        position: fixed;
-        right: 24px;
-        bottom: 24px;
-        z-index: 1100;
-    }
-</style>
-
 <PageTitle>Lista Pojazdów</PageTitle>
 
 <MudGrid Justify="Justify.Center" Class="py-4">
@@ -69,7 +60,7 @@
                 <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" />
                 <TemplateColumn Title="Akcje" StickyRight>
                     <CellTemplate>
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                        <MudIconButton Disabled="context.Item.IsActive ? false : true" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
                         <MudIconButton Disabled="context.Item.IsActive ? false : true" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OpenDeleteDialogAsync(context.Item.Id))" />
                     </CellTemplate>
                 </TemplateColumn>
