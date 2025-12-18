@@ -12,7 +12,7 @@
 
 <PageTitle>Lista Pojazdów</PageTitle>
 
-<PageHeader Title="Lista Pojazdów" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szuakj (Nr rej / Marka / Model...)" OnClick="OpenAddDialogAsync" />
+<PageHeader Title="Lista Pojazdów" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr rej / Marka / Model...)" OnClick="OpenAddDialogAsync" />
 <MudItem xs="12" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
@@ -54,8 +54,8 @@
                 <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" />
                 <TemplateColumn Title="Akcje" StickyRight>
                     <CellTemplate>
-                        <MudIconButton Disabled="context.Item.IsActive ? false : true" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
-                        <MudIconButton Disabled="context.Item.IsActive ? false : true" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>
