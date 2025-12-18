@@ -1,0 +1,150 @@
+﻿@using Fleetly.Shared.Dto
+@using Fleetly.Shared.Dto.UserDtos
+@using Fleetly.Shared.Dto.UserRoleDtos
+@using FleetlyWeb.Services.UserRoles
+@using FleetlyWeb.Services.Users
+@using System.ComponentModel.DataAnnotations
+@inject ISnackbar Snackbar
+@inject IUserRoleService UserRoleService
+@inject IUserService UserService
+
+<MudDialog>
+    <TitleContent>
+        <MudText style="font-weight:bold" Typo="Typo.h6">Dodaj nowego użtkownika</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="_userModel" OnValidSubmit="Submit" @ref="_editForm">
+            <DataAnnotationsValidator />
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_userModel.Details.Name" Label="Imię" For="@(() => _userModel.Details.Name)" Variant="Variant.Outlined" Required />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_userModel.Details.Surname" Label="Nazwisko" For="@(() => _userModel.Details.Surname)" Variant="Variant.Outlined" Required />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_userModel.Email" Label="Email" For="@(() => _userModel.Email)" Variant="Variant.Outlined" Required />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_userModel.Password" Label="Hasło" For="@(() => _userModel.Password)" Variant="Variant.Outlined" Required />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="_userModel.Details.PhoneNumber" Label="Numer telefonu" Variant="Variant.Outlined" For="@(() => _userModel.Details.PhoneNumber)" Required />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int" @bind-Value="_userModel.RoleId" Label="Rola użytkownika" Placeholder="Wybierz rolę" Variant="Variant.Outlined" For="@(() => _userModel.RoleId)" Required>
+                        @foreach (var role in _roles)
+                        {
+                            <MudSelectItem T="int" Value="role.Id">@role.RoleName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="@_isBusy">
+            @(_isBusy ? "Dodawanie..." : "Dodaj pojazd")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnUserAdded { get; set; }
+
+    private readonly UserCreateDto _userModel = new UserCreateDto();
+    private IEnumerable<UserRoleResponseDto> _roles = Enumerable.Empty<UserRoleResponseDto>();
+    private bool _isBusy = false;
+    private EditForm _editForm = default!;
+    private EditContext _editContext = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserRoles();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && _editForm != null && _editContext == null)
+        {
+            _editContext = _editForm.EditContext!;
+        }
+    }
+
+    private async Task LoadUserRoles()
+    {
+        try
+        {
+            var userRolesResponse = await UserRoleService.GetAllRolesAsync();
+            if (userRolesResponse.Success && userRolesResponse.Data != null)
+            {
+                _roles = userRolesResponse.Data;
+                if (_roles.Any())
+                {
+                    var defaultRole = _roles.FirstOrDefault(r => r.RoleName == "Client")
+                                     ?? _roles.First();
+
+                    _userModel.RoleId = defaultRole.Id;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add($"Błąd ładowania słowników.", Severity.Error);
+        }
+    }
+
+    void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    async Task SubmitForm()
+    {
+        if (_editContext is null)
+            return;
+
+        var isValid = _editContext.Validate();
+        if (!isValid)
+        {
+            Snackbar.Add("Popraw błędy w formularzu", Severity.Warning);
+            return;
+        }
+
+        await Submit();
+    }
+
+    async Task Submit()
+    {
+        _isBusy = true;
+        try
+        {
+            var res = await UserService.CreateUserAsync(_userModel);
+            if (res.Success)
+            {
+                Snackbar.Add("Użytkownik został pomyślnie dodany.", Severity.Success);
+
+                await OnUserAdded.InvokeAsync();
+
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add(res.Error ?? "Błąd dodawania użytkownika, spróbuj ponownie.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Wystąpił błąd: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+}

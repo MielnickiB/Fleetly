@@ -5,13 +5,13 @@ namespace Fleetly.Shared.Dto.UserDtos
 {
     public class UserCreateDto
     {
-        [Required]
+        [Required(ErrorMessage = "Email jest wymagany!")]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
-        [Required]
+        [Required(ErrorMessage = "Hasło jest wymagane!")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
-        [Required]
+        [Required(ErrorMessage = "Rola jest wymagana")]
         [Range(1, int.MaxValue, ErrorMessage = "Id roli musi mieć pozytywną wartość")]
         public int RoleId { get; set; }
         [Required]
