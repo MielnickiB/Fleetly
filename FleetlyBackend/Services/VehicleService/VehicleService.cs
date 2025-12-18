@@ -137,7 +137,7 @@ namespace FleetlyBackend.Services.VehicleService
 
             var exists = false;
 
-            if (dto.RegistrationNumber is not null && dto.RegistrationNumber != string.Empty && dto.RegistrationNumber != v.RegistrationNumber)
+            if (dto.RegistrationNumber is not null && dto.RegistrationNumber != string.Empty && !dto.RegistrationNumber.Equals(v.RegistrationNumber, StringComparison.OrdinalIgnoreCase))
             {
                 exists = await _context.Vehicles.AnyAsync(v =>
                     v.RegistrationNumber == dto.RegistrationNumber);
@@ -146,7 +146,7 @@ namespace FleetlyBackend.Services.VehicleService
                 v.RegistrationNumber = dto.RegistrationNumber;
             }
 
-            if (dto.VIN is not null)
+            if (dto.VIN is not null && !dto.VIN.Equals(v.VIN, StringComparison.OrdinalIgnoreCase))
             {
                 exists = await _context.Vehicles.AnyAsync(v => v.VIN == dto.VIN);
                 if (exists)

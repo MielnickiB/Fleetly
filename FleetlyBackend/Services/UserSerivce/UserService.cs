@@ -1,4 +1,5 @@
-﻿using Fleetly.Shared.Dto.UserDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.UserDtos;
 using FleetlyBackend.Data;
 using FleetlyBackend.Extensions;
 using FleetlyBackend.Helpers;
@@ -15,19 +16,21 @@ namespace FleetlyBackend.Services.UserSerivce
         private readonly IPasswordHasher<User> _hasher = hasher;
         private readonly IHttpContextAccessor _http = http;
 
-        public async Task<List<UserResponseDto>> GetAll(int page = 1, int pageSize = 10)
+        public async Task<PagedResult<UserResponseDto>> GetAll()
         {
-            var (skip, safe) = PaginationHelper.Calculate(page, pageSize);
-
-            return await _context.Users
+            var totalCount = await _context.Users.CountAsync();
+            var users = await _context.Users
                 .AsNoTracking()
                 .Include(u => u.Role)
                 .Include(u => u.Details)
                 .OrderBy(u => u.Id)
-                .Skip(skip)
-                .Take(safe)
                 .Select(u => u.ToResponseDto())
                 .ToListAsync();
+            return new PagedResult<UserResponseDto>
+            {
+                Items = users,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<List<UserResponseDto>> GetAllByRole(string roleName)
@@ -123,7 +126,7 @@ namespace FleetlyBackend.Services.UserSerivce
         public async Task<UserResponseDto> Update(int id, UserUpdateDto dto)
         {
             ArgumentNullException.ThrowIfNull(dto);
-            if(id <= 0) throw new ArgumentException("Id użytkownika musi być większe od 0");
+            if (id <= 0) throw new ArgumentException("Id użytkownika musi być większe od 0");
 
             var user = _http.CurrentUser();
             var u = await _context.Users

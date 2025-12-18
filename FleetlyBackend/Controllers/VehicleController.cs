@@ -31,11 +31,11 @@ namespace FleetlyBackend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { error = ex.Message });
+                return Unauthorized(ex.Message);
             }
         }
 
@@ -71,7 +71,7 @@ namespace FleetlyBackend.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
             catch (InvalidOperationException ex)
             {

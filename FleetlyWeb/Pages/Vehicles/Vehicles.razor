@@ -1,54 +1,39 @@
 ﻿@page "/vehicles"
 @attribute [Authorize(Roles = "Admin, Client")]
+@using Fleetly.Shared
 @using Fleetly.Shared.Dto
 @using Fleetly.Shared.Dto.VehicleDtos
 @using Fleetly.Shared.Enums
+@using FleetlyWeb.Components
 @inject IVehicleService vehicleService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
-
-<style>
-    .fab-container {
-        position: fixed;
-        right: 24px;
-        bottom: 24px;
-        z-index: 1100;
-    }
-</style>
+@inherits FleetlyPageBase<VehicleResponseDto>
 
 <PageTitle>Lista Pojazdów</PageTitle>
 
-<MudGrid Justify="Justify.Center" Class="py-4">
-    <MudItem xs="12">
-        <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:bold">Lista pojazdów</MudText>
-        <MudPaper Elevation="5" Class="d-flex flex-row align-center justify-center pa-5 rounded-xl" Style="width:100%">
-            <MudTextField T="string"
-                          @bind-Value="_searchString"
-                          Placeholder="Szukaj (Nr rej / Marka / Model / VIN...)"
-                          Adornment="Adornment.End"
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          IconSize="Size.Medium"
-                          DebounceInterval="300"
-                          Variant="Variant.Outlined"
-                          Clearable />
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" Class="d-flex flex-row align-center">
-        <MudSwitch @bind-Value="_showInactive" Label="Pokaż nieaktywne" />
-        <MudSpacer />
-        <MudButton @onclick="OpenAddDialogAsync" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Class="d-none d-sm-flex">
-            Dodaj nowy pojazd
-        </MudButton>
-    </MudItem>
-    <MudItem xs="12" Style="overflow-x:auto;width:100%">
+<PageHeader Title="Lista Pojazdów" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr rej / Marka / Model...)" OnClick="OpenAddDialogAsync" />
+<MudItem xs="12" Style="overflow-x:auto;width:100%">
+    @if (IsLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else if (TotalItems == 0)
+    {
+        <NoItems ItemName="Pojazdy"
+                 Icon="@Icons.Material.Filled.DirectionsCar"
+                 OnAddClicked="OpenAddDialogAsync" />
+    }
+    else
+    {
         <MudDataGrid T="VehicleResponseDto"
                      QuickFilter="@_quickFilter"
-                     Items="_vehicles"
+                     Items="Items"
                      Striped="true"
                      Bordered="true"
                      SortMode="SortMode.Single"
                      ColumnResizeMode="ResizeMode.Column"
-                     Loading="@_isLoading"
+                     Loading="@IsLoading"
                      Filterable="true"
                      FilterMode="@DataGridFilterMode.ColumnFilterMenu"
                      FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
@@ -69,8 +54,8 @@
                 <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" />
                 <TemplateColumn Title="Akcje" StickyRight>
                     <CellTemplate>
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
-                        <MudIconButton Disabled="context.Item.IsActive ? false : true" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OpenDeleteDialogAsync(context.Item.Id))" />
+                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>
@@ -82,75 +67,57 @@
                                   PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
             </PagerContent>
         </MudDataGrid>
-    </MudItem>
-
-    @if (!string.IsNullOrEmpty(_errorMessage))
-    {
-        <MudAlert Severity="Severity.Error" Elevation="5" Variant="Variant.Filled" Class="mt-4" ShowCloseIcon="true" CloseIconClicked="(() => CloseMe())">
-            @_errorMessage
-        </MudAlert>
     }
-</MudGrid>
+</MudItem>
 
-<div class="fab-container d-flex d-sm-none">
-    <MudFab OnClick="OpenAddDialogAsync"
-            StartIcon="@Icons.Material.Filled.Add"
-            Size="Size.Large"
-            Color="Color.Primary" />
-</div>
+@if (TotalItems > 0)
+{
+    <MobileActionButton OnClick="OpenAddDialogAsync" />
+}
 
 @code {
-    private IEnumerable<VehicleResponseDto> _vehicles = Enumerable.Empty<VehicleResponseDto>();
-    private bool _isLoading = false;
-    private string _errorMessage = string.Empty;
-    private string? _searchString = string.Empty;
-    private bool _showInactive = false;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadVehicles();
-    }
-
-    private async Task LoadVehicles()
+    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+    protected override async Task LoadDataAsync()
     {
         try
         {
-            _isLoading = true;
+            IsLoading = true;
             var apiResponse = await vehicleService.GetAllVehiclesAsync();
             if (apiResponse.Success)
             {
-                _vehicles = apiResponse.Data!.Items!;
+                Items = apiResponse.Data!.Items!;
+                TotalItems = apiResponse.Data.TotalCount;
             }
             else
             {
-                _errorMessage = $"Błąd ładowania pojazdów: {apiResponse.Error}";
+                Snackbar.Add($"Błąd ładowania pojazdów: {apiResponse.Error}", Severity.Error);
             }
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Wystąpił nieoczekiwany błąd: {ex.Message}";
+            Snackbar.Add($"Błąd ładowania pojazdów: {ex.Message}", Severity.Error);
         }
         finally
         {
-            _isLoading = false;
+            IsLoading = false;
         }
     }
 
     private Func<VehicleResponseDto, bool> _quickFilter => x =>
     {
-        if (!_showInactive && !x.IsActive)
+        if (!ShowInactive && !x.IsActive)
             return false;
-        if (string.IsNullOrWhiteSpace(_searchString))
+        if (string.IsNullOrWhiteSpace(SearchString))
             return true;
-        if (x.RegistrationNumber?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+        if (x.RegistrationNumber?.Contains(SearchString, StringComparison.OrdinalIgnoreCase) == true)
             return true;
-        if (x.BrandModel?.CarBrandName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+        if (x.BrandModel?.CarBrandName?.Contains(SearchString, StringComparison.OrdinalIgnoreCase) == true)
             return true;
-        if (x.BrandModel?.ModelName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+        if (x.BrandModel?.ModelName?.Contains(SearchString, StringComparison.OrdinalIgnoreCase) == true)
             return true;
-        if (x.VIN?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+        if (x.VIN?.Contains(SearchString, StringComparison.OrdinalIgnoreCase) == true)
             return true;
-        if (x.UserFullName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) == true)
+        if (x.UserFullName?.Contains(SearchString, StringComparison.OrdinalIgnoreCase) == true)
             return true;
         return false;
     };
@@ -165,11 +132,6 @@
         return "background-color: #f8d7da; color: #721c24;";
     };
 
-    private void CloseMe()
-    {
-        _errorMessage = string.Empty;
-    }
-
     private async Task OpenAddDialogAsync()
     {
         var options = new DialogOptions
@@ -183,39 +145,19 @@
 
         var parameters = new DialogParameters<AddVehicleDialog>
         {
-            { x => x.OnVehicleAdded, new EventCallback(this, LoadVehicles) }
+            { x => x.OnVehicleAdded, new EventCallback(this, LoadDataAsync) }
         };
 
         var dialogRef = await DialogService.ShowAsync<AddVehicleDialog>("Dodaj pojazd", parameters, options);
         await dialogRef.Result;
     }
 
-    private async Task OpenDeleteDialogAsync(int vehicleId)
-    {
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true,
-            CloseOnEscapeKey = true,
-            CloseButton = true,
-            BackgroundClass = "blurry-bg"
-        };
-
-        var parameters = new DialogParameters<DeleteVehicleDialog>
-        {
-            { x => x.VehicleId, vehicleId },
-            { x => x.OnVehicleDeleted, new EventCallback(this, LoadVehicles) }
-        };
-
-        var dialogRef = await DialogService.ShowAsync<DeleteVehicleDialog>("Usuń pojazd", parameters, options);
-        await dialogRef.Result;
-    }
-
     private async Task OpenEditDialogAsync(VehicleResponseDto vehicle)
     {
-        var parameters = new DialogParameters<EditVehicleDialog> { 
+        var parameters = new DialogParameters<EditVehicleDialog>
+        {
             { x => x.Vehicle, vehicle },
-            { x => x.OnVehicleUpdated, new EventCallback(this, LoadVehicles)  }
+            { x => x.OnVehicleUpdated, new EventCallback(this, LoadDataAsync)  }
         };
         var options = new DialogOptions
         {
@@ -228,5 +170,48 @@
 
         var dialogRef = await DialogService.ShowAsync<EditVehicleDialog>("Edytuj pojazd", parameters, options);
         await dialogRef.Result;
+    }
+
+    private async Task OnDeleteClicked(VehicleResponseDto vehicle)
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+    {
+        { x => x.Title, "Dezaktywacja pojazdu" },
+        { x => x.Content, $"Czy na pewno chcesz dezaktywować pojazd o numerze {vehicle.RegistrationNumber}?" },
+        { x => x.ConfirmText, "Dezaktywuj" },
+        { x => x.Color, Color.Error },
+        { x => x.Icon, Icons.Material.Filled.DeleteForever },
+        { x => x.IconColor, Color.Error }
+    };
+
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.ExtraSmall,
+            BackdropClick = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await DeactivateVehicle(vehicle.Id);
+        }
+    }
+
+    private async Task DeactivateVehicle(int id)
+    {
+        var response = await vehicleService.DeactivateVehicleAsync(id);
+        if (response.Success)
+        {
+            Snackbar.Add("Pojazd został dezaktywowany", Severity.Success);
+            await LoadDataAsync();
+        }
+        else
+        {
+            Snackbar.Add(response.Error ?? "Błąd dezaktywacji", Severity.Error);
+        }
     }
 }

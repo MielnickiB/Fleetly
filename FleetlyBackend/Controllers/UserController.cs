@@ -1,4 +1,5 @@
-﻿using Fleetly.Shared.Dto.UserDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.UserDtos;
 using FleetlyBackend.Helpers;
 using FleetlyBackend.Services.UserSerivce;
 using Microsoft.AspNetCore.Authorization;
@@ -15,9 +16,9 @@ namespace FleetlyBackend.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<List<UserResponseDto>>> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<PagedResult<UserResponseDto>>> GetAllUsers()
         {
-            return Ok(await _service.GetAll(page, pageSize));
+            return Ok(await _service.GetAll());
         }
 
         [HttpGet("role")]
