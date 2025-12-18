@@ -11,7 +11,7 @@ namespace Fleetly.Shared.Dto.UserDtos
         [Required(ErrorMessage = "Hasło jest wymagane!")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Rola jest wymagana")]
+        [Required(ErrorMessage = "Rola jest wymagana!")]
         [Range(1, int.MaxValue, ErrorMessage = "Id roli musi mieć pozytywną wartość")]
         public int RoleId { get; set; }
         [Required]

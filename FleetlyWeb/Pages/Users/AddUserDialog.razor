@@ -10,7 +10,7 @@
 
 <MudDialog>
     <TitleContent>
-        <MudText style="font-weight:bold" Typo="Typo.h6">Dodaj nowego użtkownika</MudText>
+        <MudText style="font-weight:bold" Typo="Typo.h6">Dodaj nowego użytkownika</MudText>
     </TitleContent>
     <DialogContent>
         <EditForm Model="_userModel" OnValidSubmit="Submit" @ref="_editForm">
@@ -45,7 +45,7 @@
     <DialogActions>
         <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled">Anuluj</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="@_isBusy">
-            @(_isBusy ? "Dodawanie..." : "Dodaj pojazd")
+            @(_isBusy ? "Dodawanie..." : "Dodaj użytkownika")
         </MudButton>
     </DialogActions>
 </MudDialog>
