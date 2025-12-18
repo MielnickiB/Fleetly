@@ -101,11 +101,11 @@ namespace FleetlyBackend.Controllers
                 return Ok(await _service.Deactivate(id));
             }
             catch (ArgumentException ex) {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(ex.Message);
             }
         }
     }

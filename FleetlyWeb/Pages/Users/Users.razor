@@ -16,7 +16,7 @@
 <MudItem xs="12" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
-        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" Width="100%" Height="100%" />
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
     }
     else if (TotalItems == 0)
     {
@@ -127,25 +127,24 @@
 
     private async Task OpenAddDialogAsync()
     {
-        return;
-        //     var options = new DialogOptions
-        //     {
-        //         MaxWidth = MaxWidth.Medium,
-        //         FullWidth = true,
-        //         CloseOnEscapeKey = true,
-        //         CloseButton = true,
-        //         BackgroundClass = "blurry-bg"
-        //     };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            BackgroundClass = "blurry-bg"
+        };
 
-        //     var parameters = new DialogParameters<AddVehicleDialog>
-        //     {
-        //         { x => x.OnVehicleAdded, new EventCallback(this, LoadDataAsync) }
-        //     };
+        var parameters = new DialogParameters<AddUserDialog>
+            {
+                { x => x.OnUserAdded, new EventCallback(this, LoadDataAsync) }
+            };
 
-        //     var dialogRef = await DialogService.ShowAsync<AddVehicleDialog>("Dodaj pojazd", parameters, options);
-        //     await dialogRef.Result;
-        // }
+        var dialogRef = await DialogService.ShowAsync<AddUserDialog>("Dodaj użytkownika", parameters, options);
+        await dialogRef.Result;
     }
+
 
     private async Task OpenEditDialogAsync(UserResponseDto user)
     {
