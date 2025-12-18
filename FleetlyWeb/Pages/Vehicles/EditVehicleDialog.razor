@@ -1,0 +1,222 @@
+﻿@using Fleetly.Shared.Enums
+@using Fleetly.Shared.Dto.VehicleDtos
+@using Fleetly.Shared.Dto.CarBrandDtos
+@using Fleetly.Shared.Dto.BrandModelDtos
+@using FleetlyWeb.Services.BrandModel
+@using FleetlyWeb.Services.CarBrand
+@inject ISnackbar Snackbar
+@inject IVehicleService VehicleService
+@inject IBrandModelService BrandModelService
+@inject ICarBrandService CarBrandService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Style="font-weight:bold" Typo="Typo.h6">Edytuj pojazd: @Vehicle.RegistrationNumber</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="_updateModel" OnValidSubmit="Submit">
+            <DataAnnotationsValidator />
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int?"
+                               Label="Marka Pojazdu"
+                               Value="_selectedBrandId"
+                               ValueChanged="OnBrandSelected"
+                               Variant="Variant.Outlined"
+                               AnchorOrigin="Origin.BottomCenter">
+                        @if (_brands == null)
+                        {
+                            <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                        }
+                        else
+                        {
+                            @foreach (var brand in _brands.OrderBy(b => b.BrandName))
+                            {
+                                <MudSelectItem T="int?" Value="@(brand.Id)">@brand.BrandName</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="int?"
+                               Label="Model Pojazdu"
+                               @bind-Value="_updateModel.BrandModelId"
+                               For="@(() => _updateModel.BrandModelId)"
+                               Variant="Variant.Outlined"
+                               Disabled="@(_filteredModels == null || !_filteredModels.Any())"
+                               AnchorOrigin="Origin.BottomCenter">
+                        @if (_filteredModels == null || !_filteredModels.Any())
+                        {
+                            <MudSelectItem T="int?" Value="0" Disabled>Wybierz najpierw markę</MudSelectItem>
+                        }
+                        else
+                        {
+                            @foreach (var model in _filteredModels.OrderBy(m => m.ModelName))
+                            {
+                                <MudSelectItem T="int?" Value="@(model.Id)">@model.ModelName</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudTextField T="string"
+                                  Label="Numer rejestracyjny"
+                                  For="@(() => _updateModel.RegistrationNumber)"
+                                  @bind-Value="@_updateModel.RegistrationNumber"
+                                  Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudTextField T="string"
+                                  Label="Numer VIN"
+                                  For="@(() => _updateModel.VIN)"
+                                  @bind-Value="@_updateModel.VIN"
+                                  Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int?"
+                                     Label="Rok produkcji"
+                                     For="@(() => _updateModel.Year)"
+                                     @bind-Value="@_updateModel.Year"
+                                     Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudNumericField T="int?"
+                                     Label="Aktualny przebieg (km)"
+                                     For="@(() => _updateModel.Mileage)"
+                                     @bind-Value="@_updateModel.Mileage"
+                                     Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="FuelType?" Label="Typ paliwa" For="@(() => _updateModel.FuelType)" @bind-Value="_updateModel.FuelType" Variant="Variant.Outlined">
+                        @foreach (FuelType fuel in Enum.GetValues(typeof(FuelType)))
+                        {
+                            <MudSelectItem T="FuelType?" Value="@(fuel)">@fuel.ToString()</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudTextField T="string"
+                                  Label="Szczegóły / Opis"
+                                  For="@(() => _updateModel.Details)"
+                                  @bind-Value="@_updateModel.Details"
+                                  AutoGrow
+                                  Variant="Variant.Outlined" />
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled">Anuluj</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   ButtonType="ButtonType.Submit"
+                   Disabled="@_isBusy"
+                   OnClick="Submit">
+            @(_isBusy ? "Zapisywanie..." : "Zapisz zmiany")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public VehicleResponseDto Vehicle { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnVehicleUpdated { get; set; }
+
+    private VehicleUpdateDto _updateModel = new();
+    private bool _isBusy = false;
+
+    private IEnumerable<CarBrandResponseDto> _brands = Enumerable.Empty<CarBrandResponseDto>();
+    private IEnumerable<BrandModelResponseDto> _allModels = Enumerable.Empty<BrandModelResponseDto>();
+    private IEnumerable<BrandModelResponseDto> _filteredModels = Enumerable.Empty<BrandModelResponseDto>();
+
+    private int? _selectedBrandId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _updateModel = new VehicleUpdateDto
+        {
+            RegistrationNumber = Vehicle.RegistrationNumber,
+            VIN = Vehicle.VIN,
+            Mileage = Vehicle.Mileage,
+            Year = Vehicle.Year,
+            Details = Vehicle.Details,
+            BrandModelId = Vehicle.BrandModel.Id,
+            FuelType = Vehicle.FuelType
+        };
+
+        await LoadBrandAndModelData();
+
+        var currentModel = _allModels.FirstOrDefault(m => m.Id == Vehicle.BrandModel.Id);
+        if (currentModel != null)
+        {
+            _selectedBrandId = currentModel.CarBrandId;
+            _filteredModels = _allModels.Where(m => m.CarBrandId == _selectedBrandId).ToList();
+        }
+    }
+
+    private async Task LoadBrandAndModelData()
+    {
+        try
+        {
+            var brandsRes = await CarBrandService.GetAllCarBrandsAsync();
+            if (brandsRes.Success) _brands = brandsRes.Data?.Items ?? Enumerable.Empty<CarBrandResponseDto>();
+
+            var modelsRes = await BrandModelService.GetAllBrandModelsAsync();
+            if (modelsRes.Success) _allModels = modelsRes.Data?.Items ?? Enumerable.Empty<BrandModelResponseDto>();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Błąd ładowania słowników.", Severity.Error);
+        }
+    }
+
+    private void OnBrandSelected(int? brandId)
+    {
+        _selectedBrandId = brandId;
+        _updateModel.BrandModelId = null;
+        _filteredModels = brandId.HasValue
+            ? _allModels.Where(m => m.CarBrandId == brandId.Value).ToList()
+            : Enumerable.Empty<BrandModelResponseDto>();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        _isBusy = true;
+        try
+        {
+            var res = await VehicleService.UpdateVehicleAsync(Vehicle.Id, _updateModel);
+            if (res.Success)
+            {
+                Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
+                await OnVehicleUpdated.InvokeAsync(null);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add(res.Error ?? "Błąd aktualizacji pojazdu, spróbuj ponownie", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Wystąpił błąd, spróbuje ponownie", Severity.Error);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+}

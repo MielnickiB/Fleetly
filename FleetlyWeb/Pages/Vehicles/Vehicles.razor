@@ -69,6 +69,7 @@
                 <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" />
                 <TemplateColumn Title="Akcje" StickyRight>
                     <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
                         <MudIconButton Disabled="context.Item.IsActive ? false : true" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OpenDeleteDialogAsync(context.Item.Id))" />
                     </CellTemplate>
                 </TemplateColumn>
@@ -102,7 +103,6 @@
     private IEnumerable<VehicleResponseDto> _vehicles = Enumerable.Empty<VehicleResponseDto>();
     private bool _isLoading = false;
     private string _errorMessage = string.Empty;
-    private bool _showErrorAlert = false;
     private string? _searchString = string.Empty;
     private bool _showInactive = false;
 
@@ -167,7 +167,6 @@
 
     private void CloseMe()
     {
-        _showErrorAlert = false;
         _errorMessage = string.Empty;
     }
 
@@ -207,6 +206,18 @@
         };
 
         var dialogRef = await DialogService.ShowAsync<DeleteVehicleDialog>("Usuń pojazd", parameters, options);
+        await dialogRef.Result;
+    }
+
+    private async Task OpenEditDialogAsync(VehicleResponseDto vehicle)
+    {
+        var parameters = new DialogParameters<EditVehicleDialog> { 
+            { x => x.Vehicle, vehicle },
+            { x => x.OnVehicleUpdated, new EventCallback(this, LoadVehicles)  }
+        };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
+
+        var dialogRef = await DialogService.ShowAsync<EditVehicleDialog>("Edytuj pojazd", parameters, options);
         await dialogRef.Result;
     }
 }
