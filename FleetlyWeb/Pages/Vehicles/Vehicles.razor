@@ -177,6 +177,7 @@
             MaxWidth = MaxWidth.Medium,
             FullWidth = true,
             CloseOnEscapeKey = true,
+            CloseButton = true,
             BackgroundClass = "blurry-bg"
         };
 
@@ -196,6 +197,7 @@
             MaxWidth = MaxWidth.Small,
             FullWidth = true,
             CloseOnEscapeKey = true,
+            CloseButton = true,
             BackgroundClass = "blurry-bg"
         };
 
@@ -215,7 +217,14 @@
             { x => x.Vehicle, vehicle },
             { x => x.OnVehicleUpdated, new EventCallback(this, LoadVehicles)  }
         };
-        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            BackgroundClass = "blurry-bg"
+        };
 
         var dialogRef = await DialogService.ShowAsync<EditVehicleDialog>("Edytuj pojazd", parameters, options);
         await dialogRef.Result;
