@@ -137,7 +137,7 @@ namespace FleetlyBackend.Services.VehicleService
 
             var exists = false;
 
-            if (dto.RegistrationNumber is not null)
+            if (dto.RegistrationNumber is not null && dto.RegistrationNumber != string.Empty && dto.RegistrationNumber != v.RegistrationNumber)
             {
                 exists = await _context.Vehicles.AnyAsync(v =>
                     v.RegistrationNumber == dto.RegistrationNumber);
@@ -163,6 +163,7 @@ namespace FleetlyBackend.Services.VehicleService
                 v.BrandModelId = dto.BrandModelId.Value;
             }
 
+            if (dto.FuelType.HasValue && dto.FuelType.Value != v.FuelType) v.FuelType = dto.FuelType.Value;
             if (dto.Mileage.HasValue && dto.Mileage.Value != v.Mileage) v.Mileage = dto.Mileage.Value;
             if (dto.Year.HasValue && dto.Year.Value != v.Year) v.Year = dto.Year.Value;
             if (dto.Details is not null && dto.Details != v.Details) v.Details = dto.Details;

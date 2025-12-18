@@ -150,7 +150,7 @@
         }
         catch (Exception)
         {
-            Snackbar.Add($"Błąd ładowania danych, spróbuj ponownie", Severity.Error);
+            Snackbar.Add($"Błąd ładowania słowników.", Severity.Error);
         }
     }
 
@@ -201,12 +201,12 @@
             }
             else
             {
-                Snackbar.Add($"Błąd dodawania pojazdu, spróbuj ponownie", Severity.Error);
+                Snackbar.Add(res.Error ?? "Błąd dodawania pojazdu, spróbuj ponownie", Severity.Error);
             }
         }
         catch (Exception)
         {
-            Snackbar.Add($"Wystąpił błąd, spróbuj ponownie", Severity.Error);
+            Snackbar.Add("Wystąpił błąd, spróbuj ponownie", Severity.Error);
         }
         finally
         {

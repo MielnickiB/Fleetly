@@ -33,7 +33,7 @@
         }
         else
         {
-            Snackbar.Add($"Dezaktywacja pojazdu nie powiodło się, spróbuj ponownie.", Severity.Error);
+            Snackbar.Add(result.Error ?? "Dezaktywacja pojazdu nie powiodła się, spróbuj ponownie.", Severity.Error);
             MudDialog.Close(DialogResult.Cancel());
         }
     }
