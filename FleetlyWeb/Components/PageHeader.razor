@@ -1,0 +1,42 @@
+﻿<MudGrid Justify="Justify.Center" Class="py-4">
+    <MudItem xs="12">
+        <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:bold">@Title</MudText>
+        <MudPaper Elevation="5" Class="d-flex flex-wrap align-center pa-5 rounded-xl" Style="width:100%">
+            <MudTextField T="string"
+                          Value="SearchString"
+                          ValueChanged="SearchStringChanged"
+                          Placeholder="@SearchPlaceholder"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          IconSize="Size.Medium"
+                          DebounceInterval="300"
+                          Variant="Variant.Outlined"
+                          Class="rounded-xl flex-grow-1"
+                          Clearable />
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" Class="d-flex flex-row align-center">
+        @if (ShowInactiveSwitch)
+        {
+            <MudSwitch Value="InactiveValue" ValueChanged="InactiveValueChanged" T="bool" Color="Color.Primary" Label="Pokaż nieaktywne" />
+        }
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OnClick" Class="d-none d-sm-flex rounded-xl elevation-3">
+            Dodaj
+        </MudButton>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string SearchPlaceholder { get; set; } = "Szukaj...";
+    [Parameter] public string? SearchString { get; set; }
+    [Parameter] public EventCallback<string?> SearchStringChanged { get; set; }
+
+    [Parameter] public bool ShowInactiveSwitch { get; set; } = true;
+    [Parameter] public bool InactiveValue { get; set; }
+    [Parameter] public EventCallback<bool> InactiveValueChanged { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    [Parameter] public RenderFragment? ActionButtons { get; set; }
+}

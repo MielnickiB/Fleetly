@@ -1,0 +1,24 @@
+﻿<MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Class="pa-10" Style="height:100%">
+    <MudIcon Icon="@Icon" Color="Color.Default" Style="font-size: 5rem; opacity: 0.3;" />
+
+    <MudText Typo="Typo.h5" Align="Align.Center" Style="font-weight: bold; opacity: 0.6;">
+        Brak danych w kategorii: @ItemName
+    </MudText>
+
+    <MudText Typo="Typo.body1" Align="Align.Center" Style="opacity: 0.5;">
+        Wygląda na to, że nie dodano jeszcze żadnych elementów lub nic nie pasuje do Twoich filtrów.
+    </MudText>
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               OnClick="OnAddClicked"
+               Class="mt-4 py-2 px-6 rounded-xl elevation-3">
+        Dodaj @(ItemName.ToLower())
+    </MudButton>
+</MudStack>
+@code {
+    [Parameter] public string ItemName { get; set; } = "elementów";
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.SearchOff;
+    [Parameter] public EventCallback OnAddClicked { get; set; }
+}

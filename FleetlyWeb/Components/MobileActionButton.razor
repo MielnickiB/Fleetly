@@ -1,0 +1,10 @@
+﻿<div class="fab-container d-flex d-sm-none">
+    <MudFab OnClick="OnClick"
+            StartIcon="@Icons.Material.Filled.Add"
+            Size="Size.Large"
+            Color="Color.Primary" />
+</div>
+
+@code {
+    [Parameter] public EventCallback OnClick { get; set; }
+}

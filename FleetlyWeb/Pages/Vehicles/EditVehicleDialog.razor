@@ -210,9 +210,9 @@
                 Snackbar.Add(res.Error ?? "Błąd aktualizacji pojazdu, spróbuj ponownie", Severity.Error);
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            Snackbar.Add("Wystąpił błąd, spróbuj ponownie", Severity.Error);
+            Snackbar.Add($"Wystąpił błąd: {ex.Message}", Severity.Error);
         }
         finally
         {
