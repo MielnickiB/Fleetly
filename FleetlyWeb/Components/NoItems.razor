@@ -6,7 +6,7 @@
     </MudText>
 
     <MudText Typo="Typo.body1" Align="Align.Center" Style="opacity: 0.5;">
-        Wygląda na to, że nie dodano jeszcze żadnych elementów lub nic nie pasuje do Twoich filtrów.
+        Wygląda na to, że nie dodano jeszcze żadnych elementów. Możesz to zrobić, klikając w przycisk poniżej.
     </MudText>
 
     <MudButton Variant="Variant.Filled"
@@ -14,7 +14,7 @@
                StartIcon="@Icons.Material.Filled.Add"
                OnClick="OnAddClicked"
                Class="mt-4 py-2 px-6 rounded-xl elevation-3">
-        Dodaj @(ItemName.ToLower())
+        Dodaj element
     </MudButton>
 </MudStack>
 @code {

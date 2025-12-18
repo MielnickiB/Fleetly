@@ -1,9 +1,213 @@
 ﻿@page "/users"
+@attribute [Authorize(Roles = "Admin")]
+@using FleetlyWeb.Components
+@using FleetlyWeb.Services.Users
+@using Fleetly.Shared
+@using Fleetly.Shared.Dto
+@using Fleetly.Shared.Dto.UserDtos
+@inject IUserService UserService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inherits FleetlyPageBase<UserResponseDto>
 
 <PageTitle>Lista Użytkowników</PageTitle>
 
+<PageHeader Title="Lista Użytkowników" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szuakj (Imię / Nazwisko / Email...)" OnClick="OpenAddDialogAsync" />
+<MudItem xs="12" Style="overflow-x:auto;width:100%">
+    @if (IsLoading)
+    {
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Animation="Animation.Wave" Width="100%" Height="100%" />
+    }
+    else if (TotalItems == 0)
+    {
+        <NoItems ItemName="Użytkownicy"
+                 Icon="@Icons.Material.Filled.Person"
+                 OnAddClicked="OpenAddDialogAsync" />
+    }
+    else
+    {
+        <MudDataGrid T="UserResponseDto"
+                     QuickFilter="@_quickFilter"
+                     Items="Items"
+                     Striped="true"
+                     Bordered="true"
+                     SortMode="SortMode.Single"
+                     ColumnResizeMode="ResizeMode.Column"
+                     Loading="@IsLoading"
+                     Filterable="true"
+                     FilterMode="@DataGridFilterMode.ColumnFilterMenu"
+                     FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                     Class="pa-4 rounded-xl"
+                     Style="margin:4px"
+                     FixedHeader="true"
+                     Elevation="5"
+                     RowStyleFunc="@_rowStyleFunc"
+                     RowStyle="font-weight:bold;">
+            <Columns>
+                <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" StickyLeft />
+                <PropertyColumn Property="x => x.Details.Name" Title="Imię" />
+                <PropertyColumn Property="x => x.Details.Surname" Title="Nazwisko" />
+                <PropertyColumn Property="x => x.Email" Title="Email" />
+                <PropertyColumn Property="x => x.RoleName" Title="Rola" />
+                <TemplateColumn Title="Akcje" StickyRight>
+                    <CellTemplate>
+                        <MudIconButton Disabled="context.Item.IsActive ? false : true" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                        <MudIconButton Disabled="context.Item.IsActive ? false : true" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
 
+            <PagerContent>
+                <MudDataGridPager T="UserResponseDto"
+                                  RowsPerPageString="Wierszy na stronę"
+                                  InfoFormat="{first_item}-{last_item} z {all_items}"
+                                  PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
+            </PagerContent>
+        </MudDataGrid>
+    }
+</MudItem>
+
+@if (TotalItems > 0)
+{
+    <MobileActionButton OnClick="OpenAddDialogAsync" />
+}
 
 @code {
+    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+    protected override async Task LoadDataAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            var apiResponse = await UserService.GetAllUsersAsync();
+            if (apiResponse.Success)
+            {
+                Items = apiResponse.Data!.Items!;
+                TotalItems = apiResponse.Data.TotalCount;
+            }
+            else
+            {
+                Snackbar.Add($"Błąd ładowania użytkowników: {apiResponse.Error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd ładowania użytkowników: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
 
+    private Func<UserResponseDto, bool> _quickFilter => x =>
+    {
+        if (!ShowInactive && !x.IsActive)
+            return false;
+        if (string.IsNullOrWhiteSpace(SearchString))
+            return true;
+        if (x.Details.Name.Contains(SearchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (x.Details.Surname.Contains(SearchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        if (x.Email.Contains(SearchString, StringComparison.OrdinalIgnoreCase) == true)
+            return true;
+        return false;
+    };
+
+    private Func<UserResponseDto, int, string> _rowStyleFunc => (x, i) =>
+{
+    if (x.IsActive)
+    {
+        return "";
+    }
+
+    return "background-color: #f8d7da; color: #721c24;";
+};
+
+    private async Task OpenAddDialogAsync()
+    {
+        return;
+        //     var options = new DialogOptions
+        //     {
+        //         MaxWidth = MaxWidth.Medium,
+        //         FullWidth = true,
+        //         CloseOnEscapeKey = true,
+        //         CloseButton = true,
+        //         BackgroundClass = "blurry-bg"
+        //     };
+
+        //     var parameters = new DialogParameters<AddVehicleDialog>
+        //     {
+        //         { x => x.OnVehicleAdded, new EventCallback(this, LoadDataAsync) }
+        //     };
+
+        //     var dialogRef = await DialogService.ShowAsync<AddVehicleDialog>("Dodaj pojazd", parameters, options);
+        //     await dialogRef.Result;
+        // }
+    }
+
+    private async Task OpenEditDialogAsync(UserResponseDto user)
+    {
+        return;
+        // var parameters = new DialogParameters<EditUserDialog>
+        // {
+        //     { x => x.Vehicle, user },
+        //     { x => x.OnUserUpdated, new EventCallback(this, LoadDataAsync)  }
+        // };
+        // var options = new DialogOptions
+        // {
+        //     MaxWidth = MaxWidth.Medium,
+        //     FullWidth = true,
+        //     CloseOnEscapeKey = true,
+        //     CloseButton = true,
+        //     BackgroundClass = "blurry-bg"
+        // };
+
+        // var dialogRef = await DialogService.ShowAsync<EditVehicleDialog>("Edytuj pojazd", parameters, options);
+        // await dialogRef.Result;
+    }
+
+    private async Task OnDeleteClicked(UserResponseDto user)
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+    {
+        { x => x.Title, "Dezaktywacja użytkownika" },
+        { x => x.Content, $"Czy na pewno chcesz dezaktywować użytkownika o id {user.Id}?" },
+        { x => x.ConfirmText, "Dezaktywuj" },
+        { x => x.Color, Color.Error },
+        { x => x.Icon, Icons.Material.Filled.DeleteForever },
+        { x => x.IconColor, Color.Error }
+    };
+
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.ExtraSmall,
+            BackdropClick = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await DeactivateUser(user.Id);
+        }
+    }
+
+    private async Task DeactivateUser(int id)
+    {
+        var response = await UserService.DeactivateUserAsync(id);
+        if (response.Success)
+        {
+            Snackbar.Add("Użytkownik został dezaktywowany", Severity.Success);
+            await LoadDataAsync();
+        }
+        else
+        {
+            Snackbar.Add(response.Error ?? "Błąd dezaktywacji", Severity.Error);
+        }
+    }
 }

@@ -3,10 +3,10 @@ using Fleetly.Shared.Dto.UserDtos;
 
 namespace FleetlyWeb.Services.Users
 {
-    public class UserService(ApiClient api) : IUsersService
+    public class UserService(ApiClient api) : IUserService
     {
         private readonly ApiClient _api = api;
-        private const string BaseUrl = "api/User";
+        private const string BaseUrl = "api/Users";
 
         public async Task<ApiResponse<PagedResult<UserResponseDto>>> GetAllUsersAsync()
         {

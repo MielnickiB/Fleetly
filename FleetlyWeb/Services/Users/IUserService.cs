@@ -3,7 +3,7 @@ using Fleetly.Shared.Dto.UserDtos;
 
 namespace FleetlyWeb.Services.Users
 {
-    public interface IUsersService
+    public interface IUserService
     {
         Task<ApiResponse<PagedResult<UserResponseDto>>> GetAllUsersAsync();
         Task<ApiResponse<UserResponseDto?>> GetUserByIdAsync(int userId);
