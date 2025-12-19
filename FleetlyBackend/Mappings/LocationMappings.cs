@@ -14,7 +14,8 @@ namespace FleetlyBackend.Mappings
                 Street = l.Street,
                 BuildingNumber = l.BuildingNumber,
                 ApartmentNumber = l.ApartmentNumber,
-                PostalCode = l.PostalCode
+                PostalCode = l.PostalCode,
+                IsPublic = l.IsPublic,
             };
     }
 }

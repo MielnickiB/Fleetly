@@ -14,9 +14,9 @@ namespace FleetlyBackend.Controllers
         private readonly ILocationService _service = service;
 
         [HttpGet]
-        public async Task<ActionResult<List<LocationResponseDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<List<LocationResponseDto>>> GetAll()
         {
-            return Ok(await _service.GetAll(page, pageSize));
+            return Ok(await _service.GetAll());
         }
 
         [HttpGet("{id:int}")]

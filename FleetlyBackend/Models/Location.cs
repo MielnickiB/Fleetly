@@ -22,6 +22,11 @@ namespace FleetlyBackend.Models
         [StringLength(10)]
         public string PostalCode { get; set; } = null!;
 
+        [StringLength(500)]
+        public string? Description { get; set; }
+
+        public bool IsPublic { get; set; } = false;
+
         public bool IsActive { get; set; } = true;
     }
 }

@@ -191,6 +191,12 @@ namespace FleetlyBackend.Data
                 .Property(o => o.FuelCosts)
                 .HasColumnType("decimal(18,2)");
 
+            modelBuilder.Entity<Location>(entity =>
+            {
+                entity.Property(e => e.IsPublic).HasDefaultValue(false);
+                entity.Property(e => e.Description).HasMaxLength(500);
+            });
+
             base.OnModelCreating(modelBuilder);
         }
     }

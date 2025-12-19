@@ -9,5 +9,7 @@
         public string BuildingNumber { get; set; } = null!;
         public string? ApartmentNumber { get; set; }
         public string PostalCode { get; set; } = null!;
+        public bool IsPublic { get; set; } = false;
+        public string? Description { get; set; }
     }
 }
