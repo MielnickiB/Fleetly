@@ -4,6 +4,7 @@
     {
         public int Id { get; set; }
         public int UserId { get; set; }
+        public string UserFullName { get; set; } = null!;
         public string City { get; set; } = null!;
         public string Street { get; set; } = null!;
         public string BuildingNumber { get; set; } = null!;

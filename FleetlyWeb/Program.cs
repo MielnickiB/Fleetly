@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
+using FleetlyWeb.Services.Locations;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -37,5 +38,6 @@ builder.Services.AddScoped<IBrandModelService, BrandModelService>();
 builder.Services.AddScoped<ICarBrandService, CarBrandService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRoleService, UserRoleService>();
+builder.Services.AddScoped<ILocationService, LocationService>();
 
 await builder.Build().RunAsync();

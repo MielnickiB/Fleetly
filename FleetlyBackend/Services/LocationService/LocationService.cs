@@ -2,7 +2,6 @@
 using Fleetly.Shared.Dto.LocationDtos;
 using FleetlyBackend.Data;
 using FleetlyBackend.Extensions;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -24,11 +23,10 @@ namespace FleetlyBackend.Services.LocationService
                 query = query.Where(l => l.UserId == user.GetUserId());
             }
 
-            query = query.Where(l => l.IsPublic);
-
             var totalCount = await query.CountAsync();
             var items = await query
                 .OrderBy(l => l.Id)
+                .Include(v => v.User).ThenInclude(u => u.Details)
                 .Select(l => l.ToLocationResponseDto())
                 .ToListAsync();
 
@@ -68,7 +66,7 @@ namespace FleetlyBackend.Services.LocationService
             _context.Locations.Add(location);
             await _context.SaveChangesAsync();
 
-            return location.ToLocationResponseDto();
+            return await GetFresh(location.Id);
         }
 
         public async Task<LocationResponseDto> Update(int id, LocationUpdateDto dto)
@@ -98,7 +96,7 @@ namespace FleetlyBackend.Services.LocationService
             loc.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return loc.ToLocationResponseDto();
+            return await GetFresh(loc.Id);
         }
 
         public async Task<bool> Deactivate(int id)
@@ -123,6 +121,17 @@ namespace FleetlyBackend.Services.LocationService
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        private async Task<LocationResponseDto> GetFresh(int id)
+        {
+            var fresh = await _context.Locations
+                .AsNoTracking()
+                .Include(l => l.User).ThenInclude(l => l.Details)
+                .FirstOrDefaultAsync(l => l.Id == id)
+                ?? throw new ArgumentException("Nie znaleziono lokalizacji.");
+
+            return fresh.ToLocationResponseDto();
         }
     }
 }

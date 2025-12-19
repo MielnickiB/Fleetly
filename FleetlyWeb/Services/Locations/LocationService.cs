@@ -6,7 +6,7 @@ namespace FleetlyWeb.Services.Locations
     public class LocationService(ApiClient api) : ILocationService
     {
         private readonly ApiClient _api = api;
-        private const string BaseUrl = "api/Vehicle";
+        private const string BaseUrl = "api/Location";
 
         public async Task<ApiResponse<PagedResult<LocationResponseDto>>> GetAllLocationsAsync()
         {

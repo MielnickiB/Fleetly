@@ -10,6 +10,7 @@ namespace FleetlyBackend.Mappings
             {
                 Id = l.Id,
                 UserId = l.UserId,
+                UserFullName = l.User.Details.Name + " " + l.User.Details.Surname,
                 City = l.City,
                 Street = l.Street,
                 BuildingNumber = l.BuildingNumber,
