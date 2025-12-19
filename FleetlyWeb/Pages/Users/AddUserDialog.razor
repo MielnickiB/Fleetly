@@ -43,7 +43,7 @@
         </EditForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled">Anuluj</MudButton>
+        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled" Disabled="@_isBusy">Anuluj</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="@_isBusy">
             @(_isBusy ? "Dodawanie..." : "Dodaj użytkownika")
         </MudButton>
@@ -138,9 +138,9 @@
                 Snackbar.Add(res.Error ?? "Błąd dodawania użytkownika, spróbuj ponownie.", Severity.Error);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Wystąpił błąd: {ex.Message}", Severity.Error);
+            Snackbar.Add("Wystąpił problem z zapisywaniem danych, spróbuj ponownie", Severity.Error);
         }
         finally
         {
