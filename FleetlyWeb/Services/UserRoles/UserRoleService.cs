@@ -17,7 +17,7 @@ namespace FleetlyWeb.Services.UserRoles
                 throw new Exception(response.Error ?? "Nie udało się pobrać ról użytkowników.");
             }
 
-            return response;
+            return response!;
         }
     }
 }

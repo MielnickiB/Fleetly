@@ -16,7 +16,7 @@ namespace FleetlyWeb.Services.Users
             {
                 throw new Exception(resp.Error ?? "Nie udało się pobrać użytkowników.");
             }
-            return resp;
+            return resp!;
         }
 
         public async Task<ApiResponse<UserResponseDto?>> GetUserByIdAsync(int userId)
@@ -38,7 +38,7 @@ namespace FleetlyWeb.Services.Users
             {
                 throw new Exception(resp.Error ?? "Nie udało się utworzyć użytkownika.");
             }
-            return resp;
+            return resp!;
         }
 
         public async Task<ApiResponse<UserResponseDto>> UpdateUserAsync(int id, UserUpdateDto dto)
@@ -49,7 +49,7 @@ namespace FleetlyWeb.Services.Users
             {
                 throw new Exception(resp.Error ?? "Nie udało się zaktualizować użytkownika.");
             }
-            return resp;
+            return resp!;
         }
 
         public async Task<ApiResponse<bool>> DeactivateUserAsync(int id)

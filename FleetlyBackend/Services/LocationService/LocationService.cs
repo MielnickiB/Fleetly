@@ -1,7 +1,7 @@
-﻿using Fleetly.Shared.Dto.LocationDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.LocationDtos;
 using FleetlyBackend.Data;
 using FleetlyBackend.Extensions;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +13,8 @@ namespace FleetlyBackend.Services.LocationService
         private readonly FleetlyContext _context = context;
         private readonly IHttpContextAccessor _http = http;
 
-        public async Task<List<LocationResponseDto>> GetAll(int page = 1, int pageSize = 10)
+        public async Task<PagedResult<LocationResponseDto>> GetAll()
         {
-            var (skip, safe) = PaginationHelper.Calculate(page, pageSize);
-
             var user = _http.CurrentUser();
             var query = _context.Locations.AsNoTracking().AsQueryable();
 
@@ -25,12 +23,18 @@ namespace FleetlyBackend.Services.LocationService
                 query = query.Where(l => l.UserId == user.GetUserId());
             }
 
-            return await query
+            var totalCount = await query.CountAsync();
+            var items = await query
                 .OrderBy(l => l.Id)
-                .Skip(skip)
-                .Take(safe)
+                .Include(v => v.User).ThenInclude(u => u.Details)
                 .Select(l => l.ToLocationResponseDto())
                 .ToListAsync();
+
+            return new PagedResult<LocationResponseDto>
+            {
+                Items = items,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<LocationResponseDto?> GetById(int id)
@@ -54,13 +58,15 @@ namespace FleetlyBackend.Services.LocationService
                 Street = dto.Street,
                 BuildingNumber = dto.BuildingNumber,
                 ApartmentNumber = dto.ApartmentNumber,
-                PostalCode = dto.PostalCode
+                PostalCode = dto.PostalCode,
+                IsPublic = dto.IsPublic,
+                Description = dto.Description
             };
 
             _context.Locations.Add(location);
             await _context.SaveChangesAsync();
 
-            return location.ToLocationResponseDto();
+            return await GetFresh(location.Id);
         }
 
         public async Task<LocationResponseDto> Update(int id, LocationUpdateDto dto)
@@ -79,16 +85,21 @@ namespace FleetlyBackend.Services.LocationService
             if (!loc.IsActive)
                 throw new InvalidOperationException("Nie można modyfikować usuniętej lokalizacji.");
 
-            if (dto.City is not null && dto.City != loc.City) loc.City = dto.City;
-            if (dto.Street is not null && dto.Street != loc.Street) loc.Street = dto.Street;
-            if (dto.BuildingNumber is not null && dto.BuildingNumber != loc.BuildingNumber) loc.BuildingNumber = dto.BuildingNumber;
-            if (dto.ApartmentNumber is not null && dto.ApartmentNumber != loc.ApartmentNumber) loc.ApartmentNumber = dto.ApartmentNumber;
-            if (dto.PostalCode is not null && dto.PostalCode != loc.PostalCode) loc.PostalCode = dto.PostalCode;
+            if (dto.City is not null && dto.City != string.Empty && !dto.City.Equals(loc.City, StringComparison.OrdinalIgnoreCase)) loc.City = dto.City;
+            if (dto.Street is not null && dto.Street != string.Empty && !dto.Street.Equals(loc.Street, StringComparison.OrdinalIgnoreCase)) loc.Street = dto.Street;
+            if (dto.BuildingNumber is not null && dto.BuildingNumber != string.Empty && !dto.BuildingNumber.Equals(loc.BuildingNumber, StringComparison.OrdinalIgnoreCase)) loc.BuildingNumber = dto.BuildingNumber;
+            if (!string.Equals(dto.ApartmentNumber, loc.ApartmentNumber, StringComparison.OrdinalIgnoreCase)) loc.ApartmentNumber = dto.ApartmentNumber;
+            if (dto.PostalCode is not null && dto.PostalCode != string.Empty && !dto.PostalCode.Equals(loc.PostalCode, StringComparison.OrdinalIgnoreCase)) loc.PostalCode = dto.PostalCode;
+            if (dto.IsPublic != loc.IsPublic) loc.IsPublic = dto.IsPublic;
+            if (dto.Description is null)
+                loc.Description = null;
+            else if (dto.Description != string.Empty && !dto.Description.Equals(loc.Description, StringComparison.OrdinalIgnoreCase))
+                loc.Description = dto.Description;
 
             loc.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return loc.ToLocationResponseDto();
+            return await GetFresh(loc.Id);
         }
 
         public async Task<bool> Deactivate(int id)
@@ -113,6 +124,17 @@ namespace FleetlyBackend.Services.LocationService
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        private async Task<LocationResponseDto> GetFresh(int id)
+        {
+            var fresh = await _context.Locations
+                .AsNoTracking()
+                .Include(l => l.User).ThenInclude(l => l.Details)
+                .FirstOrDefaultAsync(l => l.Id == id)
+                ?? throw new ArgumentException("Nie znaleziono lokalizacji.");
+
+            return fresh.ToLocationResponseDto();
         }
     }
 }
