@@ -16,6 +16,10 @@ namespace FleetlyBackend.Mappings
                 ApartmentNumber = l.ApartmentNumber,
                 PostalCode = l.PostalCode,
                 IsPublic = l.IsPublic,
+                Description = l.Description,
+                IsActive = l.IsActive,
+                CreatedAt = l.CreatedAt,
+                UpdatedAt = l.UpdatedAt
             };
     }
 }

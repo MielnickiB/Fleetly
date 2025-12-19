@@ -9,7 +9,10 @@
         public string BuildingNumber { get; set; } = null!;
         public string? ApartmentNumber { get; set; }
         public string PostalCode { get; set; } = null!;
-        public bool IsPublic { get; set; } = false;
+        public bool IsPublic { get; set; }
         public string? Description { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }
