@@ -91,7 +91,10 @@ namespace FleetlyBackend.Services.LocationService
             if (!string.Equals(dto.ApartmentNumber, loc.ApartmentNumber, StringComparison.OrdinalIgnoreCase)) loc.ApartmentNumber = dto.ApartmentNumber;
             if (dto.PostalCode is not null && dto.PostalCode != string.Empty && !dto.PostalCode.Equals(loc.PostalCode, StringComparison.OrdinalIgnoreCase)) loc.PostalCode = dto.PostalCode;
             if (dto.IsPublic != loc.IsPublic) loc.IsPublic = dto.IsPublic;
-            if (dto.Description is not null && dto.Description != string.Empty && !dto.Description.Equals(loc.Description, StringComparison.OrdinalIgnoreCase)) loc.Description = dto.Description;
+            if (dto.Description is null)
+                loc.Description = null;
+            else if (dto.Description != string.Empty && !dto.Description.Equals(loc.Description, StringComparison.OrdinalIgnoreCase))
+                loc.Description = dto.Description;
 
             loc.UpdatedAt = DateTime.UtcNow;
 
