@@ -226,7 +226,7 @@
         var parameters = new DialogParameters<ConfirmDialog>
     {
         { x => x.Title, "Dezaktywacja lokalizacji" },
-        { x => x.Content, $"Czy na pewno chcesz dezaktywować lokalizację {location.City} {location.Street} {location.ApartmentNumber}?" },
+        { x => x.Content, $"Czy na pewno chcesz dezaktywować lokalizację {location.City} {location.Street}{(string.IsNullOrWhiteSpace(location.ApartmentNumber) ? string.Empty : " " + location.ApartmentNumber)}?" },
         { x => x.ConfirmText, "Dezaktywuj" },
         { x => x.Color, Color.Error },
         { x => x.Icon, Icons.Material.Filled.DeleteForever },
