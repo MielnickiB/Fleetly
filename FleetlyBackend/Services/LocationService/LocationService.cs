@@ -88,7 +88,7 @@ namespace FleetlyBackend.Services.LocationService
             if (dto.City is not null && dto.City != string.Empty && !dto.City.Equals(loc.City, StringComparison.OrdinalIgnoreCase)) loc.City = dto.City;
             if (dto.Street is not null && dto.Street != string.Empty && !dto.Street.Equals(loc.Street, StringComparison.OrdinalIgnoreCase)) loc.Street = dto.Street;
             if (dto.BuildingNumber is not null && dto.BuildingNumber != string.Empty && !dto.BuildingNumber.Equals(loc.BuildingNumber, StringComparison.OrdinalIgnoreCase)) loc.BuildingNumber = dto.BuildingNumber;
-            if (dto.ApartmentNumber is not null && dto.ApartmentNumber != string.Empty && !dto.ApartmentNumber.Equals(loc.ApartmentNumber, StringComparison.OrdinalIgnoreCase)) loc.ApartmentNumber = dto.ApartmentNumber;
+            if (!string.Equals(dto.ApartmentNumber, loc.ApartmentNumber, StringComparison.OrdinalIgnoreCase)) loc.ApartmentNumber = dto.ApartmentNumber;
             if (dto.PostalCode is not null && dto.PostalCode != string.Empty && !dto.PostalCode.Equals(loc.PostalCode, StringComparison.OrdinalIgnoreCase)) loc.PostalCode = dto.PostalCode;
             if (dto.IsPublic != loc.IsPublic) loc.IsPublic = dto.IsPublic;
             if (dto.Description is not null && dto.Description != string.Empty && !dto.Description.Equals(loc.Description, StringComparison.OrdinalIgnoreCase)) loc.Description = dto.Description;
