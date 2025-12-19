@@ -121,9 +121,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        User = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
         await LoadDataAsync();
+        User = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
     }
+
     protected override async Task LoadDataAsync()
     {
         try
@@ -180,23 +181,22 @@
 
     private async Task OpenAddDialogAsync()
     {
-        return;
-        // var options = new DialogOptions
-        // {
-        //     MaxWidth = MaxWidth.Medium,
-        //     FullWidth = true,
-        //     CloseOnEscapeKey = true,
-        //     CloseButton = true,
-        //     BackgroundClass = "blurry-bg"
-        // };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            BackgroundClass = "blurry-bg"
+        };
 
-        // var parameters = new DialogParameters<AddLocationDialog>
-        //     {
-        //         { x => x.OnLocationAdded, new EventCallback(this, LoadDataAsync) }
-        //     };
+        var parameters = new DialogParameters<AddLocationDialog>
+            {
+                { x => x.OnLocationAdded, new EventCallback(this, LoadDataAsync) }
+            };
 
-        // var dialogRef = await DialogService.ShowAsync<AddLocationDialog>("Dodaj lokalizację", parameters, options);
-        // await dialogRef.Result;
+        var dialogRef = await DialogService.ShowAsync<AddLocationDialog>("Dodaj lokalizację", parameters, options);
+        await dialogRef.Result;
     }
 
 
