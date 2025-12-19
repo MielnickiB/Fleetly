@@ -32,7 +32,7 @@
                     <MudTextField @bind-Value="_locationModel.Description" Label="Szczegóły" For="@(() => _locationModel.Description)" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="12">
-                    <MudCheckBox @bind-Value="_locationModel.IsPublic" Label="Czy publiczna?" For="@(() => _locationModel.IsPublic)" Required Size="Size.Medium"></MudCheckBox>
+                    <MudCheckBox @bind-Value="_locationModel.IsPublic" Label="Czy publiczna?" For="@(() => _locationModel.IsPublic)" Size="Size.Medium"></MudCheckBox>
                 </MudItem>
             </MudGrid>
         </EditForm>
@@ -104,9 +104,9 @@
                 Snackbar.Add(res.Error ?? "Błąd dodawania lokalizacji, spróbuj ponownie.", Severity.Error);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Wystąpił błąd: {ex.Message}", Severity.Error);
+            Snackbar.Add("Wystąpił problem z zapisywaniem danych, spróbuj ponownie", Severity.Error);
         }
         finally
         {
