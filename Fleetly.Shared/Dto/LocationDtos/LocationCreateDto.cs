@@ -22,7 +22,6 @@ namespace Fleetly.Shared.Dto.LocationDtos
         [StringLength(10, ErrorMessage = "Kod pocztowy nie może przekraczać 10 znaków.")]
         public string PostalCode { get; set; } = null!;
 
-        [Required(ErrorMessage = "Informacja o widoczności jest wymagana!")]
         public bool IsPublic { get; set; } = false;
 
         [StringLength(500, ErrorMessage = "Opis nie może przekraczać 500 znaków.")]
