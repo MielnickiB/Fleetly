@@ -152,7 +152,7 @@ namespace FleetlyBackend.Services.UserSerivce
                 u.Email = dto.Email;
             }
 
-            if (dto.Password is not null && !dto.Password.Equals(u.PasswordHash))
+            if (!string.IsNullOrWhiteSpace(dto.Password))
             {
                 u.PasswordHash = _hasher.HashPassword(u, dto.Password);
             }
