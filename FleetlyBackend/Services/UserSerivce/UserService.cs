@@ -173,8 +173,13 @@ namespace FleetlyBackend.Services.UserSerivce
                     u.Details.Name = detailsDto.Name;
                 if (detailsDto.Surname is not null && detailsDto.Surname != string.Empty && !detailsDto.Surname.Equals(u.Details.Surname, StringComparison.OrdinalIgnoreCase))
                     u.Details.Surname = detailsDto.Surname;
-                if (detailsDto.PhoneNumber is not null && detailsDto.PhoneNumber != u.Details.PhoneNumber)
-                    u.Details.PhoneNumber = detailsDto.PhoneNumber;
+                if (detailsDto.PhoneNumber is not null)
+                {
+                    var newPhone = detailsDto.PhoneNumber.Trim();
+                    var currentPhone = u.Details.PhoneNumber?.Trim();
+                    if (!string.Equals(newPhone, currentPhone, StringComparison.OrdinalIgnoreCase))
+                        u.Details.PhoneNumber = newPhone;
+                }
                 if (detailsDto.Company is not null && detailsDto.Company != string.Empty && !detailsDto.Company.Equals(u.Details.Company, StringComparison.OrdinalIgnoreCase))
                     u.Details.Company = detailsDto.Company;
             }
