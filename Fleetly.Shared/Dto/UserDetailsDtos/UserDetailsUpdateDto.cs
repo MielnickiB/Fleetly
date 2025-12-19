@@ -6,7 +6,7 @@ namespace Fleetly.Shared.Dto.UserDetailsDtos
     {
         public string? Name { get; set; }
         public string? Surname { get; set; }
-        [Phone]
+        [Phone(ErrorMessage = "Nieporawny format numeru telefonu!")]
         public string? PhoneNumber { get; set; }
         public string? Company { get; set; }
     }

@@ -42,7 +42,7 @@
                      FixedHeader="true"
                      Elevation="5"
                      RowStyleFunc="@_rowStyleFunc"
-                     RowStyle="font-weight:bold;">
+                     RowStyle="font-weight:bold;overflow:hidden">
             <Columns>
                 <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" StickyLeft />
                 <PropertyColumn Property="x => x.RegistrationNumber" Title="Nr rejestracyjny" />
@@ -52,6 +52,8 @@
                 <PropertyColumn Property="x => x.FuelType" Title="Paliwo" />
                 <PropertyColumn Property="x => x.Year" Title="Rok prod." />
                 <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" />
+                <PropertyColumn Property="x => x.CreatedAt" Title="Utworzono" />
+                <PropertyColumn Property="x => x.UpdatedAt" Title="Zaaktualizowano" />
                 <TemplateColumn Title="Akcje" StickyRight>
                     <CellTemplate>
                         <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />

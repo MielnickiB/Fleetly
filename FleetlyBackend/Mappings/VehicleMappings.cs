@@ -26,7 +26,9 @@ namespace FleetlyBackend.Mappings
                 VIN = v.VIN,
                 Year = v.Year,
                 Details = v.Details,
-                IsActive = v.IsActive
+                IsActive = v.IsActive,
+                CreatedAt = v.CreatedAt,
+                UpdatedAt = v.UpdatedAt
             };
     }
 }

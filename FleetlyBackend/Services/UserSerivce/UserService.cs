@@ -143,13 +143,18 @@ namespace FleetlyBackend.Services.UserSerivce
             if (!u.IsActive)
                 throw new InvalidOperationException("Nie można edytować nieaktywnego użytkownika");
 
-            if (dto.Email is not null && dto.Email != u.Email)
+            if (dto.Email is not null && !dto.Email.Equals(u.Email, StringComparison.OrdinalIgnoreCase))
             {
                 var emailInUse = await _context.Users.AnyAsync(x => x.Email == dto.Email && x.Id != u.Id && x.IsActive);
                 if (emailInUse)
                     throw new ArgumentException("Podany adres email jest już używany przez innego użytkownika");
 
                 u.Email = dto.Email;
+            }
+
+            if (dto.Password is not null && !dto.Password.Equals(u.PasswordHash))
+            {
+                u.PasswordHash = _hasher.HashPassword(u, dto.Password);
             }
 
             if (dto.RoleId is not null && dto.RoleId != u.RoleId)
@@ -161,16 +166,16 @@ namespace FleetlyBackend.Services.UserSerivce
                 u.RoleId = (int)dto.RoleId;
             }
 
-            if (dto.DetailsUpdateDto is not null && u.Details is not null)
+            if (dto.Details is not null && u.Details is not null)
             {
-                var detailsDto = dto.DetailsUpdateDto;
-                if (detailsDto.Name is not null && detailsDto.Name != u.Details.Name)
+                var detailsDto = dto.Details;
+                if (detailsDto.Name is not null && detailsDto.Name != string.Empty && !detailsDto.Name.Equals(u.Details.Name, StringComparison.OrdinalIgnoreCase))
                     u.Details.Name = detailsDto.Name;
-                if (detailsDto.Surname is not null && detailsDto.Surname != u.Details.Surname)
+                if (detailsDto.Surname is not null && detailsDto.Surname != string.Empty && !detailsDto.Surname.Equals(u.Details.Surname, StringComparison.OrdinalIgnoreCase))
                     u.Details.Surname = detailsDto.Surname;
                 if (detailsDto.PhoneNumber is not null && detailsDto.PhoneNumber != u.Details.PhoneNumber)
                     u.Details.PhoneNumber = detailsDto.PhoneNumber;
-                if (detailsDto.Company is not null && detailsDto.Company != u.Details.Company)
+                if (detailsDto.Company is not null && detailsDto.Company != string.Empty && !detailsDto.Company.Equals(u.Details.Company, StringComparison.OrdinalIgnoreCase))
                     u.Details.Company = detailsDto.Company;
             }
 

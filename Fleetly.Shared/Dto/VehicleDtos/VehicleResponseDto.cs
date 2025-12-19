@@ -1,5 +1,4 @@
 ﻿using Fleetly.Shared.Enums;
-using Fleetly.Shared.Dto.UserDetailsDtos;
 using Fleetly.Shared.Dto.BrandModelDtos;
 
 namespace Fleetly.Shared.Dto.VehicleDtos
@@ -18,5 +17,7 @@ namespace Fleetly.Shared.Dto.VehicleDtos
         public int? Year { get; set; }
         public string? Details { get; set; }
         public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

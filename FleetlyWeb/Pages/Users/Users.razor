@@ -48,7 +48,10 @@
                 <PropertyColumn Property="x => x.Details.Name" Title="Imię" />
                 <PropertyColumn Property="x => x.Details.Surname" Title="Nazwisko" />
                 <PropertyColumn Property="x => x.Email" Title="Email" />
+                <PropertyColumn Property="x => x.Details.PhoneNumber" Title="Numer Telefonu" />
                 <PropertyColumn Property="x => x.RoleName" Title="Rola" />
+                <PropertyColumn Property="x => x.CreatedAt" Title="Utworzono" />
+                <PropertyColumn Property="x => x.UpdatedAt" Title="Zaaktualizowano" />
                 <TemplateColumn Title="Akcje" StickyRight>
                     <CellTemplate>
                         <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
@@ -148,23 +151,22 @@
 
     private async Task OpenEditDialogAsync(UserResponseDto user)
     {
-        return;
-        // var parameters = new DialogParameters<EditUserDialog>
-        // {
-        //     { x => x.Vehicle, user },
-        //     { x => x.OnUserUpdated, new EventCallback(this, LoadDataAsync)  }
-        // };
-        // var options = new DialogOptions
-        // {
-        //     MaxWidth = MaxWidth.Medium,
-        //     FullWidth = true,
-        //     CloseOnEscapeKey = true,
-        //     CloseButton = true,
-        //     BackgroundClass = "blurry-bg"
-        // };
+        var parameters = new DialogParameters<EditUserDialog>
+        {
+            { x => x.User, user },
+            { x => x.OnUserUpdated, new EventCallback(this, LoadDataAsync)  }
+        };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            BackgroundClass = "blurry-bg"
+        };
 
-        // var dialogRef = await DialogService.ShowAsync<EditVehicleDialog>("Edytuj pojazd", parameters, options);
-        // await dialogRef.Result;
+        var dialogRef = await DialogService.ShowAsync<EditUserDialog>("Edytuj użytkownika", parameters, options);
+        await dialogRef.Result;
     }
 
     private async Task OnDeleteClicked(UserResponseDto user)

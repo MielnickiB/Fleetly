@@ -150,6 +150,6 @@ code {
 .fab-container {
     position: fixed;
     right: 24px;
-    bottom: 24px;
+    bottom: 48px;
     z-index: 1100;
 }
