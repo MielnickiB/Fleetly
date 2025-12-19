@@ -61,22 +61,22 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField T="string" Label="Numer rejestracyjny" For="@(() => _vehicleModel.RegistrationNumber)" @bind-Value="@_vehicleModel.RegistrationNumber" Required="true" />
+                    <MudTextField T="string" Label="Numer rejestracyjny" For="@(() => _vehicleModel.RegistrationNumber)" @bind-Value="@_vehicleModel.RegistrationNumber" Variant="Variant.Outlined" Required />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField T="string" Label="Numer VIN (opcjonalnie)" For="@(() => _vehicleModel.VIN)" @bind-Value="@_vehicleModel.VIN" />
-                </MudItem>
-
-                <MudItem xs="12" sm="6">
-                    <MudNumericField T="int" Label="Rok produkcji" For="@(() => _vehicleModel.Year)" @bind-Value="@_vehicleModel.Year" Required="true" />
+                    <MudTextField T="string" Label="Numer VIN (opcjonalnie)" For="@(() => _vehicleModel.VIN)" @bind-Value="@_vehicleModel.VIN" Variant="Variant.Outlined" />
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
-                    <MudNumericField T="int" Label="Aktualny przebieg (km)" For="@(() => _vehicleModel.Mileage)" @bind-Value="@_vehicleModel.Mileage" Required="true" />
+                    <MudNumericField T="int" Label="Rok produkcji" For="@(() => _vehicleModel.Year)" @bind-Value="@_vehicleModel.Year" Variant="Variant.Outlined" Required />
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
-                    <MudSelect T="FuelType" Label="Typ paliwa" For="@(() => _vehicleModel.FuelType)" @bind-Value="_vehicleModel.FuelType" Required="true">
+                    <MudNumericField T="int" Label="Aktualny przebieg (km)" For="@(() => _vehicleModel.Mileage)" @bind-Value="@_vehicleModel.Mileage" Variant="Variant.Outlined" Required />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudSelect T="FuelType" Label="Typ paliwa" For="@(() => _vehicleModel.FuelType)" @bind-Value="_vehicleModel.FuelType" Variant="Variant.Outlined" Required>
                         @foreach (FuelType fuel in Enum.GetValues(typeof(FuelType)))
                         {
                             <MudSelectItem Value="fuel">@fuel.ToString()</MudSelectItem>
@@ -85,7 +85,7 @@
                 </MudItem>
 
                 <MudItem xs="12" md="6">
-                    <MudTextField T="string" Label="Szczegóły / Opis (opcjonalnie)" For="@(() => _vehicleModel.Details)" @bind-Value="@_vehicleModel.Details" AutoGrow Clearable />
+                    <MudTextField T="string" Label="Szczegóły / Opis (opcjonalnie)" For="@(() => _vehicleModel.Details)" @bind-Value="@_vehicleModel.Details" Variant="Variant.Outlined" AutoGrow Clearable />
                 </MudItem>
             </MudGrid>
         </EditForm>

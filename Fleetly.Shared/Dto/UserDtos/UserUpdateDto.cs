@@ -5,10 +5,11 @@ namespace Fleetly.Shared.Dto.UserDtos
 {
     public class UserUpdateDto
     {
-        [EmailAddress]
+        [EmailAddress(ErrorMessage = "Niepoprawny format adresu email!")]
         public string? Email { get; set; }
-        [Range(1, int.MaxValue, ErrorMessage = "RoleId musi być większe od 0.")]
+        public string? Password { get; set; }
+        [Range(1, int.MaxValue, ErrorMessage = "Niepoprawna rola użytkownika!")]
         public int? RoleId { get; set; }
-        public UserDetailsUpdateDto? DetailsUpdateDto { get; set; }
+        public UserDetailsUpdateDto? Details { get; set; }
     }
 }
