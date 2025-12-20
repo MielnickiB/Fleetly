@@ -1,0 +1,30 @@
+﻿@using Fleetly.Shared.Dto.LocationDtos
+@typeparam T where T : LocationBaseDto
+
+<MudGrid>
+    <MudItem xs="12" sm="6">
+        <MudTextField @bind-Value="Model.City" Label="Miasto" For="@(() => Model.City)" Required Variant="Variant.Outlined" />
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudTextField @bind-Value="Model.Street" Label="Ulica" For="@(() => Model.Street)" Required Variant="Variant.Outlined" />
+    </MudItem>
+    <MudItem xs="6">
+        <MudTextField @bind-Value="Model.BuildingNumber" Label="Numer budynku" For="@(() => Model.BuildingNumber)" Required Variant="Variant.Outlined" />
+    </MudItem>
+    <MudItem xs="6">
+        <MudTextField @bind-Value="Model.ApartmentNumber" Label="Numer mieszkania" For="@(() => Model.ApartmentNumber)" Variant="Variant.Outlined" Clearable />
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudTextField @bind-Value="Model.PostalCode" Label="Kod pocztowy" For="@(() => Model.PostalCode)" Required Variant="Variant.Outlined" Placeholder="XX-XXX" />
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudTextField @bind-Value="Model.Description" Label="Opis" For="@(() => Model.Description)" Variant="Variant.Outlined" AutoGrow Clearable />
+    </MudItem>
+    <MudItem xs="12">
+        <MudCheckBox @bind-Value="Model.IsPublic" Label="Lokalizacja publiczna" Color="Color.Primary" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter] public T Model { get; set; } = default!;
+}

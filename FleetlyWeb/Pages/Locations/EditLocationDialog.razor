@@ -1,8 +1,8 @@
-﻿@using Fleetly.Shared.Enums
+﻿@using FleetlyWeb.Components
 @using Fleetly.Shared.Dto.LocationDtos
 @using FleetlyWeb.Services.Locations
-@inject ISnackbar Snackbar
 @inject ILocationService LocationService
+@inherits FleetlyWeb.Base.DialogBase<LocationUpdateDto>
 
 <MudDialog>
     <TitleContent>
@@ -11,67 +11,26 @@
         </MudText>
     </TitleContent>
     <DialogContent>
-        <EditForm Model="_updateModel" @ref="_editForm">
+        <EditForm Model="Model" @ref="EditForm">
             <DataAnnotationsValidator />
-            <MudGrid>
-                <MudItem xs="12" sm="6">
-                    <MudTextField T="string" @bind-Value="_updateModel.City" Label="Miasto" For="@(() => _updateModel.City)" Required Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudTextField T="string" @bind-Value="_updateModel.Street" Label="Ulica" For="@(() => _updateModel.Street)" Required Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="6">
-                    <MudTextField T="string" @bind-Value="_updateModel.BuildingNumber" Label="Numer budynku" For="@(() => _updateModel.BuildingNumber)" Required Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="6">
-                    <MudTextField @bind-Value="_updateModel.ApartmentNumber" Label="Numer mieszkania" For="@(() => _updateModel.ApartmentNumber)" Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudTextField T="string" @bind-Value="_updateModel.PostalCode" Label="Kod pocztowy" For="@(() => _updateModel.PostalCode)" Required Variant="Variant.Outlined" Placeholder="XX-XXX" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_updateModel.Description" Label="Szczegóły" For="@(() => _updateModel.Description)" Variant="Variant.Outlined" AutoGrow MaxLines="4" />
-                </MudItem>
-                <MudItem xs="12">
-                    <MudCheckBox @bind-Value="_updateModel.IsPublic" Label="Czy publiczna?" For="@(() => _updateModel.IsPublic)" Size="Size.Medium"></MudCheckBox>
-                </MudItem>
-            </MudGrid>
+            <LocationForm Model="Model" />
         </EditForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled" Disabled="@_isBusy">Anuluj</MudButton>
-        <MudButton Color="Color.Primary"
-                   Variant="Variant.Filled"
-                   ButtonType="ButtonType.Submit"
-                   Disabled="@_isBusy"
-                   OnClick="SubmitForm">
-            @(_isBusy ? "Zapisywanie..." : "Zapisz zmiany")
+        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled" Disabled="@IsBusy">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" ButtonType="ButtonType.Submit" OnClick="SubmitForm" Disabled="@IsBusy">
+            @(IsBusy ? "Zapisywanie..." : "Zapisz zmiany")
         </MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
-    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public LocationResponseDto Location { get; set; } = default!;
     [Parameter] public EventCallback OnLocationUpdated { get; set; }
 
-    private LocationUpdateDto _updateModel = new();
-    private bool _isBusy = false;
-
-    private EditForm _editForm = default!;
-    private EditContext _editContext = default!;
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender && _editForm != null && _editContext == null)
-        {
-            _editContext = _editForm.EditContext!;
-        }
-    }
-
     protected override Task OnInitializedAsync()
     {
-        _updateModel = new LocationUpdateDto
+        Model = new LocationUpdateDto
         {
             City = Location.City,
             Street = Location.Street,
@@ -84,29 +43,12 @@
         return Task.CompletedTask;
     }
 
-    private void Cancel() => MudDialog.Cancel();
-
-    async Task SubmitForm()
+    protected override async Task Submit()
     {
-        if (_editContext is null)
-            return;
-
-        var isValid = _editContext.Validate();
-        if (!isValid)
-        {
-            Snackbar.Add("Popraw błędy w formularzu", Severity.Warning);
-            return;
-        }
-
-        await Submit();
-    }
-
-    private async Task Submit()
-    {
-        _isBusy = true;
+        IsBusy = true;
         try
         {
-            var res = await LocationService.UpdateLocationAsync(Location.Id, _updateModel);
+            var res = await LocationService.UpdateLocationAsync(Location.Id, Model);
             if (res.Success)
             {
                 Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
@@ -115,7 +57,7 @@
             }
             else
             {
-                Snackbar.Add(res.Error ?? "Błąd aktualizacji", Severity.Error);
+                Snackbar.Add(res.Error ?? "Błąd aktualizacji danych, spróbuj ponownie", Severity.Error);
             }
         }
         catch (Exception)
@@ -124,7 +66,7 @@
         }
         finally
         {
-            _isBusy = false;
+            IsBusy = false;
         }
     }
 }
