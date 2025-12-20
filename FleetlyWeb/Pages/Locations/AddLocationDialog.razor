@@ -10,7 +10,7 @@
         <MudText style="font-weight:bold" Typo="Typo.h6">Dodaj nową lokalizację</MudText>
     </TitleContent>
     <DialogContent>
-        <EditForm Model="_locationModel" OnValidSubmit="Submit" @ref="_editForm">
+        <EditForm Model="_locationModel" @ref="_editForm">
             <DataAnnotationsValidator />
             <MudGrid>
                 <MudItem xs="12" sm="6">

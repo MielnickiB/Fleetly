@@ -76,25 +76,21 @@ namespace FleetlyBackend.Services.LocationService
 
             var loc = await _context.Locations.FindAsync(id);
 
-            if (loc is not null && loc.UserId != userId && (user.IsClient() || user.IsWorker()))
+            if (loc is null) throw new ArgumentException("Nie znaleziono lokalizacji.");
+            if (!loc.IsActive) throw new InvalidOperationException("Nie można modyfikować usuniętej lokalizacji.");
+
+            if (loc.UserId != userId && (user.IsClient() || user.IsWorker()))
                 throw new UnauthorizedAccessException("Nie możesz modyfikować cudzej lokalizacji.");
 
-            if (loc is null)
-                throw new ArgumentException("Nie znaleziono lokalizacji.");
+            if (!string.IsNullOrWhiteSpace(dto.City)) loc.City = dto.City;
+            if (!string.IsNullOrWhiteSpace(dto.Street)) loc.Street = dto.Street;
+            if (!string.IsNullOrWhiteSpace(dto.BuildingNumber)) loc.BuildingNumber = dto.BuildingNumber;
+            if (!string.IsNullOrWhiteSpace(dto.PostalCode)) loc.PostalCode = dto.PostalCode;
 
-            if (!loc.IsActive)
-                throw new InvalidOperationException("Nie można modyfikować usuniętej lokalizacji.");
+            loc.ApartmentNumber = dto.ApartmentNumber;
+            loc.Description = dto.Description;
 
-            if (dto.City is not null && dto.City != string.Empty && !dto.City.Equals(loc.City, StringComparison.OrdinalIgnoreCase)) loc.City = dto.City;
-            if (dto.Street is not null && dto.Street != string.Empty && !dto.Street.Equals(loc.Street, StringComparison.OrdinalIgnoreCase)) loc.Street = dto.Street;
-            if (dto.BuildingNumber is not null && dto.BuildingNumber != string.Empty && !dto.BuildingNumber.Equals(loc.BuildingNumber, StringComparison.OrdinalIgnoreCase)) loc.BuildingNumber = dto.BuildingNumber;
-            if (!string.Equals(dto.ApartmentNumber, loc.ApartmentNumber, StringComparison.OrdinalIgnoreCase)) loc.ApartmentNumber = dto.ApartmentNumber;
-            if (dto.PostalCode is not null && dto.PostalCode != string.Empty && !dto.PostalCode.Equals(loc.PostalCode, StringComparison.OrdinalIgnoreCase)) loc.PostalCode = dto.PostalCode;
-            if (dto.IsPublic != loc.IsPublic) loc.IsPublic = dto.IsPublic;
-            if (dto.Description is null)
-                loc.Description = null;
-            else if (dto.Description != string.Empty && !dto.Description.Equals(loc.Description, StringComparison.OrdinalIgnoreCase))
-                loc.Description = dto.Description;
+            loc.IsPublic = dto.IsPublic;
 
             loc.UpdatedAt = DateTime.UtcNow;
 

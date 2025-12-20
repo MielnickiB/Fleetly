@@ -200,25 +200,24 @@
     }
 
 
-    private async Task OpenEditDialogAsync(LocationResponseDto user)
+    private async Task OpenEditDialogAsync(LocationResponseDto location)
     {
-        return;
-        // var parameters = new DialogParameters<EditLocationDialog>
-        // {
-        //     { x => x.User, user },
-        //     { x => x.OnLocationUpdated, new EventCallback(this, LoadDataAsync)  }
-        // };
-        // var options = new DialogOptions
-        // {
-        //     MaxWidth = MaxWidth.Medium,
-        //     FullWidth = true,
-        //     CloseOnEscapeKey = true,
-        //     CloseButton = true,
-        //     BackgroundClass = "blurry-bg"
-        // };
+        var parameters = new DialogParameters<EditLocationDialog>
+        {
+            { x => x.Location, location },
+            { x => x.OnLocationUpdated, new EventCallback(this, LoadDataAsync)  }
+        };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            BackgroundClass = "blurry-bg"
+        };
 
-        // var dialogRef = await DialogService.ShowAsync<EditLocationDialog>("Edytuj lokalizację", parameters, options);
-        // await dialogRef.Result;
+        var dialogRef = await DialogService.ShowAsync<EditLocationDialog>("Edytuj lokalizację", parameters, options);
+        await dialogRef.Result;
     }
 
     private async Task OnDeleteClicked(LocationResponseDto location)
