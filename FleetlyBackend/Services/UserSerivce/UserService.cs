@@ -157,7 +157,7 @@ namespace FleetlyBackend.Services.UserSerivce
                 u.PasswordHash = _hasher.HashPassword(u, dto.Password);
             }
 
-            if (dto.RoleId is not null && dto.RoleId != u.RoleId)
+            if (dto.RoleId != u.RoleId)
             {
                 var roleExists = await _context.UserRoles.AnyAsync(r => r.Id == dto.RoleId);
                 if (!roleExists)
