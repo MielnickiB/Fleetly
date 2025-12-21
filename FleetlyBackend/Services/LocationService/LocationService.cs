@@ -75,12 +75,10 @@ namespace FleetlyBackend.Services.LocationService
             var userId = user.GetUserId();
 
             var loc = await _context.Locations.FindAsync(id);
-
-            if (loc is null) throw new ArgumentException("Nie znaleziono lokalizacji.");
+            if (loc is null || loc.UserId != userId && (user.IsClient() || user.IsWorker()))
+                throw new UnauthorizedAccessException("Nie możesz modyfikować cudzej lokalizacji.");
             if (!loc.IsActive) throw new InvalidOperationException("Nie można modyfikować usuniętej lokalizacji.");
 
-            if (loc.UserId != userId && (user.IsClient() || user.IsWorker()))
-                throw new UnauthorizedAccessException("Nie możesz modyfikować cudzej lokalizacji.");
 
             if (!string.IsNullOrWhiteSpace(dto.City)) loc.City = dto.City;
             if (!string.IsNullOrWhiteSpace(dto.Street)) loc.Street = dto.Street;

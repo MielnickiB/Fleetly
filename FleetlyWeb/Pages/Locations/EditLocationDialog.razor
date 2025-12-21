@@ -45,28 +45,16 @@
 
     protected override async Task Submit()
     {
-        IsBusy = true;
-        try
+        var res = await LocationService.UpdateLocationAsync(Location.Id, Model);
+        if (res.Success)
         {
-            var res = await LocationService.UpdateLocationAsync(Location.Id, Model);
-            if (res.Success)
-            {
-                Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
-                await OnLocationUpdated.InvokeAsync();
-                MudDialog.Close(DialogResult.Ok(true));
-            }
-            else
-            {
-                Snackbar.Add(res.Error ?? "Błąd aktualizacji danych, spróbuj ponownie", Severity.Error);
-            }
+            Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
+            await OnLocationUpdated.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
         }
-        catch (Exception)
+        else
         {
-            Snackbar.Add("Wystąpił problem z zapisywaniem danych, spróbuj ponownie", Severity.Error);
-        }
-        finally
-        {
-            IsBusy = false;
+            Snackbar.Add(res.Error ?? "Błąd aktualizacji danych, spróbuj ponownie", Severity.Error);
         }
     }
 }
