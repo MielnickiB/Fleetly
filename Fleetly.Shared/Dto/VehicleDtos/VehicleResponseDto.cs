@@ -12,7 +12,7 @@ namespace Fleetly.Shared.Dto.VehicleDtos
         public BrandModelResponseDto BrandModel { get; set; } = null!;
         public string RegistrationNumber { get; set; } = null!;
         public FuelType FuelType { get; set; }
-        public int? Mileage { get; set; }
+        public int Mileage { get; set; }
         public string? VIN { get; set; }
         public int? Year { get; set; }
         public string? Details { get; set; }

@@ -154,19 +154,19 @@ namespace FleetlyBackend.Services.VehicleService
                 v.VIN = dto.VIN;
             }
 
-            if (dto.BrandModelId.HasValue && dto.BrandModelId.Value != v.BrandModelId)
+            if (dto.BrandModelId != v.BrandModelId)
             {
-                var brandExists = await _context.BrandModels.AnyAsync(b => b.Id == dto.BrandModelId.Value);
+                var brandExists = await _context.BrandModels.AnyAsync(b => b.Id == dto.BrandModelId);
                 if (!brandExists)
                     throw new ArgumentException("Podany model nie istnieje.");
 
-                v.BrandModelId = dto.BrandModelId.Value;
+                v.BrandModelId = dto.BrandModelId;
             }
 
-            if (dto.FuelType.HasValue && dto.FuelType.Value != v.FuelType) v.FuelType = dto.FuelType.Value;
-            if (dto.Mileage.HasValue && dto.Mileage.Value != v.Mileage) v.Mileage = dto.Mileage.Value;
-            if (dto.Year.HasValue && dto.Year.Value != v.Year) v.Year = dto.Year.Value;
-            if (dto.Details is not null && dto.Details != v.Details) v.Details = dto.Details;
+            if (dto.FuelType != v.FuelType) v.FuelType = dto.FuelType;
+            if (dto.Mileage != v.Mileage) v.Mileage = dto.Mileage;
+            if (dto.Year != v.Year) v.Year = dto.Year;
+            if (!string.IsNullOrEmpty(dto.Details) && dto.Details != v.Details) v.Details = dto.Details;
 
             v.UpdatedAt = DateTime.UtcNow;
 

@@ -1,0 +1,152 @@
+﻿@typeparam T where T : VehicleBaseDto
+@using Fleetly.Shared.Dto.CarBrandDtos
+@using Fleetly.Shared.Dto.BrandModelDtos
+@using Fleetly.Shared.Dto.VehicleDtos
+@using FleetlyWeb.Services.CarBrand
+@using FleetlyWeb.Services.BrandModel
+@using Fleetly.Shared.Enums
+@inject ICarBrandService CarBrandService
+@inject IBrandModelService BrandModelService
+
+@if (_isLoading)
+{
+    <MudProgressCircular Indeterminate="true" />
+    <MudText>Ładowanie danych...</MudText>
+    return;
+}
+else
+{
+    <MudGrid>
+        <MudItem xs="12" sm="6">
+            <MudSelect T="int?"
+                       Label="Marka Pojazdu"
+                       Value="_selectedBrandId"
+                       ValueChanged="OnBrandSelected"
+                       Required
+                       Variant="Variant.Outlined"
+                       Clearable>
+                @if (_brands == null)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                }
+                else
+                {
+                    @foreach (var brand in _brands.OrderBy(b => b.BrandName))
+                    {
+                        <MudSelectItem T="int?" Value="@(brand.Id)">@brand.BrandName</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudSelect T="int"
+                       Label="Model Pojazdu"
+                       @bind-Value="Model.BrandModelId"
+                       For="@(() => Model.BrandModelId)"
+                       Required="true"
+                       Variant="Variant.Outlined"
+                       Disabled="_filteredModels == null || !_filteredModels.Any()"
+                       Clearable>
+                @if (_filteredModels == null || !_filteredModels.Any())
+                {
+                    <MudSelectItem T="int" Value="0" Disabled>Wybierz najpierw markę</MudSelectItem>
+                }
+                else
+                {
+                    @foreach (var model in _filteredModels.OrderBy(m => m.ModelName))
+                    {
+                        <MudSelectItem T="int" Value="@(model.Id)">@model.ModelName</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string" Label="Numer rejestracyjny" For="@(() => Model.RegistrationNumber)" @bind-Value="@Model.RegistrationNumber" Variant="Variant.Outlined" Required />
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string" Label="Numer VIN (opcjonalnie)" For="@(() => Model.VIN)" @bind-Value="@Model.VIN" Variant="Variant.Outlined" />
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudNumericField T="int?" Label="Rok produkcji" For="@(() => Model.Year)" @bind-Value="@Model.Year" Variant="Variant.Outlined" />
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudNumericField T="int" Label="Aktualny przebieg (km)" For="@(() => Model.Mileage)" @bind-Value="@Model.Mileage" Variant="Variant.Outlined" Required />
+        </MudItem>
+
+        <MudItem xs="12" sm="6">
+            <MudSelect T="FuelType" Label="Typ paliwa" For="@(() => Model.FuelType)" @bind-Value="Model.FuelType" Variant="Variant.Outlined" Required>
+                @foreach (FuelType fuel in Enum.GetValues(typeof(FuelType)))
+                {
+                    <MudSelectItem Value="fuel">@fuel.ToString()</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudTextField T="string" Label="Szczegóły / Opis (opcjonalnie)" For="@(() => Model.Details)" @bind-Value="@Model.Details" Variant="Variant.Outlined" AutoGrow Clearable />
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public T Model { get; set; } = default!;
+    private bool _isLoading = true;
+
+    private int? _selectedBrandId;
+    private IEnumerable<CarBrandResponseDto> _brands = Enumerable.Empty<CarBrandResponseDto>();
+    private IEnumerable<BrandModelResponseDto> _allModels = Enumerable.Empty<BrandModelResponseDto>();
+    private IEnumerable<BrandModelResponseDto> _filteredModels = Enumerable.Empty<BrandModelResponseDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Enum.IsDefined(typeof(FuelType), 0))
+        {
+            Model.FuelType = Enum.GetValues<FuelType>().First();
+        }
+
+        await LoadBrandAndModelData();
+        if (Model.BrandModelId != 0)
+        {
+            var currentModel = _allModels.FirstOrDefault(m => m.Id == Model.BrandModelId);
+            if (currentModel != null)
+            {
+                _selectedBrandId = currentModel.CarBrandId;
+                _filteredModels = _allModels.Where(m => m.CarBrandId == _selectedBrandId).ToList();
+            }
+        }
+        _isLoading = false;
+    }
+
+    private async Task LoadBrandAndModelData()
+    {
+        var brandsResponse = await CarBrandService.GetAllCarBrandsAsync();
+        if (brandsResponse.Success && brandsResponse.Data?.Items != null)
+        {
+            _brands = brandsResponse.Data.Items;
+        }
+
+        var modelsResponse = await BrandModelService.GetAllBrandModelsAsync();
+        if (modelsResponse.Success && modelsResponse.Data?.Items != null)
+        {
+            _allModels = modelsResponse.Data.Items;
+        }
+    }
+
+    private void OnBrandSelected(int? brandId)
+    {
+        _selectedBrandId = brandId;
+        _filteredModels = Enumerable.Empty<BrandModelResponseDto>();
+        Model.BrandModelId = 0;
+
+        if (brandId.HasValue)
+        {
+            _filteredModels = _allModels.Where(m => m.CarBrandId == brandId.Value).ToList();
+        }
+        else
+        {
+            _filteredModels = Enumerable.Empty<BrandModelResponseDto>();
+        }
+    }
+}
