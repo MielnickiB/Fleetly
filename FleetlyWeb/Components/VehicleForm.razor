@@ -131,7 +131,7 @@ else
             }
             else
             {
-                Snackbar.Add($"Nie udało się załadować marek pojazdów. {brandsResponse.Error}", Severity.Error);
+                Snackbar.Add("Nie udało się załadować marek pojazdów.", Severity.Error);
                 return;
             }
 
@@ -142,13 +142,13 @@ else
             }
             else
             {
-                Snackbar.Add($"Nie udało się załadować modeli pojazdów. {modelsResponse.Error}", Severity.Error);
+                Snackbar.Add("Nie udało się załadować modeli pojazdów.", Severity.Error);
                 return;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Błąd podczas ładowania danych: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Błąd podczas ładowania danych:", Severity.Error);
         }
     }
 

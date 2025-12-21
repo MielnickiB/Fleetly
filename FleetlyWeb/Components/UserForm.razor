@@ -44,6 +44,6 @@
     {
         var res = await UserRoleService.GetAllRolesAsync();
         if (res.Success) _roles = res.Data ?? Enumerable.Empty<UserRoleResponseDto>();
-        else Snackbar.Add($"Błąd ładowania ról użytkowników. {res.Error}", Severity.Error);
+        else Snackbar.Add("Błąd ładowania ról użytkowników.", Severity.Error);
     }
 }
