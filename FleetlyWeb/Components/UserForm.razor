@@ -3,6 +3,7 @@
 @using Fleetly.Shared.Dto.UserDtos
 @using FleetlyWeb.Services.UserRoles
 @inject IUserRoleService UserRoleService
+@inject ISnackbar Snackbar
 
 <MudGrid>
     <MudItem xs="12" sm="6">
@@ -43,5 +44,6 @@
     {
         var res = await UserRoleService.GetAllRolesAsync();
         if (res.Success) _roles = res.Data ?? Enumerable.Empty<UserRoleResponseDto>();
+        else Snackbar.Add($"Błąd ładowania ról użytkowników. {res.Error}", Severity.Error);
     }
 }

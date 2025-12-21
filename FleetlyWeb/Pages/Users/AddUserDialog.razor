@@ -38,6 +38,6 @@
             await OnUserAdded.InvokeAsync();
             MudDialog.Close(DialogResult.Ok(true));
         }
-        else Snackbar.Add(res.Error ?? "Błąd", Severity.Error);
+        else Snackbar.Add(res.Error ?? "Nie udało się dodać użytkownika", Severity.Error);
     }
 }

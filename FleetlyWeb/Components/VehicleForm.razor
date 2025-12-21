@@ -7,6 +7,7 @@
 @using Fleetly.Shared.Enums
 @inject ICarBrandService CarBrandService
 @inject IBrandModelService BrandModelService
+@inject ISnackbar Snackbar
 
 @if (_isLoading)
 {
@@ -121,16 +122,33 @@ else
 
     private async Task LoadBrandAndModelData()
     {
-        var brandsResponse = await CarBrandService.GetAllCarBrandsAsync();
-        if (brandsResponse.Success && brandsResponse.Data?.Items != null)
+        try
         {
-            _brands = brandsResponse.Data.Items;
-        }
+            var brandsResponse = await CarBrandService.GetAllCarBrandsAsync();
+            if (brandsResponse.Success && brandsResponse.Data?.Items != null)
+            {
+                _brands = brandsResponse.Data.Items;
+            }
+            else
+            {
+                Snackbar.Add($"Nie udało się załadować marek pojazdów. {brandsResponse.Error}", Severity.Error);
+                return;
+            }
 
-        var modelsResponse = await BrandModelService.GetAllBrandModelsAsync();
-        if (modelsResponse.Success && modelsResponse.Data?.Items != null)
+            var modelsResponse = await BrandModelService.GetAllBrandModelsAsync();
+            if (modelsResponse.Success && modelsResponse.Data?.Items != null)
+            {
+                _allModels = modelsResponse.Data.Items;
+            }
+            else
+            {
+                Snackbar.Add($"Nie udało się załadować modeli pojazdów. {modelsResponse.Error}", Severity.Error);
+                return;
+            }
+        }
+        catch (Exception ex)
         {
-            _allModels = modelsResponse.Data.Items;
+            Snackbar.Add($"Błąd podczas ładowania danych: {ex.Message}", Severity.Error);
         }
     }
 
@@ -140,13 +158,8 @@ else
         _filteredModels = Enumerable.Empty<BrandModelResponseDto>();
         Model.BrandModelId = 0;
 
-        if (brandId.HasValue)
-        {
-            _filteredModels = _allModels.Where(m => m.CarBrandId == brandId.Value).ToList();
-        }
-        else
-        {
-            _filteredModels = Enumerable.Empty<BrandModelResponseDto>();
-        }
+        _filteredModels = brandId.HasValue
+            ? _allModels.Where(m => m.CarBrandId == brandId.Value).ToList()
+            : Enumerable.Empty<BrandModelResponseDto>();
     }
 }

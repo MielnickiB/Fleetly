@@ -16,7 +16,7 @@
     <DialogActions>
         <MudButton OnClick="Cancel" Disabled="IsBusy" Variant="Variant.Filled" Color="Color.Default">Anuluj</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="IsBusy">
-            @(IsBusy ? "Zapisywanie..." : "Zapisz zmiany")
+            @(IsBusy ? "Zapisywanie..." : "Zapisz zmiany") || @(Vehicle.BrandModelId == 0)
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -48,6 +48,6 @@
             await OnVehicleUpdated.InvokeAsync();
             MudDialog.Close(DialogResult.Ok(true));
         }
-        else Snackbar.Add(res.Error ?? "Błąd aktualizacji", Severity.Error);
+        else Snackbar.Add(res.Error ?? "Błąd aktualizacji pojazdu", Severity.Error);
     }
 }

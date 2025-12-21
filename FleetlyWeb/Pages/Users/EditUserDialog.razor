@@ -45,7 +45,7 @@
                 Name = User.Details.Name,
                 Surname = User.Details.Surname,
                 PhoneNumber = User.Details.PhoneNumber,
-                Company = User.Details.Company
+                Company = User.Details?.Company
             }
         };
     }
@@ -59,6 +59,6 @@
             await OnUserUpdated.InvokeAsync();
             MudDialog.Close(DialogResult.Ok(true));
         }
-        else Snackbar.Add(res.Error ?? "Błąd", Severity.Error);
+        else Snackbar.Add(res.Error ?? "Nie udało się zaktualizować użytkownika", Severity.Error);
     }
 }
