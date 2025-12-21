@@ -1,0 +1,49 @@
+﻿@typeparam T where T : UserBaseDto
+@using Fleetly.Shared.Dto.UserRoleDtos
+@using Fleetly.Shared.Dto.UserDtos
+@using FleetlyWeb.Services.UserRoles
+@inject IUserRoleService UserRoleService
+@inject ISnackbar Snackbar
+
+<MudGrid>
+    <MudItem xs="12" sm="6">
+        <MudTextField @bind-Value="Model.Details.Name" Label="Imię" For="@(() => Model.Details.Name)" Variant="Variant.Outlined" Required/>
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudTextField @bind-Value="Model.Details.Surname" Label="Nazwisko" For="@(() => Model.Details.Surname)" Variant="Variant.Outlined" Required/>
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudTextField @bind-Value="Model.Email" Label="Email" For="@(() => Model.Email)" Variant="Variant.Outlined" Required/>
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudTextField @bind-Value="Model.Details.PhoneNumber" Label="Numer telefonu" For="@(() => Model.Details.PhoneNumber)" Variant="Variant.Outlined" Required/>
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudTextField @bind-Value="Model.Details.Company" Label="Firma" For="@(() => Model.Details.Company)" Variant="Variant.Outlined" />
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudSelect T="int" @bind-Value="Model.RoleId" Label="Rola użytkownika" Variant="Variant.Outlined" For="@(() => Model.RoleId)" Required AnchorOrigin="Origin.BottomCenter">
+            @foreach (var role in _roles)
+            {
+                <MudSelectItem T="int" Value="@role.Id">@role.RoleName</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12">
+        @ChildContent
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter] public T Model { get; set; } = default!;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private IEnumerable<UserRoleResponseDto> _roles = Enumerable.Empty<UserRoleResponseDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var res = await UserRoleService.GetAllRolesAsync();
+        if (res.Success) _roles = res.Data ?? Enumerable.Empty<UserRoleResponseDto>();
+        else Snackbar.Add("Błąd ładowania ról użytkowników.", Severity.Error);
+    }
+}

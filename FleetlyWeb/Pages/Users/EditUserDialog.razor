@@ -1,136 +1,64 @@
-﻿@using Fleetly.Shared.Enums
-@using Fleetly.Shared.Dto.UserDtos
-@using Fleetly.Shared.Dto.UserRoleDtos
+﻿@using Fleetly.Shared.Dto.UserDtos
 @using Fleetly.Shared.Dto.UserDetailsDtos
 @using FleetlyWeb.Services.Users
-@using FleetlyWeb.Services.UserRoles
-@inject ISnackbar Snackbar
+@using FleetlyWeb.Base
+@using FleetlyWeb.Components
+@inherits DialogBase<UserUpdateDto>
 @inject IUserService UserService
-@inject IUserRoleService UserRoleService
 
 <MudDialog>
     <TitleContent>
-        <MudText Style="font-weight:bold" Typo="Typo.h6">
-            Edytuj użytkownika @User?.Details?.Name @User?.Details?.Surname
-        </MudText>
+        <MudText Style="font-weight:bold" Typo="Typo.h6">Edytuj: @User.Details.Name @User.Details.Surname</MudText>
     </TitleContent>
     <DialogContent>
-        @if (_updateModel.Details != null)
+        @if (Model.Details != null)
         {
-            <EditForm Model="_updateModel" OnValidSubmit="Submit">
+            <EditForm Model="Model" @ref="EditForm">
                 <DataAnnotationsValidator />
-                <MudGrid>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField T="string" @bind-Value="_updateModel.Details.Name" Label="Imię" For="@(() => _updateModel.Details.Name)" Variant="Variant.Outlined" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField T="string" @bind-Value="_updateModel.Details.Surname" Label="Nazwisko" For="@(() => _updateModel.Details.Surname)" Variant="Variant.Outlined" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField T="string" @bind-Value="_updateModel.Email" Label="Email" For="@(() => _updateModel.Email)" Variant="Variant.Outlined" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField T="string" @bind-Value="_updateModel.Password" Label="Hasło (opcjonalnie)" For="@(() => _updateModel.Password)" Variant="Variant.Outlined" HelperText="Zostaw puste, aby nie zmieniać" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField T="string" @bind-Value="_updateModel.Details.PhoneNumber" Label="Numer telefonu" Variant="Variant.Outlined" For="@(() => _updateModel.Details.PhoneNumber)" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudSelect T="int?" @bind-Value="_updateModel.RoleId" Label="Rola użytkownika" Placeholder="Wybierz rolę" Variant="Variant.Outlined" For="@(() => _updateModel.RoleId)" >
-                            @foreach (var role in _roles)
-                            {
-                                <MudSelectItem T="int?" Value="@((int?)role.Id)">@role.RoleName</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                </MudGrid>
+                <UserForm T="UserUpdateDto" Model="Model">
+                    <MudTextField @bind-Value="Model.Password" Label="Zmień hasło" For="@(() => Model.Password)" 
+                                  InputType="InputType.Password" Variant="Variant.Outlined" HelperText="Zostaw puste, aby nie zmieniać" />
+                </UserForm>
             </EditForm>
-        }
-        else
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled" Disabled="@_isBusy">Anuluj</MudButton>
-        <MudButton Color="Color.Primary"
-                   Variant="Variant.Filled"
-                   ButtonType="ButtonType.Submit"
-                   Disabled="@_isBusy"
-                   OnClick="Submit">
-            @(_isBusy ? "Zapisywanie..." : "Zapisz zmiany")
+        <MudButton OnClick="Cancel" Disabled="IsBusy" Color="Color.Default" Variant="Variant.Filled">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="IsBusy">
+            @(IsBusy ? "Zapisywanie..." : "Zapisz")
         </MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
-    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public UserResponseDto User { get; set; } = default!;
     [Parameter] public EventCallback OnUserUpdated { get; set; }
 
-    private UserUpdateDto _updateModel = new();
-    private bool _isBusy = false;
-    private IEnumerable<UserRoleResponseDto> _roles = Enumerable.Empty<UserRoleResponseDto>();
-
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        _updateModel = new UserUpdateDto
+        Model = new UserUpdateDto
         {
             Email = User.Email,
             RoleId = User.RoleId,
-            Details = new UserDetailsUpdateDto
+            Details = new UserDetailsDto
             {
                 Name = User.Details.Name,
                 Surname = User.Details.Surname,
-                PhoneNumber = User.Details.PhoneNumber
+                PhoneNumber = User.Details.PhoneNumber,
+                Company = User.Details?.Company
             }
         };
-
-        await LoadUserRoles();
     }
 
-    private async Task LoadUserRoles()
+    protected override async Task Submit()
     {
-        try
+        var res = await UserService.UpdateUserAsync(User.Id, Model);
+        if (res.Success)
         {
-            var userRolesResponse = await UserRoleService.GetAllRolesAsync();
-            if (userRolesResponse.Success && userRolesResponse.Data != null)
-            {
-                _roles = userRolesResponse.Data;
-            }
+            Snackbar.Add("Dane użytkownika zostały zaktualizowane", Severity.Success);
+            await OnUserUpdated.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
         }
-        catch (Exception)
-        {
-            Snackbar.Add("Błąd ładowania słowników.", Severity.Error);
-        }
-    }
-
-    private void Cancel() => MudDialog.Cancel();
-
-    private async Task Submit()
-    {
-        _isBusy = true;
-        try
-        {
-            var res = await UserService.UpdateUserAsync(User.Id, _updateModel);
-            if (res.Success)
-            {
-                Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
-                await OnUserUpdated.InvokeAsync();
-                MudDialog.Close(DialogResult.Ok(true));
-            }
-            else
-            {
-                Snackbar.Add(res.Error ?? "Błąd aktualizacji", Severity.Error);
-            }
-        }
-        catch (Exception)
-        {
-            Snackbar.Add("Wystąpił problem z zapisywaniem danych, spróbuj ponownie", Severity.Error);
-        }
-        finally
-        {
-            _isBusy = false;
-        }
+        else Snackbar.Add(res.Error ?? "Nie udało się zaktualizować użytkownika", Severity.Error);
     }
 }

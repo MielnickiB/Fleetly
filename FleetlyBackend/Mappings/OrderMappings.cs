@@ -20,7 +20,7 @@ namespace FleetlyBackend.Mappings
                 VehicleId = o.VehicleId,
                 VehicleName = o.Vehicle.BrandModel.CarBrand.BrandName + " " + o.Vehicle.BrandModel.ModelName,
                 VehicleRegistrationNumber = o.Vehicle.RegistrationNumber,
-                VehicleMileage = o.Vehicle.Mileage ?? 0,
+                VehicleMileage = o.Vehicle.Mileage,
                 VehicleVin = o.Vehicle.VIN ?? "Nie podano",
                 Status = o.Status,
                 Type = o.Type,

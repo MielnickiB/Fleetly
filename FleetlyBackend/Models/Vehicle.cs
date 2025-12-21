@@ -14,7 +14,7 @@ namespace FleetlyBackend.Models
         [StringLength(10)]
         public string RegistrationNumber { get; set; } = null!;
 
-        public int? Mileage { get; set; }
+        public int Mileage { get; set; }
 
         [StringLength(17)]
         public string? VIN { get; set; }
