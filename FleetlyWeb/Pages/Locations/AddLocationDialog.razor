@@ -1,96 +1,37 @@
-﻿@using Fleetly.Shared.Dto
+﻿@using FleetlyWeb.Components
 @using Fleetly.Shared.Dto.LocationDtos
 @using FleetlyWeb.Services.Locations
-@using System.ComponentModel.DataAnnotations
-@inject ISnackbar Snackbar
 @inject ILocationService LocationService
+@inherits FleetlyWeb.Base.DialogBase<LocationCreateDto>
 
 <MudDialog>
     <TitleContent>
         <MudText style="font-weight:bold" Typo="Typo.h6">Dodaj nową lokalizację</MudText>
     </TitleContent>
     <DialogContent>
-        <EditForm Model="_locationModel" OnValidSubmit="Submit" @ref="_editForm">
+        <EditForm Model="Model" @ref="EditForm">
             <DataAnnotationsValidator />
-            <MudGrid>
-                <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_locationModel.City" Label="Miasto" For="@(() => _locationModel.City)" Required Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_locationModel.Street" Label="Ulica" For="@(() => _locationModel.Street)" Required Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="6">
-                    <MudTextField @bind-Value="_locationModel.BuildingNumber" Label="Numer budynku" For="@(() => _locationModel.BuildingNumber)" Required Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="6">
-                    <MudTextField @bind-Value="_locationModel.ApartmentNumber" Label="Numer mieszkania" For="@(() => _locationModel.ApartmentNumber)" Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_locationModel.PostalCode" Label="Kod pocztowy" For="@(() => _locationModel.PostalCode)" Required Variant="Variant.Outlined" Placeholder="XX-XXX" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_locationModel.Description" Label="Szczegóły" For="@(() => _locationModel.Description)" Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="12">
-                    <MudCheckBox @bind-Value="_locationModel.IsPublic" Label="Czy publiczna?" For="@(() => _locationModel.IsPublic)" Size="Size.Medium"></MudCheckBox>
-                </MudItem>
-            </MudGrid>
+            <LocationForm Model="Model" />
         </EditForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled" Disabled="@_isBusy">Anuluj</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="@_isBusy">
-            @(_isBusy ? "Dodawanie..." : "Dodaj lokalizację")
+        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled" Disabled="@IsBusy">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="@IsBusy">
+            @(IsBusy ? "Dodawanie..." : "Dodaj lokalizację")
         </MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
-    [CascadingParameter]
-    private IMudDialogInstance MudDialog { get; set; } = default!;
-
     [Parameter]
     public EventCallback OnLocationAdded { get; set; }
 
-    private readonly LocationCreateDto _locationModel = new LocationCreateDto();
-    private bool _isBusy = false;
-    private EditForm _editForm = default!;
-    private EditContext _editContext = default!;
-
-    protected override void OnAfterRender(bool firstRender)
+    protected override async Task Submit()
     {
-        if (firstRender && _editForm != null && _editContext == null)
-        {
-            _editContext = _editForm.EditContext!;
-        }
-    }
-
-    void Cancel()
-    {
-        MudDialog.Cancel();
-    }
-
-    async Task SubmitForm()
-    {
-        if (_editContext is null)
-            return;
-
-        var isValid = _editContext.Validate();
-        if (!isValid)
-        {
-            Snackbar.Add("Popraw błędy w formularzu", Severity.Warning);
-            return;
-        }
-
-        await Submit();
-    }
-
-    async Task Submit()
-    {
-        _isBusy = true;
+        IsBusy = true;
         try
         {
-            var res = await LocationService.CreateLocationAsync(_locationModel);
+            var res = await LocationService.CreateLocationAsync(Model);
             if (res.Success)
             {
                 Snackbar.Add("Lokalizacja została pomyślnie dodana.", Severity.Success);
@@ -110,7 +51,7 @@
         }
         finally
         {
-            _isBusy = false;
+            IsBusy = false;
         }
     }
 }

@@ -124,7 +124,7 @@
                 Snackbar.Add(res.Error ?? "Błąd aktualizacji", Severity.Error);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             Snackbar.Add("Wystąpił problem z zapisywaniem danych, spróbuj ponownie", Severity.Error);
         }
