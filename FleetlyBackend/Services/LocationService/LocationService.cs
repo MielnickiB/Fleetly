@@ -85,8 +85,10 @@ namespace FleetlyBackend.Services.LocationService
             if (!string.IsNullOrWhiteSpace(dto.BuildingNumber)) loc.BuildingNumber = dto.BuildingNumber;
             if (!string.IsNullOrWhiteSpace(dto.PostalCode)) loc.PostalCode = dto.PostalCode;
 
-            loc.ApartmentNumber = dto.ApartmentNumber;
-            loc.Description = dto.Description;
+            if (!string.Equals(loc.ApartmentNumber, dto.ApartmentNumber, StringComparison.OrdinalIgnoreCase))
+                loc.ApartmentNumber = dto.ApartmentNumber;
+            if (!string.Equals(loc.Description, dto.Description, StringComparison.OrdinalIgnoreCase))
+                loc.Description = dto.Description;
 
             loc.IsPublic = dto.IsPublic;
 
