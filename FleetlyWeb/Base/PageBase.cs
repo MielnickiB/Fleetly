@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
 
-namespace Fleetly.Shared
+namespace FleetlyWeb.Base
 {
-    public abstract class FleetlyPageBase<TItem> : ComponentBase
+    public abstract class PageBase<TItem> : ComponentBase
     {
         protected IEnumerable<TItem> Items = [];
         protected int TotalItems = 0;

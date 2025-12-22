@@ -12,6 +12,7 @@
                           DebounceInterval="300"
                           Variant="Variant.Outlined"
                           Class="rounded-xl flex-grow-1"
+                          Disabled="IsLoading"
                           Clearable />
         </MudPaper>
     </MudItem>
@@ -28,6 +29,7 @@
 </MudGrid>
 
 @code {
+    [Parameter] public bool IsLoading { get; set; }
     [Parameter] public string Title { get; set; } = "";
     [Parameter] public string SearchPlaceholder { get; set; } = "Szukaj...";
     [Parameter] public string? SearchString { get; set; }

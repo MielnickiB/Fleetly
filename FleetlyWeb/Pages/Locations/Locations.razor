@@ -2,112 +2,122 @@
 @attribute [Authorize(Roles = "Admin, Client")]
 @using FleetlyWeb.Components
 @using FleetlyWeb.Services.Locations
-@using Fleetly.Shared
 @using Fleetly.Shared.Dto
 @using Fleetly.Shared.Dto.LocationDtos
 @using FleetlyWeb.Helpers
+@using FleetlyWeb.Base
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IAuthService Auth
 @inject ILocationService LocationService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
-@inherits FleetlyPageBase<LocationResponseDto>
+@inherits PageBase<LocationResponseDto>
 
 <PageTitle>Lista Lokalizacji</PageTitle>
 
-<PageHeader Title="Lista Lokalizacji" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Miasto / Ulica / Opis...)" OnClick="OpenAddDialogAsync" />
+<PageHeader Title="Lista Lokalizacji" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Miasto / Ulica / Opis...)" OnClick="OpenAddDialogAsync" IsLoading="IsLoading" />
 <MudItem xs="12" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
     }
-    else if (TotalItems == 0)
-    {
-        <NoItems ItemName="Lokalizacje"
-                 Icon="@Icons.Material.Filled.LocationOn"
-                 OnAddClicked="OpenAddDialogAsync" />
-    }
     else
     {
-        <MudDataGrid T="LocationResponseDto"
-                     QuickFilter="@_quickFilter"
-                     Items="Items"
-                     Striped="true"
-                     Bordered="true"
-                     SortMode="SortMode.Single"
-                     ColumnResizeMode="ResizeMode.Column"
-                     Loading="@IsLoading"
-                     Filterable="true"
-                     FilterMode="@DataGridFilterMode.ColumnFilterMenu"
-                     FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
-                     Class="pa-4 rounded-xl"
-                     Style="margin:4px"
-                     FixedHeader="true"
-                     Elevation="5"
-                     RowStyleFunc="@_rowStyleFunc"
-                     RowStyle="font-weight:bold;">
-            <Columns>
-                <PropertyColumn Property="x => x.Id" Title="Nr" Filterable="false" StickyLeft />
-                <PropertyColumn Property="x => x.City" Title="Miasto" />
-                <PropertyColumn Property="x => x.Street" Title="Ulica" />
-                <PropertyColumn Property="x => x.BuildingNumber" Title="Nr budynku" />
-                <PropertyColumn Property="x => x.ApartmentNumber" Title="Nr lokalu">
-                    <CellTemplate>
-                        @if (string.IsNullOrEmpty(context.Item.ApartmentNumber))
-                        {
-                            <MudText Typo="Typo.body2">Brak</MudText>
-                        }
-                        else
-                        {
-                            <MudText Typo="Typo.body2">@context.Item.ApartmentNumber</MudText>
-                        }
-                    </CellTemplate>
-                </PropertyColumn>
-                <PropertyColumn Property="x => x.Description" Title="Opis">
-                    <CellTemplate>
-                        @if (string.IsNullOrEmpty(context.Item.Description))
-                        {
-                            <MudText Typo="Typo.body2">Brak</MudText>
-                        }
-                        else
-                        {
-                            <MudText Typo="Typo.body2">@context.Item.Description</MudText>
-                        }
-                    </CellTemplate>
-                </PropertyColumn>
-                @if (User?.IsAdmin() ?? false)
-                {
-                    <PropertyColumn Property="x => x.UserFullName" Title="Utworzył" />
-                }
-                <PropertyColumn Property="x => x.IsPublic" Title="Publiczna">
-                    <CellTemplate>
-                        @if (context.Item.IsPublic)
-                        {
-                            <MudChip Color="Color.Success" Variant="Variant.Filled" Size="Size.Small">Tak</MudChip>
-                        }
-                        else
-                        {
-                            <MudChip Color="Color.Error" Variant="Variant.Filled" Size="Size.Small">Nie</MudChip>
-                        }
-                    </CellTemplate>
-                </PropertyColumn>
-                <PropertyColumn Property="x => x.CreatedAt" Title="Utworzono" />
-                <PropertyColumn Property="x => x.UpdatedAt" Title="Zaaktualizowano" />
-                <TemplateColumn Title="Akcje" StickyRight>
-                    <CellTemplate>
-                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
-                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
+        @if (!Items.Any())
+        {
+            @if (string.IsNullOrWhiteSpace(SearchString))
+            {
+                <NoItems ItemName="Lokalizacje"
+                         Icon="@Icons.Material.Filled.LocationOn"
+                         OnAddClicked="OpenAddDialogAsync" />
+            }
+            else
+            {
+                <NoSearchResult @bind-SearchString="SearchString" />
+            }
+        }
+        else
+        {
+            <MudDataGrid T="LocationResponseDto"
+                         QuickFilter="@_quickFilter"
+                         Items="Items"
+                         Striped="true"
+                         Bordered="true"
+                         SortMode="SortMode.Single"
+                         ColumnResizeMode="ResizeMode.Column"
+                         Loading="@IsLoading"
+                         Filterable="true"
+                         FilterMode="@DataGridFilterMode.ColumnFilterMenu"
+                         FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                         Class="pa-4 rounded-xl"
+                         Style="margin:4px"
+                         FixedHeader="true"
+                         Elevation="5"
+                         RowStyleFunc="@_rowStyleFunc"
+                         RowStyle="font-weight:bold;">
+                <Columns>
+                    <PropertyColumn Property="x => x.Id" Title="Nr" Filterable="false" StickyLeft />
+                    <PropertyColumn Property="x => x.City" Title="Miasto" />
+                    <PropertyColumn Property="x => x.Street" Title="Ulica" />
+                    <PropertyColumn Property="x => x.BuildingNumber" Title="Nr budynku" />
+                    <PropertyColumn Property="x => x.ApartmentNumber" Title="Nr lokalu">
+                        <CellTemplate>
+                            @if (string.IsNullOrEmpty(context.Item.ApartmentNumber))
+                            {
+                                <MudText Typo="Typo.body2">Brak</MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2">@context.Item.ApartmentNumber</MudText>
+                            }
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Description" Title="Opis">
+                        <CellTemplate>
+                            @if (string.IsNullOrEmpty(context.Item.Description))
+                            {
+                                <MudText Typo="Typo.body2">Brak</MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.body2">@context.Item.Description</MudText>
+                            }
+                        </CellTemplate>
+                    </PropertyColumn>
+                    @if (User?.IsAdmin() ?? false)
+                    {
+                        <PropertyColumn Property="x => x.UserFullName" Title="Utworzył" />
+                    }
+                    <PropertyColumn Property="x => x.IsPublic" Title="Publiczna">
+                        <CellTemplate>
+                            @if (context.Item.IsPublic)
+                            {
+                                <MudChip Color="Color.Success" Variant="Variant.Filled" Size="Size.Small">Tak</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Error" Variant="Variant.Filled" Size="Size.Small">Nie</MudChip>
+                            }
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.CreatedAt" Title="Utworzono" />
+                    <PropertyColumn Property="x => x.UpdatedAt" Title="Zaaktualizowano" />
+                    <TemplateColumn Title="Akcje" StickyRight>
+                        <CellTemplate>
+                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
 
-            <PagerContent>
-                <MudDataGridPager T="LocationResponseDto"
-                                  RowsPerPageString="Wierszy na stronę"
-                                  InfoFormat="{first_item}-{last_item} z {all_items}"
-                                  PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
-            </PagerContent>
-        </MudDataGrid>
+                <PagerContent>
+                    <MudDataGridPager T="LocationResponseDto"
+                                      RowsPerPageString="Wierszy na stronę"
+                                      InfoFormat="{first_item}-{last_item} z {all_items}"
+                                      PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
+                </PagerContent>
+            </MudDataGrid>
+        }
     }
 </MudItem>
 
