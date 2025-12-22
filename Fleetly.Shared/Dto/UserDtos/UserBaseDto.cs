@@ -12,7 +12,7 @@ namespace Fleetly.Shared.Dto.UserDtos
         [Required(ErrorMessage = "Rola jest wymagana!")]
         public int RoleId { get; set; }
 
-        [Required(ErrorMessage = "Szczegóły użytkownika są wymagane!")]]
+        [Required(ErrorMessage = "Szczegóły użytkownika są wymagane!")]
         public UserDetailsDto Details { get; set; } = new();
     }
 }

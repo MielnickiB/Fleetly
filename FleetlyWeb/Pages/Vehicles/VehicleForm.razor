@@ -11,8 +11,10 @@
 
 @if (_isLoading)
 {
-    <MudProgressCircular Indeterminate="true" />
-    <MudText>Ładowanie danych...</MudText>
+    <div class="d-flex flex-column justify-center align-center" style="width:100%">
+        <MudProgressCircular Indeterminate="true" />
+        <MudText>Ładowanie danych...</MudText>
+    </div>
     return;
 }
 else

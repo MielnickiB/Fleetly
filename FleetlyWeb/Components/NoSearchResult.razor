@@ -1,0 +1,34 @@
+﻿<div class="d-flex flex-column align-center justify-center">
+    <MudIcon Icon="@Icons.Material.Filled.SearchOff"
+             Style="font-size: 5rem;"
+             Color="Color.Info"
+             Class="mb-4 animate-pulse" />
+
+    <MudText Typo="Typo.h5" Align="Align.Center" Class="mud-text-secondary">
+        Brak wyników dla frazy: <b>"@SearchString"</b>
+    </MudText>
+
+    <MudText Typo="Typo.body2" Align="Align.Center" Class="mb-6 mud-text-secondary">
+        Spróbuj wpisać coś innego lub wyczyść filtry, aby zobaczyć wszystkie elementy.
+    </MudText>
+
+    <MudButton Variant="Variant.Outlined"
+               Color="Color.Info"
+               StartIcon="@Icons.Material.Filled.FilterAltOff"
+               OnClick="ClearFiltersAsync"
+               Class="rounded-pill px-6">
+        Wyczyść wyszukiwanie
+    </MudButton>
+</div>
+
+@code {
+    [Parameter] public string SearchString { get; set; } = string.Empty;
+
+    [Parameter] public EventCallback<string> SearchStringChanged { get; set; }
+
+    private async Task ClearFiltersAsync()
+    {
+        SearchString = string.Empty;
+        await SearchStringChanged.InvokeAsync(SearchString);
+    }
+}

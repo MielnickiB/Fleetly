@@ -2,71 +2,81 @@
 @attribute [Authorize(Roles = "Admin")]
 @using FleetlyWeb.Components
 @using FleetlyWeb.Services.Users
-@using Fleetly.Shared
+@using FleetlyWeb.Base
 @using Fleetly.Shared.Dto
 @using Fleetly.Shared.Dto.UserDtos
 @inject IUserService UserService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
-@inherits FleetlyPageBase<UserResponseDto>
+@inherits PageBase<UserResponseDto>
 
 <PageTitle>Lista Użytkowników</PageTitle>
 
-<PageHeader Title="Lista Użytkowników" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Imię / Nazwisko / Email...)" OnClick="OpenAddDialogAsync" />
+<PageHeader Title="Lista Użytkowników" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Imię / Nazwisko / Email...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
 <MudItem xs="12" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
     }
-    else if (TotalItems == 0)
-    {
-        <NoItems ItemName="Użytkownicy"
-                 Icon="@Icons.Material.Filled.Person"
-                 OnAddClicked="OpenAddDialogAsync" />
-    }
     else
     {
-        <MudDataGrid T="UserResponseDto"
-                     QuickFilter="@_quickFilter"
-                     Items="Items"
-                     Striped="true"
-                     Bordered="true"
-                     SortMode="SortMode.Single"
-                     ColumnResizeMode="ResizeMode.Column"
-                     Loading="@IsLoading"
-                     Filterable="true"
-                     FilterMode="@DataGridFilterMode.ColumnFilterMenu"
-                     FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
-                     Class="pa-4 rounded-xl"
-                     Style="margin:4px"
-                     FixedHeader="true"
-                     Elevation="5"
-                     RowStyleFunc="@_rowStyleFunc"
-                     RowStyle="font-weight:bold;">
-            <Columns>
-                <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" StickyLeft />
-                <PropertyColumn Property="x => x.Details.Name" Title="Imię" />
-                <PropertyColumn Property="x => x.Details.Surname" Title="Nazwisko" />
-                <PropertyColumn Property="x => x.Email" Title="Email" />
-                <PropertyColumn Property="x => x.Details.PhoneNumber" Title="Numer Telefonu" />
-                <PropertyColumn Property="x => x.RoleName" Title="Rola" />
-                <PropertyColumn Property="x => x.CreatedAt" Title="Utworzono" />
-                <PropertyColumn Property="x => x.UpdatedAt" Title="Zaaktualizowano" />
-                <TemplateColumn Title="Akcje" StickyRight>
-                    <CellTemplate>
-                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
-                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
+        @if (!Items.Any())
+        {
+            @if (string.IsNullOrWhiteSpace(SearchString))
+            {
+                <NoItems ItemName="Użytkownicy"
+                         Icon="@Icons.Material.Filled.Person"
+                         OnAddClicked="OpenAddDialogAsync" />
+            }
+            else
+            {
+                <NoSearchResult @bind-SearchString="SearchString" />
+            }
+        }
+        else
+        {
+            <MudDataGrid T="UserResponseDto"
+                         QuickFilter="@_quickFilter"
+                         Items="Items"
+                         Striped="true"
+                         Bordered="true"
+                         SortMode="SortMode.Single"
+                         ColumnResizeMode="ResizeMode.Column"
+                         Loading="@IsLoading"
+                         Filterable="true"
+                         FilterMode="@DataGridFilterMode.ColumnFilterMenu"
+                         FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                         Class="pa-4 rounded-xl"
+                         Style="margin:4px"
+                         FixedHeader="true"
+                         Elevation="5"
+                         RowStyleFunc="@_rowStyleFunc"
+                         RowStyle="font-weight:bold;">
+                <Columns>
+                    <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" StickyLeft />
+                    <PropertyColumn Property="x => x.Details.Name" Title="Imię" />
+                    <PropertyColumn Property="x => x.Details.Surname" Title="Nazwisko" />
+                    <PropertyColumn Property="x => x.Email" Title="Email" />
+                    <PropertyColumn Property="x => x.Details.PhoneNumber" Title="Numer Telefonu" />
+                    <PropertyColumn Property="x => x.RoleName" Title="Rola" />
+                    <PropertyColumn Property="x => x.CreatedAt" Title="Utworzono" />
+                    <PropertyColumn Property="x => x.UpdatedAt" Title="Zaaktualizowano" />
+                    <TemplateColumn Title="Akcje" StickyRight>
+                        <CellTemplate>
+                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
 
-            <PagerContent>
-                <MudDataGridPager T="UserResponseDto"
-                                  RowsPerPageString="Wierszy na stronę"
-                                  InfoFormat="{first_item}-{last_item} z {all_items}"
-                                  PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
-            </PagerContent>
-        </MudDataGrid>
+                <PagerContent>
+                    <MudDataGridPager T="UserResponseDto"
+                                      RowsPerPageString="Wierszy na stronę"
+                                      InfoFormat="{first_item}-{last_item} z {all_items}"
+                                      PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
+                </PagerContent>
+            </MudDataGrid>
+        }
     }
 </MudItem>
 

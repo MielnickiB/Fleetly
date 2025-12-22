@@ -1,6 +1,6 @@
 ﻿@page "/vehicles"
 @attribute [Authorize(Roles = "Admin, Client")]
-@using Fleetly.Shared
+@using FleetlyWeb.Base
 @using Fleetly.Shared.Dto
 @using Fleetly.Shared.Dto.VehicleDtos
 @using Fleetly.Shared.Enums
@@ -8,68 +8,78 @@
 @inject IVehicleService vehicleService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
-@inherits FleetlyPageBase<VehicleResponseDto>
+@inherits PageBase<VehicleResponseDto>
 
 <PageTitle>Lista Pojazdów</PageTitle>
 
-<PageHeader Title="Lista Pojazdów" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr rej / Marka / Model...)" OnClick="OpenAddDialogAsync" />
+<PageHeader Title="Lista Pojazdów" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr rej / Marka / Model...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
 <MudItem xs="12" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
     }
-    else if (TotalItems == 0)
-    {
-        <NoItems ItemName="Pojazdy"
-                 Icon="@Icons.Material.Filled.DirectionsCar"
-                 OnAddClicked="OpenAddDialogAsync" />
-    }
     else
     {
-        <MudDataGrid T="VehicleResponseDto"
-                     QuickFilter="@_quickFilter"
-                     Items="Items"
-                     Striped="true"
-                     Bordered="true"
-                     Dense="true"
-                     SortMode="SortMode.Single"
-                     ColumnResizeMode="ResizeMode.Column"
-                     Loading="@IsLoading"
-                     Filterable="true"
-                     FilterMode="@DataGridFilterMode.ColumnFilterMenu"
-                     FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
-                     Class="pa-4 rounded-xl"
-                     Style="margin:4px"
-                     FixedHeader="true"
-                     Elevation="5"
-                     RowStyleFunc="@_rowStyleFunc"
-                     RowStyle="font-weight:bold">
-            <Columns>
-                <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" StickyLeft />
-                <PropertyColumn Property="x => x.RegistrationNumber" Title="Nr rejestracyjny" />
-                <PropertyColumn Property="x => x.UserFullName" Title="Właściciel" />
-                <PropertyColumn Property="x => x.BrandModel.CarBrandName" Title="Marka" />
-                <PropertyColumn Property="x => x.BrandModel.ModelName" Title="Model" />
-                <PropertyColumn Property="x => x.FuelType" Title="Paliwo" />
-                <PropertyColumn Property="x => x.Year" Title="Rok prod." />
-                <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" />
-                <PropertyColumn Property="x => x.CreatedAt" Title="Utworzono" />
-                <PropertyColumn Property="x => x.UpdatedAt" Title="Zaaktualizowano" />
-                <TemplateColumn Title="Akcje" StickyRight>
-                    <CellTemplate>
-                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
-                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
+        @if (!Items.Any())
+        {
+            @if (string.IsNullOrWhiteSpace(SearchString))
+            {
+                <NoItems ItemName="Pojazdy"
+                         Icon="@Icons.Material.Filled.DirectionsCar"
+                         OnAddClicked="OpenAddDialogAsync" />
+            }
+            else
+            {
+                <NoSearchResult @bind-SearchString="SearchString" />
+            }
+        }
+        else
+        {
+            <MudDataGrid T="VehicleResponseDto"
+                         QuickFilter="@_quickFilter"
+                         Items="Items"
+                         Striped="true"
+                         Bordered="true"
+                         Dense="true"
+                         SortMode="SortMode.Single"
+                         ColumnResizeMode="ResizeMode.Column"
+                         Loading="@IsLoading"
+                         Filterable="true"
+                         FilterMode="@DataGridFilterMode.ColumnFilterMenu"
+                         FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                         Class="pa-4 rounded-xl"
+                         Style="margin:4px"
+                         FixedHeader="true"
+                         Elevation="5"
+                         RowStyleFunc="@_rowStyleFunc"
+                         RowStyle="font-weight:bold">
+                <Columns>
+                    <PropertyColumn Property="x => x.Id" Title="Nr" Editable="false" Filterable="false" StickyLeft />
+                    <PropertyColumn Property="x => x.RegistrationNumber" Title="Nr rejestracyjny" />
+                    <PropertyColumn Property="x => x.UserFullName" Title="Właściciel" />
+                    <PropertyColumn Property="x => x.BrandModel.CarBrandName" Title="Marka" />
+                    <PropertyColumn Property="x => x.BrandModel.ModelName" Title="Model" />
+                    <PropertyColumn Property="x => x.FuelType" Title="Paliwo" />
+                    <PropertyColumn Property="x => x.Year" Title="Rok prod." />
+                    <PropertyColumn Property="x => x.Mileage" Title="Przebieg (km)" />
+                    <PropertyColumn Property="x => x.CreatedAt" Title="Utworzono" />
+                    <PropertyColumn Property="x => x.UpdatedAt" Title="Zaaktualizowano" />
+                    <TemplateColumn Title="Akcje" StickyRight>
+                        <CellTemplate>
+                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
 
-            <PagerContent>
-                <MudDataGridPager T="VehicleResponseDto"
-                                  RowsPerPageString="Wierszy na stronę"
-                                  InfoFormat="{first_item}-{last_item} z {all_items}"
-                                  PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
-            </PagerContent>
-        </MudDataGrid>
+                <PagerContent>
+                    <MudDataGridPager T="VehicleResponseDto"
+                                      RowsPerPageString="Wierszy na stronę"
+                                      InfoFormat="{first_item}-{last_item} z {all_items}"
+                                      PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
+                </PagerContent>
+            </MudDataGrid>
+        }
     }
 </MudItem>
 

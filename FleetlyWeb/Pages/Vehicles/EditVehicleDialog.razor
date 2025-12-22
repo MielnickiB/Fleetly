@@ -15,8 +15,8 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel" Disabled="IsBusy" Variant="Variant.Filled" Color="Color.Default">Anuluj</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="IsBusy">
-            @(IsBusy ? "Zapisywanie..." : "Zapisz zmiany") || @(Vehicle.BrandModelId == 0)
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="@(IsBusy || Vehicle.BrandModelId == 0)">
+            @(IsBusy ? "Zapisywanie..." : "Zapisz zmiany")
         </MudButton>
     </DialogActions>
 </MudDialog>
