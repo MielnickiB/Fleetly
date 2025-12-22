@@ -15,7 +15,7 @@
 
 <PageTitle>Lista Lokalizacji</PageTitle>
 
-<PageHeader Title="Lista Lokalizacji" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Miasto / Ulica / Opis...)" OnClick="OpenAddDialogAsync" IsLoading="IsLoading" />
+<PageHeader Title="Lista Lokalizacji" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Miasto / Ulica / Opis...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
 <MudItem xs="12" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {

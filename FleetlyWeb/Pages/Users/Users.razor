@@ -12,7 +12,7 @@
 
 <PageTitle>Lista Użytkowników</PageTitle>
 
-<PageHeader Title="Lista Użytkowników" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Imię / Nazwisko / Email...)" OnClick="OpenAddDialogAsync" IsLoading="IsLoading" />
+<PageHeader Title="Lista Użytkowników" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Imię / Nazwisko / Email...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
 <MudItem xs="12" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
