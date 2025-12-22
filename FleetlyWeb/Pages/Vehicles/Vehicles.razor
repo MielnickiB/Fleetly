@@ -12,7 +12,7 @@
 
 <PageTitle>Lista Pojazdów</PageTitle>
 
-<PageHeader Title="Lista Pojazdów" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr rej / Marka / Model...)" OnClick="OpenAddDialogAsync" IsLoading=IsLoading />
+<PageHeader Title="Lista Pojazdów" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr rej / Marka / Model...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
 <MudItem xs="12" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
