@@ -283,7 +283,7 @@ namespace FleetlyBackend.Services.OrderService
             return await GetFresh(orderId);
         }
 
-        public async Task<OrderResponseDto> CancelOrder(int orderId, int? userId)
+        public async Task<OrderResponseDto> CancelOrder(int orderId)
         {
             var user = _http.CurrentUser();
             var currentUserId = user.GetUserId();
@@ -314,18 +314,17 @@ namespace FleetlyBackend.Services.OrderService
 
         #region WORKER ACTIONS
 
-        public async Task<OrderResponseDto> AcceptOrder(int orderId, int workerId)
+        public async Task<OrderResponseDto> AcceptOrder(int orderId)
         {
+            var user = _http.CurrentUser();
+
+            if (!user.IsWorker()) 
+                throw new UnauthorizedAccessException("Tylko pracownik może przyjąć zlecenie.");
+
+            var workerId = user.GetUserId();
+
             var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId)
                 ?? throw new ArgumentException("Zlecenie nie istnieje.");
-
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Id == workerId)
-                ?? throw new ArgumentException("Pracownik nie istnieje.");
-
-            if (user.Role.RoleName != "Worker")
-                throw new UnauthorizedAccessException("Użytkownik nie jest pracownikiem.");
 
             if (order.Status != OrderStatus.Created)
                 throw new InvalidOperationException("Zlecenie nie jest dostępne do przyjęcia.");
@@ -339,17 +338,20 @@ namespace FleetlyBackend.Services.OrderService
 
             await _context.SaveChangesAsync();
 
-            await NotifyOrderAccepted(order, workerId);
+            await _notificationService.NotifyWorkerAccepted(order);
 
-            return order.ToResponseDto();
+            return await GetFresh(orderId);
         }
 
-        public async Task<OrderResponseDto> ResignOrder(int orderId, int workerId)
+        public async Task<OrderResponseDto> ResignOrder(int orderId)
         {
-            var order = await WorkerMustOwnOrder(orderId, workerId);
+            var order = await GetOrderWithWorkerCheck(orderId);
 
             if (order.Status != OrderStatus.Assigned)
                 throw new InvalidOperationException("Można zrezygnować tylko ze zlecenia w statusie 'Przypisane'.");
+
+            if (order.StartTime <= DateTime.UtcNow.AddDays(1))
+                throw new InvalidOperationException("Nie można zrezygnować ze zlecenia na mniej niż dzień przed jego rozpoczęciem.");
 
             order.WorkerId = null;
             order.Status = OrderStatus.Created;
@@ -357,14 +359,14 @@ namespace FleetlyBackend.Services.OrderService
 
             await _context.SaveChangesAsync();
 
-            await NotifyOrderResigned(order, workerId);
+            await _notificationService.NotifyWorkerResigned(order);
 
-            return order.ToResponseDto();
+            return await GetFresh(orderId);
         }
 
-        public async Task<OrderResponseDto> StartOrder(int orderId, int workerId)
+        public async Task<OrderResponseDto> StartOrder(int orderId)
         {
-            var order = await WorkerMustOwnOrder(orderId, workerId);
+            var order = await GetOrderWithWorkerCheck(orderId);
 
             if (order.Status != OrderStatus.Assigned)
                 throw new InvalidOperationException("Zlecenie nie jest gotowe do rozpoczęcia.");
@@ -374,12 +376,13 @@ namespace FleetlyBackend.Services.OrderService
             order.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return order.ToResponseDto();
+
+            return await GetFresh(orderId);
         }
 
-        public async Task<OrderResponseDto> ArrivedToService(int orderId, int workerId)
+        public async Task<OrderResponseDto> ArrivedToService(int orderId)
         {
-            var order = await WorkerMustOwnOrder(orderId, workerId);
+            var order = await GetOrderWithWorkerCheck(orderId);
 
             if (order.Type != OrderType.ServiceRide)
                 throw new InvalidOperationException("To zlecenie nie jest przejazdem do serwisu.");
@@ -392,12 +395,13 @@ namespace FleetlyBackend.Services.OrderService
             order.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return order.ToResponseDto();
+
+            return await GetFresh(orderId);
         }
 
-        public async Task<OrderResponseDto> LeaveServiceLocation(int orderId, int workerId)
+        public async Task<OrderResponseDto> LeaveServiceLocation(int orderId)
         {
-            var order = await WorkerMustOwnOrder(orderId, workerId);
+            var order = await GetOrderWithWorkerCheck(orderId);
 
             if (order.Type != OrderType.ServiceRide)
                 throw new InvalidOperationException("To zlecenie nie jest przejazdem do serwisu.");
@@ -410,12 +414,13 @@ namespace FleetlyBackend.Services.OrderService
             order.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return order.ToResponseDto();
+
+            return await GetFresh(orderId);
         }
 
-        public async Task<OrderResponseDto> ArrivedToClient(int orderId, int workerId)
+        public async Task<OrderResponseDto> ArrivedToClient(int orderId)
         {
-            var order = await WorkerMustOwnOrder(orderId, workerId);
+            var order = await GetOrderWithWorkerCheck(orderId);
 
             if (order.Type == OrderType.ServiceRide &&
                 order.Status != OrderStatus.LeftServiceLocation)
@@ -429,12 +434,13 @@ namespace FleetlyBackend.Services.OrderService
             order.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return order.ToResponseDto();
+
+            return await GetFresh(orderId);
         }
 
-        public async Task<OrderResponseDto> FinishOrderByWorker(int orderId, int workerId)
+        public async Task<OrderResponseDto> FinishOrderByWorker(int orderId)
         {
-            var order = await WorkerMustOwnOrder(orderId, workerId);
+            var order = await GetOrderWithWorkerCheck(orderId);
 
             if (order.Status != OrderStatus.ArrivedToClient)
                 throw new InvalidOperationException("Zlecenie nie zostało wykonane.");
@@ -443,7 +449,8 @@ namespace FleetlyBackend.Services.OrderService
             order.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return order.ToResponseDto();
+
+            return await GetFresh(orderId);
         }
 
         #endregion
@@ -668,21 +675,19 @@ namespace FleetlyBackend.Services.OrderService
             return fresh.ToResponseDto();
         }
 
-        private async Task<Order> WorkerMustOwnOrder(int id, int workerId)
+        private async Task<Order> GetOrderWithWorkerCheck(int orderId)
         {
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id)
+            var user = _http.CurrentUser();
+            if (!user.IsWorker())
+                throw new UnauthorizedAccessException("Tylko pracownik może wykonać tę akcję.");
+
+            var workerId = user.GetUserId();
+
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId)
                 ?? throw new ArgumentException("Zlecenie nie istnieje.");
 
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Id == workerId)
-                ?? throw new ArgumentException("Pracownik nie istnieje.");
-
-            if (user.Role.RoleName != "Worker")
-                throw new InvalidOperationException("Użytkownik nie jest pracownikiem.");
-
             if (order.WorkerId != workerId)
-                throw new UnauthorizedAccessException("Nie jesteś przypisany do zlecenia.");
+                throw new UnauthorizedAccessException("Nie jesteś przypisany do tego zlecenia.");
 
             return order;
         }

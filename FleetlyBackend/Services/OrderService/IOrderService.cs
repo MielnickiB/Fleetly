@@ -12,18 +12,18 @@ namespace FleetlyBackend.Services.OrderService
         public Task<OrderResponseDto> CreateOrder(OrderCreateDto orderCreateDto);
         public Task<OrderResponseDto> UpdateOrder(int orderId, OrderUpdateDto orderUpdateDto);
         public Task<OrderResponseDto> CancelOrder(int orderId);
-        public Task<OrderResponseDto> AcceptOrder(int orderId, int workerId);
-        public Task<OrderResponseDto> ResignOrder(int orderId, int workerId);
-        public Task<OrderResponseDto> StartOrder(int orderId, int workerId);
-        public Task<OrderResponseDto> ArrivedToService(int orderId, int workerId);
-        public Task<OrderResponseDto> LeaveServiceLocation(int orderId, int workerId);
-        public Task<OrderResponseDto> ArrivedToClient(int orderId, int workerId);
-        public Task<OrderResponseDto> FinishOrderByWorker(int orderId, int workerId);
-        public Task<OrderResponseDto> SubmitAllOrderCosts(int orderId, int workerId);
+        public Task<OrderResponseDto> AcceptOrder(int orderId);
+        public Task<OrderResponseDto> ResignOrder(int orderId);
+        public Task<OrderResponseDto> StartOrder(int orderId);
+        public Task<OrderResponseDto> ArrivedToService(int orderId);
+        public Task<OrderResponseDto> LeaveServiceLocation(int orderId);
+        public Task<OrderResponseDto> ArrivedToClient(int orderId);
+        public Task<OrderResponseDto> FinishOrderByWorker(int orderId);
+        public Task<OrderResponseDto> SubmitAllOrderCosts(int orderId);
         public Task<OrderResponseDto> ApproveCostsAndCompleteOrder(int orderId);
         public Task<OrderResponseDto> ApproveOrder(int orderId);
-        public Task<OrderResponseDto> AddCost(int orderId, int workerId, ExpenseCreateDto dto);
-        public Task<OrderResponseDto> UpdateCost(int orderId, int workerId, int expenseId, ExpenseUpdateDto dto);
-        public Task<OrderResponseDto> DeleteCost(int orderId, int workerId, int expenseId);
+        public Task<OrderResponseDto> AddCost(int orderId, ExpenseCreateDto dto);
+        public Task<OrderResponseDto> UpdateCost(int orderId, int expenseId, ExpenseUpdateDto dto);
+        public Task<OrderResponseDto> DeleteCost(int orderId, int expenseId);
     }
 }
