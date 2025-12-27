@@ -14,6 +14,7 @@ using Fleetly.Shared.Dto.NotificationDtos;
 using Fleetly.Shared.Dto.InvoiceDtos;
 using Fleetly.Shared.Dto;
 using Fleetly.Shared.Enums;
+using FleetlyBackend.Extensions;
 
 namespace FleetlyBackend.Services.OrderService
 {
@@ -23,7 +24,8 @@ namespace FleetlyBackend.Services.OrderService
         INotificationService notificationService,
         IExpenseService expenseService,
         ICostLimitService costLimitService,
-        IUserService userService
+        IUserService userService,
+        IHttpContextAccessor http
     ) : IOrderService
     {
         private readonly FleetlyContext _context = context;
@@ -32,49 +34,62 @@ namespace FleetlyBackend.Services.OrderService
         private readonly IExpenseService _expenseService = expenseService;
         private readonly ICostLimitService _costLimitService = costLimitService;
         private readonly IUserService _userService = userService;
+        private readonly IHttpContextAccessor _http = http;
 
         #region GET
 
         public async Task<OrderResponseDto?> GetOrderById(int orderId)
         {
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
             var order = await LoadFullOrder(orderId);
-            return order?.ToResponseDto();
-        }
-        public async Task<OrderResponseDto?> GetOrderForClientById(int orderId, int clientId)
-        {
-            var order = await LoadFullOrder(orderId)
-                ?? throw new ArgumentException("Zlecenie nie istnieje.");
+            if (order is null) return null;
 
-            if (order.ClientId != clientId)
-                throw new UnauthorizedAccessException("Brak dostępu do tego zlecenia.");
+            if (user.IsAdmin())
+                return order.ToResponseDto();
 
-            return order.ToResponseDto();
-        }
+            if (user.IsClient() && order.ClientId == userId)
+                return order.ToResponseDto();
 
-        public async Task<OrderResponseDto?> GetOrderForWorkerById(int orderId, int workerId)
-        {
-            var order = await LoadFullOrder(orderId)
-                ?? throw new ArgumentException("Zlecenie nie istnieje.");
-            if (order.Status > OrderStatus.Created && order.WorkerId != workerId)
-                throw new UnauthorizedAccessException("Brak dostępu do tego zlecenia.");
-            return order.ToResponseDto();
+            if (user.IsWorker())
+            {
+                if (order.WorkerId == userId) return order.ToResponseDto();
+
+                if (order.Status == OrderStatus.Created && order.WorkerId == null)
+                    return order.ToResponseDto();
+            }
+
+            throw new UnauthorizedAccessException("Brak dostępu do tego zlecenia.");
         }
 
-        public async Task<PagedResult<OrderResponseDto>> GetAllOrders(int page, int pageSize)
+        public async Task<PagedResult<OrderResponseDto>> GetAllOrders()
         {
-            var (skip, take) = PaginationHelper.Calculate(page, pageSize);
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
 
             var query = _context.Orders
                 .IncludeAllOrderRelations()
                 .AsQueryable();
+
+            if (user.IsClient())
+                query = query.Where(o => o.ClientId == userId);
+
+            else if (user.IsWorker())
+                query = query.Where(o => o.WorkerId == userId);
+
+            else
+                return new PagedResult<OrderResponseDto>
+                {
+                    Items = [],
+                    TotalCount = 0
+                };
 
             var totalCount = await query.CountAsync();
 
             var orders = await query
                 .AsNoTracking()
                 .OrderByDescending(o => o.CreatedAt)
-                .Skip(skip)
-                .Take(take)
                 .Select(o => o.ToResponseDto())
                 .ToListAsync();
 
@@ -85,59 +100,34 @@ namespace FleetlyBackend.Services.OrderService
             };
         }
 
-        public async Task<List<OrderResponseDto>> GetAllOrdersForClient(int clientId, int page, int pageSize)
+        public async Task<PagedResult<OrderResponseDto>> GetAvailableOrders()
         {
-            var (skip, take) = PaginationHelper.Calculate(page, pageSize);
-
-            return await _context.Orders
+            var totalCount = await _context.Orders
                 .AsNoTracking()
-                .IncludeAllOrderRelations()
-                .Where(o => o.ClientId == clientId)
-                .OrderByDescending(o => o.CreatedAt)
-                .Skip(skip)
-                .Take(take)
-                .Select(o => o.ToResponseDto())
-                .ToListAsync();
-        }
-
-        public async Task<List<OrderResponseDto>> GetAllOrdersForWorker(int workerId, int page, int pageSize)
-        {
-            var (skip, take) = PaginationHelper.Calculate(page, pageSize);
-
-            return await _context.Orders
-                .AsNoTracking()
-                .IncludeAllOrderRelations()
-                .Where(o => o.WorkerId == workerId)
-                .OrderByDescending(o => o.CreatedAt)
-                .Skip(skip)
-                .Take(take)
-                .Select(o => o.ToResponseDto())
-                .ToListAsync();
-        }
-
-        public async Task<List<OrderResponseDto>> GetAvailableOrdersForWorker(int page, int pageSize)
-        {
-            var (skip, take) = PaginationHelper.Calculate(page, pageSize);
-            return await _context.Orders
-                .AsNoTracking()
-                .IncludeAllOrderRelations()
                 .Where(o => o.Status == OrderStatus.Created && o.WorkerId == null)
-                .OrderByDescending(o => o.CreatedAt)
-                .Skip(skip)
-                .Take(take)
-                .Select(o => o.ToResponseDto())
-                .ToListAsync();
+                .CountAsync();
+
+            var orders = await _context.Orders
+               .AsNoTracking()
+               .IncludeAllOrderRelations()
+               .Where(o => o.Status == OrderStatus.Created && o.WorkerId == null)
+               .OrderByDescending(o => o.CreatedAt)
+               .Select(o => o.ToResponseDto())
+               .ToListAsync();
+
+            return new PagedResult<OrderResponseDto>
+            {
+                Items = orders,
+                TotalCount = totalCount
+            };
         }
 
         #endregion
 
         #region CREATE + UPDATE + CANCEL
 
-        public async Task<OrderResponseDto> CreateOrder(int clientId, OrderCreateDto dto)
+        public async Task<OrderResponseDto> CreateOrder(OrderCreateDto dto)
         {
-            if (!await _context.Users.AnyAsync(c => c.Id == clientId))
-                throw new ArgumentException("Klient nie istnieje.");
-
             if (!await _context.Vehicles.AnyAsync(v => v.Id == dto.VehicleId))
                 throw new ArgumentException("Pojazd nie istnieje.");
 
@@ -145,9 +135,13 @@ namespace FleetlyBackend.Services.OrderService
                 throw new InvalidOperationException("Zlecenie serwisowe wymaga lokalizacji serwisu i czasu dojazdu do niego.");
 
             ValidateOrderTime(dto.StartTime, dto.ServiceTime, dto.Deadline);
-            ValidateLocations(dto.StartLocationId, dto.ServiceLocationId, dto.EndLocationId);
+            await ValidateLocations(dto.StartLocationId, dto.ServiceLocationId, dto.EndLocationId);
 
-            var costLimit = await _costLimitService.GetByRangeOfKm(dto.RangeOfKm);
+            var user = _http.CurrentUser();
+            var clientId = user.GetUserId();
+
+            var costLimit = await _costLimitService.GetByRangeOfKm(dto.RangeOfKm)
+                ?? throw new InvalidOperationException("Nie znaleziono limitu kosztów dla podanego dystansu.");
 
             var order = new Order
             {
@@ -171,11 +165,9 @@ namespace FleetlyBackend.Services.OrderService
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 
-            await NotifyAdmins(NotificationType.OrderCreated,
-                $"Utworzono zlecenie nr {order.Id}",
-                $"Klient {clientId} utworzył nowe zlecenie.", order.Id);
+            await _notificationService.NotifyOrderCreated(order);
 
-            return order.ToResponseDto();
+            return await GetFresh(order.Id);
         }
 
         public async Task<OrderResponseDto> UpdateOrder(int orderId, OrderUpdateDto dto, int? userId)
@@ -670,7 +662,7 @@ namespace FleetlyBackend.Services.OrderService
         private async Task<OrderResponseDto> GetFresh(int orderId)
         {
             var fresh = await LoadFullOrder(orderId)
-                ?? throw new InvalidOperationException("Zlecenie zniknęło po aktualizacji.");
+                ?? throw new InvalidOperationException("Wystąpił problem ze znalezeniem zlecenia.");
 
             return fresh.ToResponseDto();
         }
@@ -706,7 +698,7 @@ namespace FleetlyBackend.Services.OrderService
                 throw new ArgumentException("Czas serwisu musi być pomiędzy czasem rozpoczęcia a terminem.");
         }
 
-        private async void ValidateLocations(int startLocationId, int? serviceLocationId, int endLocationId)
+        private async Task ValidateLocations(int startLocationId, int? serviceLocationId, int endLocationId)
         {
             if (!await _context.Locations.AnyAsync(l => l.Id == startLocationId))
                 throw new ArgumentException("Podana lokalizacja początkowa nie istnieje.");
