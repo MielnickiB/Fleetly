@@ -285,25 +285,29 @@ namespace FleetlyBackend.Services.OrderService
 
         public async Task<OrderResponseDto> CancelOrder(int orderId, int? userId)
         {
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId)
+            var user = _http.CurrentUser();
+            var currentUserId = user.GetUserId();
+
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(o => o.Id == orderId)
                 ?? throw new ArgumentException("Zlecenie nie istnieje.");
 
-            if (userId.HasValue && order.ClientId != userId.Value)
-                throw new UnauthorizedAccessException("Nie możesz anulować zlecenia innego klienta.");
+            if (!user.IsAdmin() && order.ClientId != currentUserId)
+                throw new UnauthorizedAccessException("Nie masz uprawnień do anulowania tego zlecenia.");
 
             if (order.Status >= OrderStatus.OrderStarted)
                 throw new InvalidOperationException("Nie można anulować rozpoczętego zlecenia.");
 
-            await NotifyOrderCancelled(order);
-
-            if (order.WorkerId.HasValue)
-                order.WorkerId = null;
+            order.WorkerId = null;
             order.Status = OrderStatus.Cancelled;
             order.IsActive = false;
             order.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
-            return order.ToResponseDto();
+
+            await _notificationService.NotifyOrderCancelled(order, currentUserId);
+
+            return await GetFresh(orderId);
         }
 
         #endregion

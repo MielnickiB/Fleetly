@@ -11,7 +11,7 @@ namespace FleetlyBackend.Services.OrderService
         public Task<PagedResult<OrderResponseDto>> GetAvailableOrders();
         public Task<OrderResponseDto> CreateOrder(OrderCreateDto orderCreateDto);
         public Task<OrderResponseDto> UpdateOrder(int orderId, OrderUpdateDto orderUpdateDto);
-        public Task<OrderResponseDto> CancelOrder(int orderId, int? userId = null);
+        public Task<OrderResponseDto> CancelOrder(int orderId);
         public Task<OrderResponseDto> AcceptOrder(int orderId, int workerId);
         public Task<OrderResponseDto> ResignOrder(int orderId, int workerId);
         public Task<OrderResponseDto> StartOrder(int orderId, int workerId);
