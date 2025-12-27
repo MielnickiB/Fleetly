@@ -170,117 +170,114 @@ namespace FleetlyBackend.Services.OrderService
             return await GetFresh(order.Id);
         }
 
-        public async Task<OrderResponseDto> UpdateOrder(int orderId, OrderUpdateDto dto, int? userId)
+        public async Task<OrderResponseDto> UpdateOrder(int orderId, OrderUpdateDto dto)
         {
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
 
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId)
-                ?? throw new ArgumentException("Zlecenie nie istnieje.");
+            var order = await _context.Orders
+                    .Include(o => o.Client)
+                    .FirstOrDefaultAsync(o => o.Id == orderId)
+                    ?? throw new ArgumentException("Zlecenie nie istnieje.");
 
-            if (userId.HasValue && order.ClientId != userId.Value)
-                throw new UnauthorizedAccessException("Nie możesz edytować zlecenia innego klienta.");
-
-            if (order.WorkerId.HasValue)
-            {
-                var oldWorkerId = order.WorkerId.Value;
-
-                if (dto.WorkerId is not null && order.WorkerId != dto.WorkerId)
-                {
-                    order.WorkerId = dto.WorkerId.Value;
-                    await NotifyWorkerUnseatedByAdmin(oldWorkerId, order.Id);
-                    await NotifyWorkerAssignedByAdmin(dto.WorkerId.Value, order.Id);
-                }
-            }
-            else
-            {
-                if (dto.WorkerId.HasValue)
-                {
-                    if (!await _context.Users
-                        .Include(u => u.Role)
-                        .AnyAsync(u => u.Id == dto.WorkerId.Value))
-                        throw new ArgumentException("Pracownik nie istnieje.");
-
-                    order.WorkerId = dto.WorkerId.Value;
-                    await NotifyWorkerAssignedByAdmin(dto.WorkerId.Value, order.Id);
-                }
-            }
+            if (!user.IsAdmin() && order.ClientId != userId)
+                throw new UnauthorizedAccessException("Nie masz uprawnień do edycji tego zlecenia.");
 
             if (order.Status >= OrderStatus.OrderFinishedByWorker)
                 throw new InvalidOperationException("Nie można edytować zakończonego zlecenia.");
 
-            if (dto.VehicleId.HasValue)
+            if (order.Type == OrderType.ServiceRide)
             {
-                if (!await _context.Vehicles.AnyAsync(v => v.Id == dto.VehicleId.Value))
-                    throw new ArgumentException("Podany pojazd nie istnieje.");
-
-                order.VehicleId = dto.VehicleId.Value;
+                if (!dto.ServiceLocationId.HasValue || !dto.ServiceTime.HasValue)
+                    throw new ArgumentException("Zlecenie serwisowe musi posiadać lokalizację i czas serwisu.");
             }
 
-            if (dto.StartLocationId.HasValue && order.StartLocationId != dto.StartLocationId.Value)
-            {
-                if (!await _context.Locations.AnyAsync(l => l.Id == dto.StartLocationId))
-                    throw new ArgumentException("Podana lokalizacja początkowa nie istnieje.");
+            var oldWorkerId = order.WorkerId;
+            var workerChanged = false;
 
-                order.StartLocationId = dto.StartLocationId.Value;
+            if (dto.WorkerId != order.WorkerId)
+            {
+                if (dto.WorkerId.HasValue)
+                {
+                    var isWorker = await _context.Users
+                        .Include(u => u.Role)
+                        .AnyAsync(u => u.Id == dto.WorkerId && u.Role.RoleName == "Worker");
+
+                    if (!isWorker) throw new ArgumentException("Użytkownik nie jest pracownikiem.");
+
+                    order.WorkerId = dto.WorkerId;
+                    order.Status = OrderStatus.Assigned;
+                    workerChanged = true;
+                }
+                else
+                {
+                    order.WorkerId = null;
+                    order.Status = OrderStatus.Created;
+                    workerChanged = true;
+                }
             }
 
-            if (order.Type == OrderType.ServiceRide && dto.ServiceLocationId.HasValue && order.ServiceLocationId != dto.ServiceLocationId.Value)
+            if (dto.VehicleId != order.VehicleId)
             {
-                if (!await _context.Locations.AnyAsync(l => l.Id == dto.ServiceLocationId))
-                    throw new ArgumentException("Podana lokalizacja serwisu nie istnieje.");
-
-                order.ServiceLocationId = dto.ServiceLocationId.Value;
+                if (!await _context.Vehicles.AnyAsync(v => v.Id == dto.VehicleId))
+                    throw new ArgumentException("Pojazd nie istnieje.");
+                order.VehicleId = dto.VehicleId;
             }
 
-            if (dto.EndLocationId.HasValue && order.EndLocationId != dto.EndLocationId.Value)
-            {
-                if (!await _context.Locations.AnyAsync(l => l.Id == dto.EndLocationId))
-                    throw new ArgumentException("Podana lokalizacja końcowa nie istnieje.");
+            bool locChanged =
+                dto.StartLocationId != order.StartLocationId ||
+                dto.EndLocationId != order.EndLocationId ||
+                dto.ServiceLocationId != order.ServiceLocationId;
 
-                order.StartLocationId = dto.EndLocationId.Value;
+            if (locChanged)
+            {
+                await ValidateLocations(dto.StartLocationId, dto.ServiceLocationId, dto.EndLocationId);
+
+                order.StartLocationId = dto.StartLocationId;
+                order.EndLocationId = dto.EndLocationId;
+
+                if (order.Type == OrderType.ServiceRide)
+                    order.ServiceLocationId = dto.ServiceLocationId;
             }
 
-            if (dto.RangeOfKm.HasValue && dto.RangeOfKm.Value > 0)
+            if (dto.RangeOfKm != order.RangeOfKm)
             {
-                order.RangeOfKm = dto.RangeOfKm.Value;
-                var costLimit = await _costLimitService.GetByRangeOfKm(order.RangeOfKm);
+                var costLimit = await _costLimitService.GetByRangeOfKm(dto.RangeOfKm)
+                     ?? throw new InvalidOperationException("Brak limitu kosztów.");
+
+                order.RangeOfKm = dto.RangeOfKm;
                 order.Salary = costLimit.BaseSalary;
             }
 
-            if (dto.EndContactName is not null && !dto.EndContactName.Equals(order.EndContactName))
+            ValidateOrderTime(dto.StartTime, dto.ServiceTime, dto.Deadline);
+
+            order.StartTime = dto.StartTime;
+            order.Deadline = dto.Deadline;
+
+            if (order.Type == OrderType.ServiceRide)
+                order.ServiceTime = dto.ServiceTime;
+
+            if(!string.IsNullOrEmpty(dto.EndContactName) &&! dto.EndContactName.Equals(order.EndContactName))
                 order.EndContactName = dto.EndContactName;
 
-            if (dto.EndContactPhone is not null && !dto.EndContactPhone.Equals(order.EndContactPhone))
+            if (!string.IsNullOrEmpty(dto.EndContactPhone) && !dto.EndContactPhone.Equals(order.EndContactPhone))
                 order.EndContactPhone = dto.EndContactPhone;
 
-            var newStart = dto.StartTime ?? order.StartTime;
-            var newService = dto.ServiceTime ?? order.ServiceTime;
-            var newDeadline = dto.Deadline ?? order.Deadline;
-
-            ValidateOrderTime(newStart, newService, newDeadline);
-
-            order.StartTime = newStart;
-            if (order.Type == OrderType.ServiceRide)
-                order.ServiceTime = newService;
-            order.Deadline = newDeadline;
-
-            if (dto.Details is not null)
-                order.Details = dto.Details;
+            order.Details = dto.Details;
 
             order.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
-            if (userId.HasValue)
+            await _notificationService.NotifyOrderUpdated(order, userId);
+
+            if (workerChanged)
             {
-                await NotifyAdmins(NotificationType.OrderUpdated,
-                    $"Zaktualizowano zlecenie {order.Id}",
-                    $"Użytkownik {userId} zaktualizował dane.", order.Id);
-            }
-            else
-            {
-                await NotifyClient(order.ClientId, NotificationType.OrderUpdated,
-                    $"Twoje zlecenie nr {order.Id} zostało zaktualizowane",
-                    $"Zmiany wprowadził admin.", order.Id);
+                if (oldWorkerId.HasValue)
+                    await _notificationService.NotifyWorkerUnassigned(order, oldWorkerId.Value);
+
+                if (order.WorkerId.HasValue) 
+                    await _notificationService.NotifyWorkerAssigned(order, order.WorkerId.Value);
             }
 
             return await GetFresh(orderId);
@@ -708,92 +705,6 @@ namespace FleetlyBackend.Services.OrderService
 
             if (!await _context.Locations.AnyAsync(l => l.Id == endLocationId))
                 throw new ArgumentException("Podana lokalizacja końcowa nie istnieje.");
-        }
-
-        private async Task NotifyAdmins(NotificationType type, string title, string msg, int orderId)
-        {
-            var admins = await _userService.GetAllByRole("Admin");
-            var notifications = admins.Select(admin => new Notification { UserId = admin.Id, Type = type, Title = title, Message = msg, RelatedEntity = RelatedEntityType.Order, RelatedEntityId = orderId }).ToList();
-            await _context.Notifications.AddRangeAsync(notifications);
-            await _context.SaveChangesAsync();
-        }
-
-        private async Task NotifyClient(int clientId, NotificationType type, string title, string msg, int orderId)
-        {
-            await _notificationService.Create(new NotificationCreateDto
-            {
-                UserId = clientId,
-                Type = type,
-                Title = title,
-                Message = msg,
-                RelatedEntityId = orderId,
-                RelatedEntity = RelatedEntityType.Order
-            });
-        }
-
-        private async Task NotifyWorker(int workerId, NotificationType type, string title, string msg, int orderId)
-        {
-            await _notificationService.Create(new NotificationCreateDto
-            {
-                UserId = workerId,
-                Type = type,
-                Title = title,
-                Message = msg,
-                RelatedEntityId = orderId,
-                RelatedEntity = RelatedEntityType.Order
-            });
-        }
-        private async Task NotifyWorkerAssignedByAdmin(int workerId, int orderId)
-        {
-            await NotifyWorker(workerId,
-                NotificationType.AssignedToOrder,
-                $"Zostałeś przypisany do zlecenia {orderId}",
-                $"Zostałeś przypisany do zlecenia przez administratora.",
-                orderId);
-        }
-
-        private async Task NotifyWorkerUnseatedByAdmin(int workerId, int orderId)
-        {
-            await NotifyWorker(workerId,
-                NotificationType.UnseatedFromOrder,
-                $"Zostałeś wypisany ze zlecenia {orderId}",
-                $"Twoje przypisanie do zlecenia zostało cofnięte przez administratora.",
-                orderId);
-        }
-
-        private async Task NotifyOrderAccepted(Order order, int workerId)
-        {
-            await NotifyAdmins(NotificationType.WorkerTookTheOrder,
-                "Akceptacja",
-                $"Pracownik {workerId} zaakceptował zlecenie.", order.Id);
-
-            await NotifyClient(order.ClientId, NotificationType.WorkerTookTheOrder,
-                "Akceptacja",
-                $"Zlecenie nr {order.Id} zostało przyjęte przez pracownika {workerId}.", order.Id);
-        }
-
-        private async Task NotifyOrderResigned(Order order, int workerId)
-        {
-            await NotifyAdmins(NotificationType.WorkerResignedFromOrder,
-                "Rezygnacja",
-                $"Pracownik {workerId} zrezygnował ze zlecenia.", order.Id);
-            await NotifyClient(order.ClientId, NotificationType.WorkerResignedFromOrder,
-                "Rezygnacja",
-                $"Pracownik {workerId} zrezygnował ze zlecenia.", order.Id);
-        }
-
-        private async Task NotifyOrderCancelled(Order order)
-        {
-            await NotifyClient(order.ClientId, NotificationType.OrderCancelled,
-                "Anulowanie zlecenia",
-                $"Zlecenie nr {order.Id} zostało anulowane.", order.Id);
-
-            if (order.WorkerId.HasValue)
-            {
-                await NotifyWorker(order.WorkerId.Value, NotificationType.OrderCancelled,
-                    "Anulowanie zlecenia",
-                    $"Zlecenie nr {order.Id} zostało anulowane.", order.Id);
-            }
         }
 
         #endregion

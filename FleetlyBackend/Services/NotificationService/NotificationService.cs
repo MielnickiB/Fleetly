@@ -25,7 +25,7 @@ namespace FleetlyBackend.Services.NotificationService
 
             return await _context.Notifications
                 .AsNoTracking()
-                .Where(n => n.UserId == userId)
+                .Where(n => n.UserId == userId && !n.IsRead)
                 .OrderByDescending(n => n.CreatedAt)
                 .Take(100)
                 .Select(n => n.ToResponseDto())
