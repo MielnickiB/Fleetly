@@ -457,17 +457,21 @@ namespace FleetlyBackend.Services.OrderService
 
         #region COSTS
 
-        public async Task<OrderResponseDto> AddCost(int orderId, int workerId, ExpenseCreateDto dto)
+        public async Task<OrderResponseDto> AddCost(int orderId, ExpenseCreateDto dto)
         {
-            var order = await WorkerMustOwnOrder(orderId, workerId);
+            var order = await GetOrderWithWorkerCheck(orderId);
 
             if (order.Status != OrderStatus.OrderFinishedByWorker)
                 throw new InvalidOperationException("Koszty można dodawać tylko po zakończeniu zlecenia.");
 
-            var costLimit = await _costLimitService.GetByRangeOfKm(order.RangeOfKm);
+            var costLimit = await _costLimitService.GetByRangeOfKm(order.RangeOfKm)
+                ?? throw new InvalidOperationException("Brak limitu kosztów.");
 
-            if (!dto.IsFuelExpense && order.AdditionalCosts + dto.Cost > costLimit.MaxCosts)
-                throw new InvalidOperationException("Przekroczono maksymalny limit kosztów dodatkowych dla tego zlecenia.");
+            if (!dto.IsFuelExpense)
+            {
+                if(order.AdditionalCosts + dto.Cost > costLimit.MaxCosts)
+                    throw new InvalidOperationException($"Przekroczono limit kosztów dodatkowych ({costLimit.MaxCosts} PLN).");
+            }
 
             using var tx = await _context.Database.BeginTransactionAsync();
 
@@ -481,15 +485,16 @@ namespace FleetlyBackend.Services.OrderService
             order.UpdatedAt = DateTime.UtcNow;
 
             _context.Orders.Update(order);
+
             await _context.SaveChangesAsync();
             await tx.CommitAsync();
 
             return await GetFresh(orderId);
         }
 
-        public async Task<OrderResponseDto> UpdateCost(int orderId, int workerId, int expenseId, ExpenseUpdateDto dto)
+        public async Task<OrderResponseDto> UpdateCost(int orderId, int expenseId, ExpenseUpdateDto dto)
         {
-            var order = await WorkerMustOwnOrder(orderId, workerId);
+            var order = await GetOrderWithWorkerCheck(orderId);
 
             if (order.Status != OrderStatus.OrderFinishedByWorker)
                 throw new InvalidOperationException("Nie można modyfikować kosztów w tym stanie.");
@@ -499,48 +504,30 @@ namespace FleetlyBackend.Services.OrderService
                 ?? throw new ArgumentException("Koszt nie istnieje.");
 
             var oldCost = expenseEntity.Cost;
-            var oldFuel = expenseEntity.IsFuelExpense;
+            var oldIsFuel = expenseEntity.IsFuelExpense;
+
+            var costLimit = await _costLimitService.GetByRangeOfKm(order.RangeOfKm);
+
+            var newCostValue = dto.Cost ?? oldCost;
+            var newIsFuel = dto.IsFuelExpense ?? oldIsFuel;
+
+            if (!newIsFuel)
+            {
+                var currentAdditionalTotal = order.AdditionalCosts - (oldIsFuel ? 0 : oldCost);
+
+                if (currentAdditionalTotal + newCostValue > costLimit.MaxCosts)
+                    throw new InvalidOperationException($"Aktualizacja spowoduje przekroczenie limitu kosztów dodatkowych.");
+            }
 
             using var tx = await _context.Database.BeginTransactionAsync();
 
-            var costLimit = await _costLimitService.GetByRangeOfKm(order.RangeOfKm);
-            if (costLimit != null)
-            {
-                if (dto.IsFuelExpense.HasValue && !dto.IsFuelExpense.Value)
-                {
-                    var newCost = dto.Cost ?? oldCost;
-                    if (order.AdditionalCosts - (oldFuel ? 0 : oldCost) + newCost > costLimit.MaxCosts)
-                        throw new InvalidOperationException("Przekroczono maksymalny limit kosztów dodatkowych dla tego zlecenia.");
-                }
-                else if (!dto.IsFuelExpense.HasValue && !oldFuel && dto.Cost.HasValue)
-                {
-                    var newCost = dto.Cost.Value;
-                    if (order.AdditionalCosts - oldCost + newCost > costLimit.MaxCosts)
-                        throw new InvalidOperationException("Przekroczono maksymalny limit kosztów dodatkowych dla tego zlecenia.");
-                }
-            }
+            var updatedExpense = await _expenseService.Update(expenseId, dto);
 
-            var updated = await _expenseService.Update(expenseId, dto);
+            if (oldIsFuel)  order.FuelCosts -= oldCost;
+            else order.AdditionalCosts -= oldCost;
 
-            if (oldFuel == updated.IsFuelExpense)
-            {
-                var delta = updated.Cost - oldCost;
-                if (updated.IsFuelExpense) order.FuelCosts += delta;
-                else order.AdditionalCosts += delta;
-            }
-            else
-            {
-                if (updated.IsFuelExpense)
-                {
-                    order.AdditionalCosts -= oldCost;
-                    order.FuelCosts += updated.Cost;
-                }
-                else
-                {
-                    order.FuelCosts -= oldCost;
-                    order.AdditionalCosts += updated.Cost;
-                }
-            }
+            if (updatedExpense.IsFuelExpense) order.FuelCosts += updatedExpense.Cost;
+            else order.AdditionalCosts += updatedExpense.Cost;
 
             order.UpdatedAt = DateTime.UtcNow;
 
@@ -552,9 +539,9 @@ namespace FleetlyBackend.Services.OrderService
             return await GetFresh(orderId);
         }
 
-        public async Task<OrderResponseDto> DeleteCost(int orderId, int workerId, int expenseId)
+        public async Task<OrderResponseDto> DeleteCost(int orderId, int expenseId)
         {
-            var order = await WorkerMustOwnOrder(orderId, workerId);
+            var order = await GetOrderWithWorkerCheck(orderId);
 
             if (order.Status != OrderStatus.OrderFinishedByWorker)
                 throw new InvalidOperationException("Nie można usuwać kosztów w tym stanie.");
@@ -584,9 +571,9 @@ namespace FleetlyBackend.Services.OrderService
             return await GetFresh(orderId);
         }
 
-        public async Task<OrderResponseDto> SubmitAllOrderCosts(int orderId, int workerId)
+        public async Task<OrderResponseDto> SubmitAllOrderCosts(int orderId)
         {
-            var order = await WorkerMustOwnOrder(orderId, workerId);
+            var order = await GetOrderWithWorkerCheck(orderId);
 
             if (order.Status != OrderStatus.OrderFinishedByWorker)
                 throw new InvalidOperationException("Zlecenie nie zostało zakończone przez pracownika.");
@@ -596,11 +583,9 @@ namespace FleetlyBackend.Services.OrderService
 
             await _context.SaveChangesAsync();
 
-            await NotifyAdmins(NotificationType.OrderCompleted,
-                $"Pracownik zakończył zlecenie nr {order.Id}",
-                $"Koszty zostały zgłoszone i oczekują na akceptację.", order.Id);
+            await _notificationService.NotifyOrderFinishedByWorker(order);
 
-            return order.ToResponseDto();
+            return await GetFresh(orderId);
         }
 
         #endregion
