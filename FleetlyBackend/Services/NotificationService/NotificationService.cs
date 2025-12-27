@@ -201,6 +201,17 @@ namespace FleetlyBackend.Services.NotificationService
                 $"Zlecenie #{order.Id} zakończone", "Administrator zatwierdził realizację. Faktura została wygenerowana.", order.Id);
         }
 
+        public async Task NotifyOrderActivated(Order order)
+        {
+            await CreateInternal(
+                order.ClientId,
+                NotificationType.OrderApprovedByAdmin,
+                "Zlecenie zatwierdzone",
+                $"Twoje zlecenie #{order.Id} zostało zweryfikowane i oczekuje na przyjęcie przez kierowcę.",
+                order.Id
+            );
+        }
+
         private async Task CreateInternal(int userId, NotificationType type, string title, string message, int relatedId)
         {
             var notif = new Notification

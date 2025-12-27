@@ -257,7 +257,7 @@ namespace FleetlyBackend.Services.OrderService
             if (order.Type == OrderType.ServiceRide)
                 order.ServiceTime = dto.ServiceTime;
 
-            if(!string.IsNullOrEmpty(dto.EndContactName) &&! dto.EndContactName.Equals(order.EndContactName))
+            if (!string.IsNullOrEmpty(dto.EndContactName) && !dto.EndContactName.Equals(order.EndContactName))
                 order.EndContactName = dto.EndContactName;
 
             if (!string.IsNullOrEmpty(dto.EndContactPhone) && !dto.EndContactPhone.Equals(order.EndContactPhone))
@@ -276,7 +276,7 @@ namespace FleetlyBackend.Services.OrderService
                 if (oldWorkerId.HasValue)
                     await _notificationService.NotifyWorkerUnassigned(order, oldWorkerId.Value);
 
-                if (order.WorkerId.HasValue) 
+                if (order.WorkerId.HasValue)
                     await _notificationService.NotifyWorkerAssigned(order, order.WorkerId.Value);
             }
 
@@ -318,7 +318,7 @@ namespace FleetlyBackend.Services.OrderService
         {
             var user = _http.CurrentUser();
 
-            if (!user.IsWorker()) 
+            if (!user.IsWorker())
                 throw new UnauthorizedAccessException("Tylko pracownik może przyjąć zlecenie.");
 
             var workerId = user.GetUserId();
@@ -469,7 +469,7 @@ namespace FleetlyBackend.Services.OrderService
 
             if (!dto.IsFuelExpense)
             {
-                if(order.AdditionalCosts + dto.Cost > costLimit.MaxCosts)
+                if (order.AdditionalCosts + dto.Cost > costLimit.MaxCosts)
                     throw new InvalidOperationException($"Przekroczono limit kosztów dodatkowych ({costLimit.MaxCosts} PLN).");
             }
 
@@ -523,7 +523,7 @@ namespace FleetlyBackend.Services.OrderService
 
             var updatedExpense = await _expenseService.Update(expenseId, dto);
 
-            if (oldIsFuel)  order.FuelCosts -= oldCost;
+            if (oldIsFuel) order.FuelCosts -= oldCost;
             else order.AdditionalCosts -= oldCost;
 
             if (updatedExpense.IsFuelExpense) order.FuelCosts += updatedExpense.Cost;
@@ -594,34 +594,43 @@ namespace FleetlyBackend.Services.OrderService
 
         public async Task<OrderResponseDto> ApproveCostsAndCompleteOrder(int orderId)
         {
+            if (!_http.CurrentUser().IsAdmin())
+                throw new UnauthorizedAccessException("Tylko administrator może zatwierdzać koszty.");
+
             using var tx = await _context.Database.BeginTransactionAsync();
 
-            var order = await LoadFullOrder(orderId)
-                ?? throw new ArgumentException("Zlecenie nie istnieje.");
+            var order = await _context.Orders
+                            .FirstOrDefaultAsync(o => o.Id == orderId)
+                            ?? throw new ArgumentException("Zlecenie nie istnieje.");
 
             if (order.Status != OrderStatus.WaitingForCostApproval)
-                throw new InvalidOperationException("Koszty nie zostały jeszcze zgłoszone.");
+                throw new InvalidOperationException("Koszty nie zostały jeszcze zgłoszone przez pracownika.");
 
             order.Status = OrderStatus.ApprovedByAdmin;
             order.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
+            var invoiceSum = Math.Round((order.Salary * 0.3m) + order.FuelCosts + order.AdditionalCosts);
+
             var invoice = new InvoiceCreateDto
             {
                 OrderId = order.Id,
-                Sum = Math.Round((order.Salary * 0.3m) + order.FuelCosts + order.AdditionalCosts)
+                Sum = invoiceSum
             };
 
             await _invoiceService.Create(invoice);
 
-            await _context.SaveChangesAsync();
-
             await tx.CommitAsync();
-            return order.ToResponseDto();
+
+            await _notificationService.NotifyOrderApprovedByAdmin(order);
+            return await GetFresh(orderId);
         }
 
         public async Task<OrderResponseDto> ApproveOrder(int orderId)
         {
+            if (!_http.CurrentUser().IsAdmin())
+                throw new UnauthorizedAccessException("Tylko administrator może akceptować zlecenia.");
+
             var order = await _context.Orders.FindAsync(orderId)
                 ?? throw new ArgumentException("Dane zlecenie nie istnieje.");
 
@@ -633,11 +642,9 @@ namespace FleetlyBackend.Services.OrderService
 
             await _context.SaveChangesAsync();
 
-            await NotifyClient(order.ClientId, NotificationType.OrderApprovedByAdmin,
-                $"Twoje zlecenie nr {order.Id} zostało zatwierdzone",
-                $"Zlecenie jest gotowe do przyjęcia przez pracowników.", order.Id);
+            await _notificationService.NotifyOrderActivated(order);
 
-            return order.ToResponseDto();
+            return await GetFresh(orderId);
         }
 
         #endregion

@@ -22,5 +22,6 @@ namespace FleetlyBackend.Services.NotificationService
 
         Task NotifyOrderFinishedByWorker(Order order);
         Task NotifyOrderApprovedByAdmin(Order order);
+        Task NotifyOrderActivated(Order order);
     }
 }
