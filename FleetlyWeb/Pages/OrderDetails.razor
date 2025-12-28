@@ -1,7 +1,8 @@
 ﻿@page "/orders/{orderId:int}"
 @using Fleetly.Shared.Dto.OrderDtos
-@using FleetlyWeb.Helpers
 @using Fleetly.Shared.Enums
+@using FleetlyWeb.Helpers
+@using FleetlyWeb.Services.Orders
 @inject IConfiguration Config
 @inject IOrderService OrderService
 @inject NavigationManager Nav

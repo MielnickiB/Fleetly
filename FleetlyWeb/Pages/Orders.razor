@@ -1,6 +1,7 @@
 ﻿@page "/orders"
 @attribute [Authorize(Roles = "Admin")]
 @using Fleetly.Shared.Dto.OrderDtos
+@using FleetlyWeb.Services.Orders
 @inject IOrderService OrderService
 @inject NavigationManager Nav
 

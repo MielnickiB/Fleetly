@@ -73,6 +73,21 @@ namespace FleetlyWeb.Services
             return ApiResponse<bool>.ErrorResult(error, status);
         }
 
+        public async Task<ApiResponse<TResponse?>> DeleteAsync<TResponse>(string url)
+        {
+            using var res = await _http.DeleteAsync(url);
+            var status = (int)res.StatusCode;
+
+            if (res.IsSuccessStatusCode)
+            {
+                var dto = await res.Content.ReadFromJsonAsync<TResponse?>();
+                return ApiResponse<TResponse?>.SuccessResult(dto, status);
+            }
+
+            var error = await SafeReadStringAsync(res);
+            return ApiResponse<TResponse?>.ErrorResult(error, status);
+        }
+
         private static async Task<string?> SafeReadStringAsync(HttpResponseMessage res)
         {
             try
