@@ -1,5 +1,4 @@
 ﻿using Fleetly.Shared.Dto.NotificationDtos;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Services.NotificationService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,41 +7,50 @@ namespace FleetlyBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class NotificationController(INotificationService service) : ControllerBase
     {
         private readonly INotificationService _service = service;
 
         [HttpGet]
-        [Authorize]
-        public async Task<ActionResult<List<NotificationResponseDto>>> GetAll()
+        public async Task<ActionResult<List<NotificationResponseDto>>> GetMyNotifications()
         {
-            return Ok(await _service.GetAll());
+            return Ok(await _service.GetMyNotifications());
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<NotificationResponseDto>> Create(NotificationCreateDto dto)
+        [HttpGet("unread-count")]
+        public async Task<ActionResult<int>> GetUnreadCount()
         {
-            try { return Ok(await _service.Create(dto)); }
-            catch (ArgumentException ex) { return NotFound(ex.Message); }
+            return Ok(await _service.GetUnreadCount());
         }
 
-        [HttpPut("read/{id:int}")]
-        [Authorize]
-        public async Task<ActionResult<bool>> MarkAsRead(int id)
+        [HttpPut("{id:int}/read")]
+        public async Task<ActionResult> MarkAsRead(int id)
         {
-            try { return Ok(await _service.MarkAsRead(id)); }
-            catch (ArgumentException ex) { return NotFound(ex.Message); }
-            catch (UnauthorizedAccessException) { return Forbid(); }
+            try
+            {
+                await _service.MarkAsRead(id);
+                return NoContent();
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [HttpPut("read-all")]
+        public async Task<ActionResult> MarkAllAsRead()
+        {
+            await _service.MarkAllAsRead();
+            return NoContent();
         }
 
         [HttpDelete("{id:int}")]
-        [Authorize]
-        public async Task<ActionResult<bool>> Delete(int id)
+        public async Task<ActionResult> Delete(int id)
         {
-            try { return Ok(await _service.Delete(id)); }
-            catch (ArgumentException ex) { return NotFound(ex.Message); }
-            catch (UnauthorizedAccessException) { return Forbid(); }
+            try
+            {
+                await _service.Delete(id);
+                return NoContent();
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
         }
     }
 }
