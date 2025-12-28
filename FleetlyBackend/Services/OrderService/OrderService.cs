@@ -1,8 +1,6 @@
 ﻿using FleetlyBackend.Data;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
-using FleetlyBackend.Services.UserSerivce;
 using FleetlyBackend.Services.InvoiceService;
 using FleetlyBackend.Services.NotificationService;
 using FleetlyBackend.Services.ExpenseService;
@@ -10,7 +8,6 @@ using FleetlyBackend.Services.CostLimitService;
 using Microsoft.EntityFrameworkCore;
 using Fleetly.Shared.Dto.ExpenseDtos;
 using Fleetly.Shared.Dto.OrderDtos;
-using Fleetly.Shared.Dto.NotificationDtos;
 using Fleetly.Shared.Dto.InvoiceDtos;
 using Fleetly.Shared.Dto;
 using Fleetly.Shared.Enums;
@@ -24,7 +21,6 @@ namespace FleetlyBackend.Services.OrderService
         INotificationService notificationService,
         IExpenseService expenseService,
         ICostLimitService costLimitService,
-        IUserService userService,
         IHttpContextAccessor http
     ) : IOrderService
     {
@@ -33,7 +29,6 @@ namespace FleetlyBackend.Services.OrderService
         private readonly INotificationService _notificationService = notificationService;
         private readonly IExpenseService _expenseService = expenseService;
         private readonly ICostLimitService _costLimitService = costLimitService;
-        private readonly IUserService _userService = userService;
         private readonly IHttpContextAccessor _http = http;
 
         #region GET
@@ -72,7 +67,11 @@ namespace FleetlyBackend.Services.OrderService
                 .IncludeAllOrderRelations()
                 .AsQueryable();
 
-            if (user.IsClient())
+            if (user.IsAdmin())
+            {
+
+            }
+            else if (user.IsClient())
                 query = query.Where(o => o.ClientId == userId);
 
             else if (user.IsWorker())
@@ -164,6 +163,8 @@ namespace FleetlyBackend.Services.OrderService
 
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
+            await _context.Entry(order).Reference(o => o.StartLocation).LoadAsync();
+            await _context.Entry(order).Reference(o => o.EndLocation).LoadAsync();
 
             await _notificationService.NotifyOrderCreated(order);
 
@@ -186,11 +187,8 @@ namespace FleetlyBackend.Services.OrderService
             if (order.Status >= OrderStatus.OrderFinishedByWorker)
                 throw new InvalidOperationException("Nie można edytować zakończonego zlecenia.");
 
-            if (order.Type == OrderType.ServiceRide)
-            {
-                if (!dto.ServiceLocationId.HasValue || !dto.ServiceTime.HasValue)
-                    throw new ArgumentException("Zlecenie serwisowe musi posiadać lokalizację i czas serwisu.");
-            }
+            if (order.Type == OrderType.ServiceRide && (!dto.ServiceLocationId.HasValue || !dto.ServiceTime.HasValue))
+                throw new ArgumentException("Zlecenie serwisowe musi posiadać lokalizację i czas serwisu.");
 
             var oldWorkerId = order.WorkerId;
             var workerChanged = false;
@@ -467,11 +465,8 @@ namespace FleetlyBackend.Services.OrderService
             var costLimit = await _costLimitService.GetByRangeOfKm(order.RangeOfKm)
                 ?? throw new InvalidOperationException("Brak limitu kosztów.");
 
-            if (!dto.IsFuelExpense)
-            {
-                if (order.AdditionalCosts + dto.Cost > costLimit.MaxCosts)
-                    throw new InvalidOperationException($"Przekroczono limit kosztów dodatkowych ({costLimit.MaxCosts} PLN).");
-            }
+            if (!dto.IsFuelExpense && order.AdditionalCosts + dto.Cost > costLimit.MaxCosts)
+                throw new InvalidOperationException($"Przekroczono limit kosztów dodatkowych ({costLimit.MaxCosts} PLN).");
 
             using var tx = await _context.Database.BeginTransactionAsync();
 
@@ -506,7 +501,8 @@ namespace FleetlyBackend.Services.OrderService
             var oldCost = expenseEntity.Cost;
             var oldIsFuel = expenseEntity.IsFuelExpense;
 
-            var costLimit = await _costLimitService.GetByRangeOfKm(order.RangeOfKm);
+            var costLimit = await _costLimitService.GetByRangeOfKm(order.RangeOfKm)
+                ?? throw new InvalidOperationException("Brak limitu kosztów.");
 
             var newCostValue = dto.Cost ?? oldCost;
             var newIsFuel = dto.IsFuelExpense ?? oldIsFuel;
