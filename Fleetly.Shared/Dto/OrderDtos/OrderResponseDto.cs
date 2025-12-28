@@ -1,4 +1,7 @@
 ﻿using Fleetly.Shared.Dto.ExpenseDtos;
+using Fleetly.Shared.Dto.LocationDtos;
+using Fleetly.Shared.Dto.VehicleDtos;
+using Fleetly.Shared.Dto.UserDtos;
 using Fleetly.Shared.Enums;
 
 namespace Fleetly.Shared.Dto.OrderDtos
@@ -6,36 +9,25 @@ namespace Fleetly.Shared.Dto.OrderDtos
     public class OrderResponseDto
     {
         public int Id { get; set; }
-        public int ClientId { get; set; }
-        public string ClientName { get; set; } = string.Empty;
-        public string ClientCompanyName { get; set; } = string.Empty;
-        public string ClientPhoneNumber { get; set; } = string.Empty;
-        public string ClientEmail { get; set; } = string.Empty;
-        public int? WorkerId { get; set; }
-        public string WorkerName { get; set; } = string.Empty;
-        public int VehicleId { get; set; }
-        public string VehicleName { get; set; } = string.Empty;
-        public string VehicleRegistrationNumber { get; set; } = string.Empty;
-        public int VehicleMileage { get; set; }
-        public string VehicleVin { get; set; } = string.Empty;
+
+        public UserResponseDto Client { get; set; } = null!;
+        public UserResponseDto? Worker { get; set; }
+        public VehicleResponseDto Vehicle { get; set; } = null!;
+
+        public LocationResponseDto StartLocation { get; set; } = null!;
+        public LocationResponseDto? ServiceLocation { get; set; }
+        public LocationResponseDto EndLocation { get; set; } = null!;
+
         public OrderStatus Status { get; set; }
         public OrderType Type { get; set; }
         public string? Details { get; set; }
 
-        public int StartLocationId { get; set; }
-        public string StartLocationCity { get; set; } = string.Empty;
-        public string StartLocationAddress { get; set; } = string.Empty;
-        public int? ServiceLocationId { get; set; }
-        public string? ServiceLocationCity { get; set; }
-        public string? ServiceLocationAddress { get; set; } = string.Empty;
-        public int EndLocationId { get; set; }
-        public string EndLocationCity { get; set; } = string.Empty;
-        public string EndLocationAddress { get; set; } = string.Empty;
         public int RangeOfKm { get; set; }
-
         public decimal Salary { get; set; }
         public decimal AdditionalCosts { get; set; }
         public decimal FuelCosts { get; set; }
+        public decimal TotalCosts => (Salary * 0.3m) + AdditionalCosts + FuelCosts;
+
         public List<ExpenseResponseDto> Expenses { get; set; } = [];
 
         public string? EndContactName { get; set; }
@@ -44,6 +36,10 @@ namespace Fleetly.Shared.Dto.OrderDtos
         public DateTime StartTime { get; set; }
         public DateTime? ServiceTime { get; set; }
         public DateTime Deadline { get; set; }
+
+        public DateTime? ActualStartTime { get; set; }
+        public DateTime? ActualServiceTime { get; set; }
+        public DateTime? ActualEndTime { get; set; }
 
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
