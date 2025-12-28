@@ -27,7 +27,6 @@ namespace FleetlyBackend.Services.NotificationService
                 .AsNoTracking()
                 .Where(n => n.UserId == userId && !n.IsRead)
                 .OrderByDescending(n => n.CreatedAt)
-                .Take(100)
                 .Select(n => n.ToResponseDto())
                 .ToListAsync();
         }
@@ -80,11 +79,31 @@ namespace FleetlyBackend.Services.NotificationService
 
             foreach (var admin in admins)
             {
+                var startCity = order.StartLocation?.City;
+                var endCity = order.EndLocation?.City;
+                string routeDescription;
+                if (!string.IsNullOrWhiteSpace(startCity) && !string.IsNullOrWhiteSpace(endCity))
+                {
+                    routeDescription = $"{startCity} -> {endCity}";
+                }
+                else if (!string.IsNullOrWhiteSpace(startCity))
+                {
+                    routeDescription = $"z {startCity}";
+                }
+                else if (!string.IsNullOrWhiteSpace(endCity))
+                {
+                    routeDescription = $"do {endCity}";
+                }
+                else
+                {
+                    routeDescription = "o nieznanej trasie";
+                }
+
                 await CreateInternal(
                     userId: admin.Id,
                     type: NotificationType.OrderCreated,
                     title: $"Nowe zlecenie #{order.Id}",
-                    message: $"Klient utworzył nowe zlecenie na trasie {order.StartLocation?.City} -> {order.EndLocation?.City}.",
+                    message: $"Klient utworzył nowe zlecenie na trasie {routeDescription}.",
                     relatedId: order.Id
                 );
             }

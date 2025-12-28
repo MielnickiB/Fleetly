@@ -16,28 +16,21 @@ namespace FleetlyBackend.Controllers.OrderControllers
         [HttpGet]
         public async Task<ActionResult<PagedResult<OrderResponseDto>>> GetAll()
         {
-            try
-            {
-                return Ok(await _service.GetAllOrders());
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(await _service.GetAllOrders());
         }
 
         [Authorize(Roles = "Admin, Client")]
         [HttpGet("{orderId:int}")]
         public async Task<ActionResult<OrderResponseDto>> Get(int orderId)
         {
-            try 
+            try
             {
                 var order = await _service.GetOrderById(orderId);
                 return order is null ? NotFound("Nie odnaleziono zlecenia.") : Ok(order);
             }
-            catch (UnauthorizedAccessException ex)
+            catch (UnauthorizedAccessException)
             {
-                return Forbid(ex.Message);
+                return Forbid();
             }
         }
 
@@ -77,7 +70,7 @@ namespace FleetlyBackend.Controllers.OrderControllers
                 return Ok(result);
             }
             catch (ArgumentException ex) { return NotFound(ex.Message); }
-            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (UnauthorizedAccessException) { return Forbid(); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
@@ -88,7 +81,7 @@ namespace FleetlyBackend.Controllers.OrderControllers
             try { return Ok(await _service.ApproveCostsAndCompleteOrder(orderId)); }
             catch (ArgumentException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (UnauthorizedAccessException) { return Forbid(); }
         }
 
         [Authorize(Roles = "Admin")]
@@ -98,7 +91,7 @@ namespace FleetlyBackend.Controllers.OrderControllers
             try { return Ok(await _service.ApproveOrder(orderId)); }
             catch (ArgumentException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (UnauthorizedAccessException) { return Forbid(); }
         }
     }
 }

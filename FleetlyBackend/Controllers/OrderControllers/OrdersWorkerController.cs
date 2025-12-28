@@ -35,9 +35,9 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
             var order = await _service.GetOrderById(orderId);
             return order is null ? NotFound("Zlecenie nie istnieje.") : Ok(order);
         }
-        catch (UnauthorizedAccessException ex)
+        catch (UnauthorizedAccessException)
         {
-            return Forbid(ex.Message);
+            return Forbid();
         }
     }
 
@@ -47,7 +47,7 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
         try { return Ok(await _service.AcceptOrder(orderId)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [HttpPost("{orderId:int}/resign")]
@@ -56,7 +56,7 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
         try { return Ok(await _service.ResignOrder(orderId)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [HttpPost("{orderId:int}/start")]
@@ -65,7 +65,7 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
         try { return Ok(await _service.StartOrder(orderId)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [HttpPost("{orderId:int}/service/arrive")]
@@ -74,7 +74,7 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
         try { return Ok(await _service.ArrivedToService(orderId)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [HttpPost("{orderId:int}/service/leave")]
@@ -84,7 +84,7 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
         try { return Ok(await _service.LeaveServiceLocation(orderId)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [HttpPost("{orderId:int}/arrive")]
@@ -93,7 +93,7 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
         try { return Ok(await _service.ArrivedToClient(orderId)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [HttpPost("{orderId:int}/finish")]
@@ -102,25 +102,25 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
         try { return Ok(await _service.FinishOrderByWorker(orderId)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [HttpPost("{orderId:int}/costs")]
-    public async Task<ActionResult<OrderResponseDto>> AddCost(int orderId, [FromBody] ExpenseCreateDto dto)
+    public async Task<ActionResult<OrderResponseDto>> AddCost(int orderId, [FromForm] ExpenseCreateDto dto)
     {
         try { return Ok(await _service.AddCost(orderId, dto)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [HttpPut("{orderId:int}/costs/{expenseId:int}")]
-    public async Task<ActionResult<OrderResponseDto>> UpdateCost(int orderId, int expenseId, [FromBody] ExpenseUpdateDto dto)
+    public async Task<ActionResult<OrderResponseDto>> UpdateCost(int orderId, int expenseId, [FromForm] ExpenseUpdateDto dto)
     {
         try { return Ok(await _service.UpdateCost(orderId, expenseId, dto)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [HttpDelete("{orderId:int}/costs/{expenseId:int}")]
@@ -129,7 +129,7 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
         try { return Ok(await _service.DeleteCost(orderId, expenseId)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [HttpPost("{orderId:int}/costs/submit")]
@@ -139,6 +139,6 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
         try { return Ok(await _service.SubmitAllOrderCosts(orderId)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 }

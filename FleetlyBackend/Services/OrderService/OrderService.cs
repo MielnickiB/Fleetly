@@ -67,22 +67,11 @@ namespace FleetlyBackend.Services.OrderService
                 .IncludeAllOrderRelations()
                 .AsQueryable();
 
-            if (user.IsAdmin())
-            {
-
-            }
-            else if (user.IsClient())
+            if (user.IsClient())
                 query = query.Where(o => o.ClientId == userId);
 
             else if (user.IsWorker())
                 query = query.Where(o => o.WorkerId == userId);
-
-            else
-                return new PagedResult<OrderResponseDto>
-                {
-                    Items = [],
-                    TotalCount = 0
-                };
 
             var totalCount = await query.CountAsync();
 
@@ -195,6 +184,9 @@ namespace FleetlyBackend.Services.OrderService
 
             if (dto.WorkerId != order.WorkerId)
             {
+                if (order.Status >= OrderStatus.OrderStarted)
+                    throw new InvalidOperationException("Nie można zmienić pracownika po rozpoczęciu zlecenia.");
+
                 if (dto.WorkerId.HasValue)
                 {
                     var isWorker = await _context.Users
@@ -600,7 +592,7 @@ namespace FleetlyBackend.Services.OrderService
                             ?? throw new ArgumentException("Zlecenie nie istnieje.");
 
             if (order.Status != OrderStatus.WaitingForCostApproval)
-                throw new InvalidOperationException("Koszty nie zostały jeszcze zgłoszone przez pracownika.");
+                throw new InvalidOperationException("Koszty nie mogą zostać zatwierdzone w bieżącym statusie zlecenia.");
 
             order.Status = OrderStatus.ApprovedByAdmin;
             order.UpdatedAt = DateTime.UtcNow;
