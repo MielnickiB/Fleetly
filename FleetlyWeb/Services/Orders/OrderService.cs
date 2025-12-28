@@ -36,12 +36,12 @@ namespace FleetlyWeb.Services.Orders
 
         public async Task<ApiResponse<OrderResponseDto?>> ApproveOrderAsync(int orderId)
         {
-            return await _api.PostAsync<object, OrderResponseDto>($"{BaseUrl}/{orderId}/activate", null!);
+            return await _api.PostAsync<object, OrderResponseDto>($"{BaseUrl}/{orderId}/activate", new object());
         }
 
         public async Task<ApiResponse<OrderResponseDto?>> ApproveCostsAsync(int orderId)
         {
-            return await _api.PostAsync<object, OrderResponseDto>($"{BaseUrl}/{orderId}/costs/approve", null!);
+            return await _api.PostAsync<object, OrderResponseDto>($"{BaseUrl}/{orderId}/costs/approve", new object());
         }
     }
 }
