@@ -1,4 +1,5 @@
-﻿using Fleetly.Shared.Dto.OrderDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.OrderDtos;
 using FleetlyBackend.Helpers;
 using FleetlyBackend.Services.OrderService;
 using Microsoft.AspNetCore.Authorization;
@@ -14,27 +15,18 @@ namespace FleetlyBackend.Controllers.OrderControllers
         private readonly IOrderService _orderService = orderService;
 
         [HttpGet]
-        public async Task<IActionResult> GetMyOrders([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<PagedResult<OrderResponseDto>>> GetAllOrders()
         {
-            if (!User.TryGetUserId(out var userId, out var error))
-                return Unauthorized(error);
-            return Ok(await _orderService.GetAllOrdersForClient(userId, page, pageSize));
+            return Ok(await _orderService.GetAllOrders());
         }
 
-        [HttpGet("{orderId:int}/details")]
-        public async Task<IActionResult> GetOrderDetails(int orderId)
+        [HttpGet("{orderId:int}")]
+        public async Task<ActionResult<OrderResponseDto>> Get(int orderId)
         {
-            if (!User.TryGetUserId(out var userId, out var error))
-                return Unauthorized(error);
-
             try
             {
-                var dto = await _orderService.GetOrderForClientById(orderId, userId);
-                return Ok(dto);
-            }
-            catch (ArgumentException ex)
-            {
-                return NotFound(new { error = ex.Message });
+                var order = await _orderService.GetOrderById(orderId);
+                return order is null ? NotFound("Nie znaleziono zlecenia.") : Ok(order);
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -43,70 +35,40 @@ namespace FleetlyBackend.Controllers.OrderControllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateOrder([FromBody] OrderCreateDto orderCreateDto)
+        public async Task<ActionResult<OrderResponseDto>> Create([FromBody] OrderCreateDto orderCreateDto)
         {
-            if (!User.TryGetUserId(out var userId, out var error))
-                return Unauthorized(error);
             try
             {
-                return Ok(await _orderService.CreateOrder(userId, orderCreateDto));
+                return Ok(await _orderService.CreateOrder(orderCreateDto));
             }
-            catch (ArgumentException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            catch (ArgumentException ex) { return BadRequest(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
-        [HttpPut("{orderId:int}/update")]
-        public async Task<IActionResult> UpdateOrder(int orderId, [FromBody] OrderUpdateDto orderUpdateDto)
+        [HttpPut("{orderId:int}")]
+        public async Task<ActionResult<OrderResponseDto>> Update(int orderId, [FromBody] OrderUpdateDto orderUpdateDto)
         {
-            if (!User.TryGetUserId(out var userId, out var error))
-                return Unauthorized(error);
             try
             {
-                var result = await _orderService.UpdateOrder(orderId, orderUpdateDto, userId);
+                var result = await _orderService.UpdateOrder(orderId, orderUpdateDto);
                 return Ok(result);
             }
-            catch (ArgumentException ex)
-            {
-                return NotFound(new { error = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
+            catch (ArgumentException ex) { return NotFound(ex.Message); }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
 
-        [HttpDelete("{orderId:int}/cancel")]
-        public async Task<IActionResult> CancelOrder(int orderId)
+        [HttpDelete("{orderId:int}")]
+        public async Task<ActionResult<OrderResponseDto>> Cancel(int orderId)
         {
-            if (!User.TryGetUserId(out var userId, out var error))
-                return Unauthorized(error);
             try
             {
-                var result = await _orderService.CancelOrder(orderId, userId);
+                var result = await _orderService.CancelOrder(orderId);
                 return Ok(result);
             }
-            catch (ArgumentException ex)
-            {
-                return NotFound(new { error = ex.Message });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
+            catch (ArgumentException ex) { return NotFound(ex.Message); }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         }
     }
 }
