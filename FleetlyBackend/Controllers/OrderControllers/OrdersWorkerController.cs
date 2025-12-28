@@ -106,7 +106,7 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
     }
 
     [HttpPost("{orderId:int}/costs")]
-    public async Task<ActionResult<OrderResponseDto>> AddCost(int orderId, [FromForm] ExpenseCreateDto dto)
+    public async Task<ActionResult<OrderResponseDto>> AddCost(int orderId, [FromBody] ExpenseCreateDto dto)
     {
         try { return Ok(await _service.AddCost(orderId, dto)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
@@ -115,7 +115,7 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
     }
 
     [HttpPut("{orderId:int}/costs/{expenseId:int}")]
-    public async Task<ActionResult<OrderResponseDto>> UpdateCost(int orderId, int expenseId, [FromForm] ExpenseUpdateDto dto)
+    public async Task<ActionResult<OrderResponseDto>> UpdateCost(int orderId, int expenseId, [FromBody] ExpenseUpdateDto dto)
     {
         try { return Ok(await _service.UpdateCost(orderId, expenseId, dto)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
