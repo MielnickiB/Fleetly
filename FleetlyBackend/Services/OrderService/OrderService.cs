@@ -705,11 +705,14 @@ namespace FleetlyBackend.Services.OrderService
         {
             return query
                 .Include(o => o.Client).ThenInclude(c => c.Details)
+                .Include(o => o.Client).ThenInclude(c => c.Role)
                 .Include(o => o.Worker).ThenInclude(w => w.Details)
+                .Include(o => o.Worker).ThenInclude(w => w.Role)
                 .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
-                .Include(o => o.StartLocation)
-                .Include(o => o.ServiceLocation)
-                .Include(o => o.EndLocation)
+                .Include(o => o.Vehicle).ThenInclude(v => v.User).ThenInclude(u => u.Details)
+                .Include(o => o.StartLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
+                .Include(o => o.ServiceLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
+                .Include(o => o.EndLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
                 .Include(o => o.Expenses);
         }
     }

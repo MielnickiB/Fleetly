@@ -3,16 +3,20 @@
 @using Fleetly.Shared.Dto.OrderDtos
 @using FleetlyWeb.Services.Orders
 @using FleetlyWeb.Components
+@using Fleetly.Shared.Enums
+@using FleetlyWeb.Helpers
 @using FleetlyWeb.Base
+@using FleetlyWeb.Extensions
 @inject IOrderService OrderService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Nav
 @inherits PageBase<OrderResponseDto>
 
 <PageTitle>Lista Zleceń</PageTitle>
 
-<PageHeader Title="Lista Zleceń" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr Zlecenia / Klient...)" IsLoading="@IsLoading" />
+<PageHeader Title="Lista Zleceń" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr Zlecenia / Klient...)" CanAdd=@(!_isAdmin) IsLoading="@IsLoading" />
 <MudItem xs="12" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
@@ -49,14 +53,39 @@
                          Style="margin:4px"
                          FixedHeader="true"
                          Elevation="5"
-                         RowStyle="font-weight:bold;">
+                         RowStyle="font-weight:bold; cursor:pointer">
                 <Columns>
                     <PropertyColumn Property="x => x.Id" Title="Nr Zlecenia" Editable="false" Filterable="false" StickyLeft />
-                    <PropertyColumn Property="x => x.Type" Title="Typ zlecenia" />
-                    <PropertyColumn Property="x => x.Client.Email" Title="Klient" />
-                    <PropertyColumn Property="x => x.Client.Details.Company" Title="Firma" />
-                    <PropertyColumn Property="x => x.StartLocation.City" Title="Miasto początkowe" />
-                    <PropertyColumn Property="x => x.EndLocation.City" Title="Miasto końcowe" />
+                    <PropertyColumn Property="x => x.Type" Title="Typ zlecenia">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2">@context.Item.Type.ToPolishName()</MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    @if (_isAdmin)
+                    {
+                        <PropertyColumn Property="x => x.Client.Email" Title="Klient" />
+                        <PropertyColumn Property="x => x.Client.Details.Company" Title="Firma" />
+                    }
+                    <PropertyColumn Property="x => x.StartLocation.City" Title="Miasto pobrania" />
+                    <PropertyColumn Property="x => x.StartTime" Title="Data i godzina pobrania" Format="dd.MM.yyyy HH:mm" />
+                    <PropertyColumn Property="x => x.EndLocation.City" Title="Miasto zdania" />
+                    <PropertyColumn Property="x => x.Deadline" Title="Data i godzina zdania" Format="dd.MM.yyyy HH:mm" />
+                    <PropertyColumn Property="x => x.Salary" Title="Wynagrodzenie" Format="0.00 'zł'"/>
+                    <PropertyColumn Property="x => x.Status" Title="Status zlecenia" >
+                        <CellTemplate>
+                            <MudChip T="string"
+                                     Color="@context.Item.Status.ToColor()"
+                                     Size="Size.Small"
+                                     Variant="Variant.Text">
+                                @context.Item.Status.ToPolishName()
+                            </MudChip>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <TemplateColumn Title="Akcje" StickyRight>
+                        <CellTemplate>
+                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
                 </Columns>
 
                 <PagerContent>
@@ -71,7 +100,13 @@
 </MudItem>
 
 @code {
-    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+    private ClaimsPrincipal? User;
+    private bool _isAdmin => User?.IsInRole("Admin") ?? false;
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+        User = (await AuthStateProvider.GetAuthenticationStateAsync()).User;
+    }
     protected override async Task LoadDataAsync()
     {
         IsLoading = true;
@@ -94,6 +129,59 @@
             return false;
         if (string.IsNullOrWhiteSpace(SearchString))
             return true;
+        if (x.Id.ToString().Contains(SearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (x.Client.Email.Contains(SearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (x.Client!.Details.Company.Contains(SearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (x.StartLocation.City.Contains(SearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (x.EndLocation.City.Contains(SearchString, StringComparison.OrdinalIgnoreCase))
+            return true;
         return false;
     };
+
+    private async Task OnDeleteClicked(OrderResponseDto order)
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+    {
+        { x => x.Title, "Anulzacja zlecenia" },
+        { x => x.Content, $"Czy na pewno chcesz anulować to zlecenie?" },
+        { x => x.ConfirmText, "Anuluj" },
+        { x => x.Color, Color.Error },
+        { x => x.Icon, Icons.Material.Filled.DeleteForever },
+        { x => x.IconColor, Color.Error }
+    };
+
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.ExtraSmall,
+            BackdropClick = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await CancellOrder(order.Id);
+        }
+    }
+
+    private async Task CancellOrder(int id)
+    {
+        var response = await OrderService.CancelOrderAsync(id);
+        if (response.Success)
+        {
+            Snackbar.Add("Zlecenie zostało anulowane", Severity.Success);
+            await LoadDataAsync();
+        }
+        else
+        {
+            Snackbar.Add(response.Error ?? "Błąd anulowania", Severity.Error);
+        }
+    }
 }

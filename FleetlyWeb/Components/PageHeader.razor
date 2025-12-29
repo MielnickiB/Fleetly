@@ -22,7 +22,7 @@
             <MudSwitch Value="InactiveValue" ValueChanged="InactiveValueChanged" T="bool" Color="Color.Primary" Label="Pokaż nieaktywne" />
         }
         <MudSpacer />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OnClick" Class="d-none d-sm-flex rounded-xl">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OnClick" Disabled=CanAdd Class="d-none d-sm-flex rounded-xl">
             Dodaj
         </MudButton>
     </MudItem>
@@ -39,6 +39,7 @@
     [Parameter] public bool InactiveValue { get; set; }
     [Parameter] public EventCallback<bool> InactiveValueChanged { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public bool CanAdd { get; set; } = true;
 
     [Parameter] public RenderFragment? ActionButtons { get; set; }
 }
