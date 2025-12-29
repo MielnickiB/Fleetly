@@ -1,0 +1,251 @@
+﻿@typeparam T where T : OrderCreateDto
+@using Fleetly.Shared.Dto.VehicleDtos
+@using Fleetly.Shared.Dto.LocationDtos
+@using Fleetly.Shared.Dto.OrderDtos
+@using FleetlyWeb.Services
+@using FleetlyWeb.Services.Locations
+@using Fleetly.Shared.Enums
+@using FleetlyWeb.Extensions
+@* Pamiętaj o Extension Methods do tłumaczenia Enuma *@
+
+@inject IVehicleService VehicleService
+@inject ILocationService LocationService
+@inject ISnackbar Snackbar
+
+<MudGrid>
+    @* --- WIERSZ 1: TYP i POJAZD --- *@
+    <MudItem xs="12" sm="6">
+        <MudSelect T="OrderType" Label="Typ zlecenia" @bind-Value="Model.Type" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+            @foreach (OrderType type in Enum.GetValues(typeof(OrderType)))
+            {
+                <MudSelectItem Value="type">@type.ToPolishName()</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+
+    <MudItem xs="12" sm="6">
+        @* Autocomplete dla pojazdu: Szuka po marce lub nr rejestracyjnym *@
+        <MudAutocomplete T="VehicleResponseDto"
+                         Label="Wybierz pojazd"
+                         Value="_selectedVehicle"
+                         ValueChanged="OnVehicleChanged"
+                         SearchFunc="@SearchVehicles"
+                         ToStringFunc="@(v => v == null ? null : $"{v.BrandModel?.CarBrandName} {v.BrandModel?.ModelName} ({v.RegistrationNumber})")"
+                         Variant="Variant.Outlined"
+                         Required
+                         RequiredError="Pojazd jest wymagany"
+                         ResetValueOnEmptyText="true" />
+        @* Ukryta walidacja dla samego ID w DTO *@
+        <MudTextField @bind-Value="Model.VehicleId" For="@(() => Model.VehicleId)" Style="display:none" />
+    </MudItem>
+
+    @* --- WIERSZ 2: TRASA (START -> KONIEC) --- *@
+    <MudItem xs="12" sm="6">
+        <MudAutocomplete T="LocationResponseDto"
+                         Label="Lokalizacja początkowa"
+                         Value="_selectedStartLocation"
+                         ValueChanged="OnStartLocationChanged"
+                         SearchFunc="@SearchLocations"
+                         ToStringFunc="@(l => l == null ? null : $"{l.City}, {l.Street} {l.BuildingNumber}/{l.ApartmentNumber} ({l.PostalCode})")"
+                         Variant="Variant.Outlined"
+                         Required
+                         AdornmentIcon="@Icons.Material.Filled.Circle"
+                         AdornmentColor="Color.Success" />
+    </MudItem>
+
+    <MudItem xs="12" sm="6">
+        <MudAutocomplete T="LocationResponseDto"
+                         Label="Lokalizacja końcowa"
+                         Value="_selectedEndLocation"
+                         ValueChanged="OnEndLocationChanged"
+                         SearchFunc="@SearchLocations"
+                         ToStringFunc="@(l => l == null ? null : $"{l.City}, {l.Street} {l.BuildingNumber}/{l.ApartmentNumber} ({l.PostalCode})")"
+                         Variant="Variant.Outlined"
+                         Required
+                         AdornmentIcon="@Icons.Material.Filled.LocationOn"
+                         AdornmentColor="Color.Error" />
+    </MudItem>
+
+    @* --- WIERSZ 3: SERWIS (Tylko jeśli ServiceRide) --- *@
+    @if (Model.Type == OrderType.ServiceRide)
+    {
+        <MudItem xs="12" sm="6">
+            <MudAutocomplete T="LocationResponseDto"
+                             Label="Lokalizacja serwisu"
+                             Value="_selectedServiceLocation"
+                             ValueChanged="OnServiceLocationChanged"
+                             SearchFunc="@SearchLocations"
+                             ToStringFunc="@(l => l == null ? null : $"{l.City} - {l.Description ?? "Serwis"}")"
+                             Variant="Variant.Outlined"
+                             Required
+                             AdornmentIcon="@Icons.Material.Filled.Build"
+                             AdornmentColor="Color.Warning" />
+        </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField @bind-Value="Model.ServiceTime"
+                              Label="Data serwisu"
+                              InputType="InputType.DateTimeLocal"
+                              Converter="@_nullableDateConverter"
+                              Variant="Variant.Outlined" />
+        </MudItem>
+    }
+
+    @* --- WIERSZ 4: CZASY --- *@
+    <MudItem xs="12" sm="6">
+        @* DateTimeLocal to HTML5 input, najwygodniejszy do szybkiego wyboru daty i godziny *@
+        <MudTextField @bind-Value="Model.StartTime" Label="Data rozpoczęcia" For="@(() => Model.StartTime)" InputType="InputType.DateTimeLocal" Variant="Variant.Outlined" Converter="@_dateConverter" Required />
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudTextField @bind-Value="Model.Deadline" Label="Termin końcowy (Deadline)" For="@(() => Model.Deadline)" InputType="InputType.DateTimeLocal" Variant="Variant.Outlined" Converter="@_dateConverter" Required />
+    </MudItem>
+
+    @* --- WIERSZ 5: LOGISTYKA --- *@
+    <MudItem xs="4">
+        <MudNumericField @bind-Value="Model.RangeOfKm" Label="Dystans (km)" For="@(() => Model.RangeOfKm)" Variant="Variant.Outlined" Min="1" />
+    </MudItem>
+    <MudItem xs="4">
+        <MudTextField @bind-Value="Model.EndContactName" Label="Osoba kontaktowa (Odbiór)" For="@(() => Model.EndContactName)" Variant="Variant.Outlined" />
+    </MudItem>
+    <MudItem xs="4">
+        <MudTextField @bind-Value="Model.EndContactPhone" Label="Telefon (Odbiór)" For="@(() => Model.EndContactPhone)" Variant="Variant.Outlined" />
+    </MudItem>
+
+    @* --- WIERSZ 6: SZCZEGÓŁY --- *@
+    <MudItem xs="12">
+        <MudTextField @bind-Value="Model.Details" Label="Szczegóły zlecenia / Uwagi" For="@(() => Model.Details)" Variant="Variant.Outlined" Lines="3" />
+    </MudItem>
+
+    @* Miejsce na ewentualne dodatkowe przyciski wstrzyknięte z zewnątrz *@
+    <MudItem xs="12">
+        @ChildContent
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter] public T Model { get; set; } = default!;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // Listy pomocnicze (cache)
+    private List<VehicleResponseDto> _vehicles = new();
+    private List<LocationResponseDto> _locations = new();
+
+    // Wybrane obiekty (do obsługi Autocomplete)
+    private VehicleResponseDto? _selectedVehicle;
+    private LocationResponseDto? _selectedStartLocation;
+    private LocationResponseDto? _selectedEndLocation;
+    private LocationResponseDto? _selectedServiceLocation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 1. Pobieramy dane słownikowe równolegle
+        var vTask = VehicleService.GetAllVehiclesAsync();
+        var lTask = LocationService.GetAllLocationsAsync();
+
+        await Task.WhenAll(vTask, lTask);
+
+        var vRes = vTask.Result;
+        var lRes = lTask.Result;
+
+        if (vRes.Success) _vehicles = vRes.Data?.Items.ToList() ?? new();
+        if (lRes.Success) _locations = lRes.Data?.Items.ToList() ?? new();
+
+        // 2. Inicjalizacja przy EDYCJI (jeśli Model ma już wypełnione ID)
+        if (Model.VehicleId != 0)
+            _selectedVehicle = _vehicles.FirstOrDefault(x => x.Id == Model.VehicleId);
+
+        if (Model.StartLocationId != 0)
+            _selectedStartLocation = _locations.FirstOrDefault(x => x.Id == Model.StartLocationId);
+
+        if (Model.EndLocationId != 0)
+            _selectedEndLocation = _locations.FirstOrDefault(x => x.Id == Model.EndLocationId);
+
+        if (Model.ServiceLocationId.HasValue && Model.ServiceLocationId != 0)
+            _selectedServiceLocation = _locations.FirstOrDefault(x => x.Id == Model.ServiceLocationId);
+
+        // Domyślne daty dla nowego zlecenia (tylko jeśli są puste/minvalue)
+        if (Model.StartTime == DateTime.MinValue) Model.StartTime = DateTime.Now.AddHours(1);
+        if (Model.Deadline == DateTime.MinValue) Model.Deadline = DateTime.Now.AddDays(1);
+    }
+
+    // --- Metody Wyszukiwania dla Autocomplete ---
+
+    private Task<IEnumerable<VehicleResponseDto>> SearchVehicles(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return Task.FromResult<IEnumerable<VehicleResponseDto>>(_vehicles);
+
+        return Task.FromResult(_vehicles.Where(x =>
+            x.RegistrationNumber.Contains(value, StringComparison.InvariantCultureIgnoreCase) ||
+            (x.BrandModel?.CarBrandName?.Contains(value, StringComparison.InvariantCultureIgnoreCase) ?? false) ||
+            (x.BrandModel?.ModelName?.Contains(value, StringComparison.InvariantCultureIgnoreCase) ?? false)
+        ));
+    }
+
+    // DODANO DRUGI PARAMETR: CancellationToken token
+    private Task<IEnumerable<LocationResponseDto>> SearchLocations(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return Task.FromResult<IEnumerable<LocationResponseDto>>(_locations);
+
+        return Task.FromResult(_locations.Where(x =>
+            x.City.Contains(value, StringComparison.InvariantCultureIgnoreCase) ||
+            x.Street.Contains(value, StringComparison.InvariantCultureIgnoreCase)
+        ));
+    }
+
+    private Task<IEnumerable<LocationResponseDto>> SearchLocations(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return Task.FromResult<IEnumerable<LocationResponseDto>>(_locations);
+
+        return Task.FromResult(_locations.Where(x =>
+            x.City.Contains(value, StringComparison.InvariantCultureIgnoreCase) ||
+            x.Street.Contains(value, StringComparison.InvariantCultureIgnoreCase)
+        ));
+    }
+
+    // --- KONWERTER DLA DateTime (Wymagany) ---
+    private readonly Converter<DateTime> _dateConverter = new Converter<DateTime>
+    {
+        // SetFunc: C# -> HTML
+        // Tutaj usuwamy sekundy, milisekundy i 'Z', zamieniając na format, który lubi przeglądarka
+        SetFunc = value => value.ToString("yyyy-MM-ddTHH:mm"),
+
+        // GetFunc: HTML -> C#
+        // Tutaj parsujemy to, co użytkownik wybrał w kalendarzu
+        GetFunc = text => DateTime.TryParse(text, out var date) ? date : DateTime.MinValue
+    };
+
+    // --- KONWERTER DLA DateTime? (Opcjonalny) ---
+    private readonly Converter<DateTime?> _nullableDateConverter = new Converter<DateTime?>
+    {
+        SetFunc = value => value.HasValue ? value.Value.ToString("yyyy-MM-ddTHH:mm") : null,
+        GetFunc = text => DateTime.TryParse(text, out var date) ? date : null
+    };
+
+    // --- Metody Zmiany (Synchronizacja Obiekt -> ID w DTO) ---
+
+    private void OnVehicleChanged(VehicleResponseDto vehicle)
+    {
+        _selectedVehicle = vehicle;
+        Model.VehicleId = vehicle?.Id ?? 0;
+    }
+
+    private void OnStartLocationChanged(LocationResponseDto location)
+    {
+        _selectedStartLocation = location;
+        Model.StartLocationId = location?.Id ?? 0;
+    }
+
+    private void OnEndLocationChanged(LocationResponseDto location)
+    {
+        _selectedEndLocation = location;
+        Model.EndLocationId = location?.Id ?? 0;
+    }
+
+    private void OnServiceLocationChanged(LocationResponseDto location)
+    {
+        _selectedServiceLocation = location;
+        Model.ServiceLocationId = location?.Id;
+    }
+}
