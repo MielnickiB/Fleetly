@@ -37,10 +37,10 @@
     <MudNavLink Href="/home" Icon="@Icons.Material.Filled.Home">Strona główna</MudNavLink>
     <MudNavLink Href="/vehicles" Icon="@Icons.Material.Filled.CarRental">Pojazdy</MudNavLink>
     <MudNavLink Href="/locations" Icon="@Icons.Material.Filled.LocationOn">Lokalizacje</MudNavLink>
+    <MudNavLink Href="/orders" Icon="@Icons.Material.Filled.ListAlt">Zlecenia</MudNavLink>
     @if (User?.IsAdmin() ?? false)
     {
         <MudNavLink Href="/users" Icon="@Icons.Material.Filled.Person">Użytkownicy</MudNavLink>
-        <MudNavLink Href="/orders" Icon="@Icons.Material.Filled.ListAlt">Wszystkie zlecenia</MudNavLink>
         <MudNavLink Href="/orders/toAccept" Icon="@Icons.Material.Filled.Approval">Zlecenia do przyjęcia</MudNavLink>
         <MudNavLink Href="/orders/toReview" Icon="@Icons.Material.Filled.ReadMore">Zlecenia do zakończenia</MudNavLink>
     }

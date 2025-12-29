@@ -1,0 +1,99 @@
+﻿@page "/orders"
+@attribute [Authorize(Roles = "Admin, Client")]
+@using Fleetly.Shared.Dto.OrderDtos
+@using FleetlyWeb.Services.Orders
+@using FleetlyWeb.Components
+@using FleetlyWeb.Base
+@inject IOrderService OrderService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager Nav
+@inherits PageBase<OrderResponseDto>
+
+<PageTitle>Lista Zleceń</PageTitle>
+
+<PageHeader Title="Lista Zleceń" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr Zlecenia / Klient...)" IsLoading="@IsLoading" />
+<MudItem xs="12" Style="overflow-x:auto;width:100%">
+    @if (IsLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else
+    {
+        @if (!Items.Any())
+        {
+            @if (string.IsNullOrWhiteSpace(SearchString))
+            {
+                <NoItems ItemName="Zlecenia"
+                         Icon="@Icons.Material.Filled.ListAlt" />
+            }
+            else
+            {
+                <NoSearchResult @bind-SearchString="SearchString" />
+            }
+        }
+        else
+        {
+            <MudDataGrid T="OrderResponseDto"
+                         QuickFilter="@_quickFilter"
+                         Items="Items"
+                         Striped="true"
+                         Bordered="true"
+                         SortMode="SortMode.Single"
+                         ColumnResizeMode="ResizeMode.Column"
+                         Loading="@IsLoading"
+                         Filterable="true"
+                         FilterMode="@DataGridFilterMode.ColumnFilterMenu"
+                         FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
+                         Class="pa-4 rounded-xl"
+                         Style="margin:4px"
+                         FixedHeader="true"
+                         Elevation="5"
+                         RowStyle="font-weight:bold;">
+                <Columns>
+                    <PropertyColumn Property="x => x.Id" Title="Nr Zlecenia" Editable="false" Filterable="false" StickyLeft />
+                    <PropertyColumn Property="x => x.Type" Title="Typ zlecenia" />
+                    <PropertyColumn Property="x => x.Client.Email" Title="Klient" />
+                    <PropertyColumn Property="x => x.Client.Details.Company" Title="Firma" />
+                    <PropertyColumn Property="x => x.StartLocation.City" Title="Miasto początkowe" />
+                    <PropertyColumn Property="x => x.EndLocation.City" Title="Miasto końcowe" />
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="OrderResponseDto"
+                                      RowsPerPageString="Wierszy na stronę"
+                                      InfoFormat="{first_item}-{last_item} z {all_items}"
+                                      PageSizeOptions="new int[] { 10, 15, 25, 50 }" />
+                </PagerContent>
+            </MudDataGrid>
+        }
+    }
+</MudItem>
+
+@code {
+    protected override async Task OnInitializedAsync() => await LoadDataAsync();
+    protected override async Task LoadDataAsync()
+    {
+        IsLoading = true;
+        var response = await OrderService.GetAllOrdersAsync();
+
+        if (response.Success)
+        {
+            Items = response.Data?.Items ?? new List<OrderResponseDto>();
+        }
+        else
+        {
+            Snackbar.Add(response.Error ?? "Błąd pobierania danych", Severity.Error);
+        }
+        IsLoading = false;
+    }
+
+    private Func<OrderResponseDto, bool> _quickFilter => x =>
+    {
+        if (!ShowInactive && !x.IsActive)
+            return false;
+        if (string.IsNullOrWhiteSpace(SearchString))
+            return true;
+        return false;
+    };
+}
