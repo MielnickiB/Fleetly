@@ -15,11 +15,9 @@ namespace Fleetly.Shared.Dto.OrderDtos
         public VehicleResponseDto Vehicle { get; set; } = null!;
 
         public LocationResponseDto StartLocation { get; set; } = null!;
-        public LocationResponseDto? ServiceLocation { get; set; }
         public LocationResponseDto EndLocation { get; set; } = null!;
 
         public OrderStatus Status { get; set; }
-        public OrderType Type { get; set; }
         public string? Details { get; set; }
 
         public int RangeOfKm { get; set; }
@@ -34,11 +32,9 @@ namespace Fleetly.Shared.Dto.OrderDtos
         public string? EndContactPhone { get; set; }
 
         public DateTime StartTime { get; set; }
-        public DateTime? ServiceTime { get; set; }
         public DateTime Deadline { get; set; }
 
         public DateTime? ActualStartTime { get; set; }
-        public DateTime? ActualServiceTime { get; set; }
         public DateTime? ActualEndTime { get; set; }
 
         public bool IsActive { get; set; }

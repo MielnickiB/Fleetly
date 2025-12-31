@@ -119,11 +119,8 @@ namespace FleetlyBackend.Services.OrderService
             if (!await _context.Vehicles.AnyAsync(v => v.Id == dto.VehicleId))
                 throw new ArgumentException("Pojazd nie istnieje.");
 
-            if (dto.Type == OrderType.ServiceRide && (!dto.ServiceLocationId.HasValue || !dto.ServiceTime.HasValue))
-                throw new InvalidOperationException("Zlecenie serwisowe wymaga lokalizacji serwisu i czasu dojazdu do niego.");
-
-            ValidateOrderTime(dto.StartTime, dto.ServiceTime, dto.Deadline);
-            await ValidateLocations(dto.StartLocationId, dto.ServiceLocationId, dto.EndLocationId);
+            ValidateOrderTime(dto.StartTime, dto.Deadline);
+            await ValidateLocations(dto.StartLocationId, dto.EndLocationId);
 
             var user = _http.CurrentUser();
             var clientId = user.GetUserId();
@@ -136,14 +133,11 @@ namespace FleetlyBackend.Services.OrderService
                 ClientId = clientId,
                 VehicleId = dto.VehicleId,
                 StartLocationId = dto.StartLocationId,
-                ServiceLocationId = dto.ServiceLocationId,
                 EndLocationId = dto.EndLocationId,
-                Type = dto.Type,
                 Details = dto.Details,
                 RangeOfKm = dto.RangeOfKm,
                 Salary = costLimit.BaseSalary,
                 StartTime = dto.StartTime,
-                ServiceTime = dto.ServiceTime,
                 Deadline = dto.Deadline,
                 EndContactName = dto.EndContactName,
                 EndContactPhone = dto.EndContactPhone,
@@ -175,9 +169,6 @@ namespace FleetlyBackend.Services.OrderService
 
             if (order.Status >= OrderStatus.OrderFinishedByWorker)
                 throw new InvalidOperationException("Nie można edytować zakończonego zlecenia.");
-
-            if (order.Type == OrderType.ServiceRide && (!dto.ServiceLocationId.HasValue || !dto.ServiceTime.HasValue))
-                throw new ArgumentException("Zlecenie serwisowe musi posiadać lokalizację i czas serwisu.");
 
             var oldWorkerId = order.WorkerId;
             var workerChanged = false;
@@ -216,18 +207,14 @@ namespace FleetlyBackend.Services.OrderService
 
             bool locChanged =
                 dto.StartLocationId != order.StartLocationId ||
-                dto.EndLocationId != order.EndLocationId ||
-                dto.ServiceLocationId != order.ServiceLocationId;
+                dto.EndLocationId != order.EndLocationId;
 
             if (locChanged)
             {
-                await ValidateLocations(dto.StartLocationId, dto.ServiceLocationId, dto.EndLocationId);
+                await ValidateLocations(dto.StartLocationId, dto.EndLocationId);
 
                 order.StartLocationId = dto.StartLocationId;
                 order.EndLocationId = dto.EndLocationId;
-
-                if (order.Type == OrderType.ServiceRide)
-                    order.ServiceLocationId = dto.ServiceLocationId;
             }
 
             if (dto.RangeOfKm != order.RangeOfKm)
@@ -239,13 +226,10 @@ namespace FleetlyBackend.Services.OrderService
                 order.Salary = costLimit.BaseSalary;
             }
 
-            ValidateOrderTime(dto.StartTime, dto.ServiceTime, dto.Deadline);
+            ValidateOrderTime(dto.StartTime, dto.Deadline);
 
             order.StartTime = dto.StartTime;
             order.Deadline = dto.Deadline;
-
-            if (order.Type == OrderType.ServiceRide)
-                order.ServiceTime = dto.ServiceTime;
 
             if (!string.IsNullOrEmpty(dto.EndContactName) && !dto.EndContactName.Equals(order.EndContactName))
                 order.EndContactName = dto.EndContactName;
@@ -370,53 +354,11 @@ namespace FleetlyBackend.Services.OrderService
             return await GetFresh(orderId);
         }
 
-        public async Task<OrderResponseDto> ArrivedToService(int orderId)
-        {
-            var order = await GetOrderWithWorkerCheck(orderId);
-
-            if (order.Type != OrderType.ServiceRide)
-                throw new InvalidOperationException("To zlecenie nie jest przejazdem do serwisu.");
-
-            if (order.Status != OrderStatus.OrderStarted)
-                throw new InvalidOperationException("Zlecenie nie jest rozpoczęte.");
-
-            order.Status = OrderStatus.ArrivedAtServiceLocation;
-            order.ActualArrivedServiceTime = DateTime.UtcNow;
-            order.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return await GetFresh(orderId);
-        }
-
-        public async Task<OrderResponseDto> LeaveServiceLocation(int orderId)
-        {
-            var order = await GetOrderWithWorkerCheck(orderId);
-
-            if (order.Type != OrderType.ServiceRide)
-                throw new InvalidOperationException("To zlecenie nie jest przejazdem do serwisu.");
-
-            if (order.Status != OrderStatus.ArrivedAtServiceLocation)
-                throw new InvalidOperationException("Nie można opuścić serwisu — nie jesteś na miejscu.");
-
-            order.Status = OrderStatus.LeftServiceLocation;
-            order.ActualLeftServiceTime = DateTime.UtcNow;
-            order.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return await GetFresh(orderId);
-        }
-
         public async Task<OrderResponseDto> ArrivedToClient(int orderId)
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
-            if (order.Type == OrderType.ServiceRide &&
-                order.Status != OrderStatus.LeftServiceLocation)
-                throw new InvalidOperationException("Musisz najpierw opuścić serwis.");
-            else
-                if (order.Status != OrderStatus.OrderStarted)
+            if (order.Status != OrderStatus.OrderStarted)
                 throw new InvalidOperationException("Musisz wpierw wyjechać od klienta.");
 
             order.Status = OrderStatus.ArrivedToClient;
@@ -672,25 +614,19 @@ namespace FleetlyBackend.Services.OrderService
             return order;
         }
 
-        private static void ValidateOrderTime(DateTime start, DateTime? service, DateTime deadline)
+        private static void ValidateOrderTime(DateTime start, DateTime deadline)
         {
             if (start < DateTime.UtcNow)
                 throw new ArgumentException("Czas rozpoczęcia zlecenia nie może być w przeszłości.");
 
             if (deadline <= start)
                 throw new ArgumentException("Czas zakończenia zlecenia musi być poźniejszy niż rozpoczęcia.");
-
-            if (service.HasValue && (service.Value <= start || service.Value >= deadline))
-                throw new ArgumentException("Czas serwisu musi być pomiędzy czasem rozpoczęcia a terminem.");
         }
 
-        private async Task ValidateLocations(int startLocationId, int? serviceLocationId, int endLocationId)
+        private async Task ValidateLocations(int startLocationId, int endLocationId)
         {
             if (!await _context.Locations.AnyAsync(l => l.Id == startLocationId))
                 throw new ArgumentException("Podana lokalizacja początkowa nie istnieje.");
-
-            if (serviceLocationId.HasValue && !await _context.Locations.AnyAsync(l => l.Id == serviceLocationId.Value))
-                throw new ArgumentException("Podana lokalizacja serwisu nie istnieje.");
 
             if (!await _context.Locations.AnyAsync(l => l.Id == endLocationId))
                 throw new ArgumentException("Podana lokalizacja końcowa nie istnieje.");
@@ -711,7 +647,6 @@ namespace FleetlyBackend.Services.OrderService
                 .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
                 .Include(o => o.Vehicle).ThenInclude(v => v.User).ThenInclude(u => u.Details)
                 .Include(o => o.StartLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
-                .Include(o => o.ServiceLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
                 .Include(o => o.EndLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
                 .Include(o => o.Expenses);
         }

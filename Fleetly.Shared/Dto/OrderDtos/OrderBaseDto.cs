@@ -13,8 +13,6 @@ namespace Fleetly.Shared.Dto.OrderDtos
         [Required(ErrorMessage = "Lokalizacja końcowa jest wymagana!")]
         public int EndLocationId { get; set; }
 
-        public int? ServiceLocationId { get; set; }
-
         [Required(ErrorMessage = "Dystans jest wymagany!")]
         [Range(1, 5000, ErrorMessage = "Dystans musi być większy od 0 i mniejszy od 5000!")]
         public int RangeOfKm { get; set; }
@@ -26,9 +24,6 @@ namespace Fleetly.Shared.Dto.OrderDtos
         [Required(ErrorMessage = "Data zakończenia jest wymagana!")]
         [DataType(DataType.DateTime, ErrorMessage = "Niepoprawny format daty i godziny!")]
         public DateTime Deadline { get; set; }
-
-        [DataType(DataType.DateTime, ErrorMessage = "Niepoprawny format daty i godziny!")]
-        public DateTime? ServiceTime { get; set; }
 
         public string? Details { get; set; }
 

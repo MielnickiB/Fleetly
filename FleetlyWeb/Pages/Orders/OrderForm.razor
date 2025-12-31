@@ -15,15 +15,6 @@
 <MudGrid>
     @* --- WIERSZ 1: TYP i POJAZD --- *@
     <MudItem xs="12" sm="6">
-        <MudSelect T="OrderType" Label="Typ zlecenia" @bind-Value="Model.Type" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
-            @foreach (OrderType type in Enum.GetValues(typeof(OrderType)))
-            {
-                <MudSelectItem Value="type">@type.ToPolishName()</MudSelectItem>
-            }
-        </MudSelect>
-    </MudItem>
-
-    <MudItem xs="12" sm="6">
         @* Autocomplete dla pojazdu: Szuka po marce lub nr rejestracyjnym *@
         <MudAutocomplete T="VehicleResponseDto"
                          Label="Wybierz pojazd"
@@ -66,30 +57,6 @@
                          AdornmentColor="Color.Error" />
     </MudItem>
 
-    @* --- WIERSZ 3: SERWIS (Tylko jeśli ServiceRide) --- *@
-    @if (Model.Type == OrderType.ServiceRide)
-    {
-        <MudItem xs="12" sm="6">
-            <MudAutocomplete T="LocationResponseDto"
-                             Label="Lokalizacja serwisu"
-                             Value="_selectedServiceLocation"
-                             ValueChanged="OnServiceLocationChanged"
-                             SearchFunc="@SearchLocations"
-                             ToStringFunc="@(l => l == null ? null : $"{l.City} - {l.Description ?? "Serwis"}")"
-                             Variant="Variant.Outlined"
-                             Required
-                             AdornmentIcon="@Icons.Material.Filled.Build"
-                             AdornmentColor="Color.Warning" />
-        </MudItem>
-            <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="Model.ServiceTime"
-                              Label="Data serwisu"
-                              InputType="InputType.DateTimeLocal"
-                              Converter="@_nullableDateConverter"
-                              Variant="Variant.Outlined" />
-        </MudItem>
-    }
-
     @* --- WIERSZ 4: CZASY --- *@
     <MudItem xs="12" sm="6">
         @* DateTimeLocal to HTML5 input, najwygodniejszy do szybkiego wyboru daty i godziny *@
@@ -101,13 +68,13 @@
 
     @* --- WIERSZ 5: LOGISTYKA --- *@
     <MudItem xs="4">
-        <MudNumericField @bind-Value="Model.RangeOfKm" Label="Dystans (km)" For="@(() => Model.RangeOfKm)" Variant="Variant.Outlined" Min="1" />
+        <MudNumericField @bind-Value="Model.RangeOfKm" Label="Dystans (km)" For="@(() => Model.RangeOfKm)" Variant="Variant.Outlined" Min="1" ReadOnly Required />
     </MudItem>
     <MudItem xs="4">
-        <MudTextField @bind-Value="Model.EndContactName" Label="Osoba kontaktowa (Odbiór)" For="@(() => Model.EndContactName)" Variant="Variant.Outlined" />
+        <MudTextField @bind-Value="Model.EndContactName" Label="Osoba kontaktowa (Odbiór)" For="@(() => Model.EndContactName)" Variant="Variant.Outlined" Required />
     </MudItem>
     <MudItem xs="4">
-        <MudTextField @bind-Value="Model.EndContactPhone" Label="Telefon (Odbiór)" For="@(() => Model.EndContactPhone)" Variant="Variant.Outlined" />
+        <MudTextField @bind-Value="Model.EndContactPhone" Label="Telefon (Odbiór)" For="@(() => Model.EndContactPhone)" Variant="Variant.Outlined" Required />
     </MudItem>
 
     @* --- WIERSZ 6: SZCZEGÓŁY --- *@
@@ -133,7 +100,6 @@
     private VehicleResponseDto? _selectedVehicle;
     private LocationResponseDto? _selectedStartLocation;
     private LocationResponseDto? _selectedEndLocation;
-    private LocationResponseDto? _selectedServiceLocation;
 
     protected override async Task OnInitializedAsync()
     {
@@ -158,9 +124,6 @@
 
         if (Model.EndLocationId != 0)
             _selectedEndLocation = _locations.FirstOrDefault(x => x.Id == Model.EndLocationId);
-
-        if (Model.ServiceLocationId.HasValue && Model.ServiceLocationId != 0)
-            _selectedServiceLocation = _locations.FirstOrDefault(x => x.Id == Model.ServiceLocationId);
 
         // Domyślne daty dla nowego zlecenia (tylko jeśli są puste/minvalue)
         if (Model.StartTime == DateTime.MinValue) Model.StartTime = DateTime.Now.AddHours(1);
@@ -241,11 +204,5 @@
     {
         _selectedEndLocation = location;
         Model.EndLocationId = location?.Id ?? 0;
-    }
-
-    private void OnServiceLocationChanged(LocationResponseDto location)
-    {
-        _selectedServiceLocation = location;
-        Model.ServiceLocationId = location?.Id;
     }
 }

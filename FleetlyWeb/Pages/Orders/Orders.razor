@@ -56,11 +56,6 @@
                          RowStyle="font-weight:bold; cursor:pointer">
                 <Columns>
                     <PropertyColumn Property="x => x.Id" Title="Nr Zlecenia" Editable="false" Filterable="false" StickyLeft />
-                    <PropertyColumn Property="x => x.Type" Title="Typ zlecenia">
-                        <CellTemplate>
-                            <MudText Typo="Typo.body2">@context.Item.Type.ToPolishName()</MudText>
-                        </CellTemplate>
-                    </PropertyColumn>
                     @if (_isAdmin)
                     {
                         <PropertyColumn Property="x => x.Client.Email" Title="Klient" />

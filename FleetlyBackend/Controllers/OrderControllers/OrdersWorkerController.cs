@@ -68,25 +68,6 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
         catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
-    [HttpPost("{orderId:int}/service/arrive")]
-    public async Task<ActionResult<OrderResponseDto>> ArriveToService(int orderId)
-    {
-        try { return Ok(await _service.ArrivedToService(orderId)); }
-        catch (ArgumentException ex) { return NotFound(ex.Message); }
-        catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
-    }
-
-    [HttpPost("{orderId:int}/service/leave")]
-    public async Task<ActionResult<OrderResponseDto>> LeaveService(int orderId)
-    {
-
-        try { return Ok(await _service.LeaveServiceLocation(orderId)); }
-        catch (ArgumentException ex) { return NotFound(ex.Message); }
-        catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
-    }
-
     [HttpPost("{orderId:int}/arrive")]
     public async Task<ActionResult<OrderResponseDto>> ArriveClient(int orderId)
     {
