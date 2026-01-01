@@ -14,5 +14,6 @@ namespace FleetlyWeb.Services.Orders
         Task<ApiResponse<OrderResponseDto?>> CancelOrderAsync(int orderId);
         Task<ApiResponse<OrderResponseDto?>> ApproveOrderAsync(int orderId);
         Task<ApiResponse<OrderResponseDto?>> ApproveCostsAsync(int orderId);
+        Task<ApiResponse<int>> CalculateDistanceAsync(string start, string end);
     }
 }

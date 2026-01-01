@@ -4,12 +4,14 @@
 @using Fleetly.Shared.Dto.OrderDtos
 @using FleetlyWeb.Services
 @using FleetlyWeb.Services.Locations
+@using FleetlyWeb.Services.Orders
 @using Fleetly.Shared.Enums
 @using FleetlyWeb.Extensions
 @* Pamiętaj o Extension Methods do tłumaczenia Enuma *@
 
 @inject IVehicleService VehicleService
 @inject ILocationService LocationService
+@inject IOrderService OrderService
 @inject ISnackbar Snackbar
 
 <MudGrid>
@@ -37,7 +39,7 @@
                          Value="_selectedStartLocation"
                          ValueChanged="OnStartLocationChanged"
                          SearchFunc="@SearchLocations"
-                         ToStringFunc="@(l => l == null ? null : $"{l.City}, {l.Street} {l.BuildingNumber}/{l.ApartmentNumber} ({l.PostalCode})")"
+                         ToStringFunc="@(l => l == null ? null : $"{l.City}, {l.Street} {l.BuildingNumber}" + (string.IsNullOrEmpty(l.ApartmentNumber) ? "" : $"/{l.ApartmentNumber}") + $" ({l.PostalCode})")"
                          Variant="Variant.Outlined"
                          Required
                          AdornmentIcon="@Icons.Material.Filled.Circle"
@@ -194,15 +196,47 @@
         Model.VehicleId = vehicle?.Id ?? 0;
     }
 
-    private void OnStartLocationChanged(LocationResponseDto location)
+    private async void OnStartLocationChanged(LocationResponseDto location)
     {
         _selectedStartLocation = location;
         Model.StartLocationId = location?.Id ?? 0;
+        await CalculateDistanceIfReady();
     }
 
-    private void OnEndLocationChanged(LocationResponseDto location)
+    private async void OnEndLocationChanged(LocationResponseDto location)
     {
         _selectedEndLocation = location;
         Model.EndLocationId = location?.Id ?? 0;
+        await CalculateDistanceIfReady();
+    }
+
+    private async Task CalculateDistanceIfReady()
+    {
+        if (_selectedStartLocation != null && _selectedEndLocation != null)
+        {
+            var startAddr = BuildAddressString(_selectedStartLocation);
+            var endAddr = BuildAddressString(_selectedEndLocation);
+
+            Snackbar.Add("Obliczam dystans...", Severity.Info);
+
+            var response = await OrderService.CalculateDistanceAsync(startAddr, endAddr);
+
+            if (response.Success && response.Data > 0)
+            {
+                Model.RangeOfKm = response.Data;
+                Snackbar.Add($"Obliczono dystans: {Model.RangeOfKm} km", Severity.Success);
+
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Nie udało się automatycznie wyliczyć trasy.", Severity.Warning);
+            }
+        }
+    }
+
+    private string BuildAddressString(LocationResponseDto loc)
+    {
+        return $"{loc.Street} {loc.BuildingNumber}, {loc.PostalCode} {loc.City}";
     }
 }

@@ -24,6 +24,7 @@ using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.Filters;
 using FleetlyBackend.Services.OrderService;
 using Microsoft.Extensions.FileProviders;
+using FleetlyBackend.Services.RouteService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,6 +79,7 @@ builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddHttpClient<IRouteService, RouteService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
