@@ -16,7 +16,7 @@
 
 <PageTitle>Lista Zleceń</PageTitle>
 
-<PageHeader Title="Lista Zleceń" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr Zlecenia / Klient...)" CanAdd=@(!_isAdmin) IsLoading="@IsLoading" />
+<PageHeader Title="Lista Zleceń" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr Zlecenia / Klient...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
 <MudItem xs="12" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
@@ -56,11 +56,6 @@
                          RowStyle="font-weight:bold; cursor:pointer">
                 <Columns>
                     <PropertyColumn Property="x => x.Id" Title="Nr Zlecenia" Editable="false" Filterable="false" StickyLeft />
-                    <PropertyColumn Property="x => x.Type" Title="Typ zlecenia">
-                        <CellTemplate>
-                            <MudText Typo="Typo.body2">@context.Item.Type.ToPolishName()</MudText>
-                        </CellTemplate>
-                    </PropertyColumn>
                     @if (_isAdmin)
                     {
                         <PropertyColumn Property="x => x.Client.Email" Title="Klient" />
@@ -98,6 +93,11 @@
         }
     }
 </MudItem>
+
+@if (TotalItems > 0)
+{
+    <MobileActionButton OnClick="OpenAddDialogAsync" />
+}
 
 @code {
     private ClaimsPrincipal? User;
@@ -141,6 +141,26 @@
             return true;
         return false;
     };
+
+    private async Task OpenAddDialogAsync()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            BackgroundClass = "blurry-bg"
+        };
+
+        var parameters = new DialogParameters<AddOrderDialog>
+            {
+                { x => x.OnOrderAdded, new EventCallback(this, LoadDataAsync) }
+            };
+
+        var dialogRef = await DialogService.ShowAsync<AddOrderDialog>("Dodaj zlecenie", parameters, options);
+        await dialogRef.Result;
+    }
 
     private async Task OnDeleteClicked(OrderResponseDto order)
     {

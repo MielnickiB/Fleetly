@@ -1,0 +1,40 @@
+﻿@using Fleetly.Shared.Dto.OrderDtos
+@using FleetlyWeb.Services.Orders
+@using FleetlyWeb.Base
+@using FleetlyWeb.Components
+@inherits DialogBase<OrderCreateDto>
+@inject IOrderService OrderService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Style="font-weight:bold" Typo="Typo.h6">Dodaj zlecenie</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="Model" @ref="EditForm">
+            <DataAnnotationsValidator />
+            <OrderForm T="OrderCreateDto" Model="Model" />
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="IsBusy" Color="Color.Default" Variant="Variant.Filled">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="IsBusy">
+            @(IsBusy ? "Dodawanie..." : "Dodaj")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public EventCallback OnOrderAdded { get; set; }
+
+    protected override async Task Submit()
+    {
+        var res = await OrderService.CreateOrderAsync(Model);
+        if (res.Success)
+        {
+            Snackbar.Add("Zlecenie dodane!", Severity.Success);
+            await OnOrderAdded.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else Snackbar.Add(res.Error ?? "Nie udało się dodać zlecenia.", Severity.Error);
+    }
+}

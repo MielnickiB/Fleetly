@@ -1,6 +1,7 @@
 ﻿using Fleetly.Shared.Dto;
 using Fleetly.Shared.Dto.OrderDtos;
 using FleetlyBackend.Services.OrderService;
+using FleetlyBackend.Services.RouteService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -34,7 +35,7 @@ namespace FleetlyBackend.Controllers.OrderControllers
             }
         }
 
-        [Authorize(Roles = "Client")]
+        [Authorize(Roles = "Admin, Client")]
         [HttpPost]
         public async Task<ActionResult<OrderResponseDto>> Create([FromBody] OrderCreateDto orderCreateDto)
         {
@@ -92,6 +93,38 @@ namespace FleetlyBackend.Controllers.OrderControllers
             catch (ArgumentException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
             catch (UnauthorizedAccessException) { return Forbid(); }
+        }
+
+        [Authorize(Roles = "Admin, Client")]
+        [HttpGet("calculate-distance")]
+        public async Task<ActionResult<int>> CalculateDistance([FromQuery] string start, [FromQuery] string end, [FromServices] IRouteService routeService)
+        {
+            if (string.IsNullOrWhiteSpace(start))
+            {
+                return BadRequest("Należy podać lokalizację początkową.");
+            }
+            if (string.IsNullOrWhiteSpace(end))
+            {
+                return BadRequest("Należy podać lokalizację końcową.");
+            }
+
+            try
+            {
+                var distance = await routeService.CalculateDistanceAsync(start, end);
+                return Ok(distance);
+            }
+            catch (ArgumentException)
+            {
+                return BadRequest("Niepoprawna lokalizacja początkowa lub końcowa");
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(503, "Serwis obliczania dystansu przekroczył limit czasowy. Proszę spróbować później.");
+            }
+            catch (HttpRequestException)
+            {
+                return StatusCode(503, "Serwis obliczania dystansu jest obecnie niedostępny. Proszę spróbować później.");
+            }
         }
     }
 }

@@ -15,8 +15,6 @@ namespace FleetlyBackend.Services.OrderService
         public Task<OrderResponseDto> AcceptOrder(int orderId);
         public Task<OrderResponseDto> ResignOrder(int orderId);
         public Task<OrderResponseDto> StartOrder(int orderId);
-        public Task<OrderResponseDto> ArrivedToService(int orderId);
-        public Task<OrderResponseDto> LeaveServiceLocation(int orderId);
         public Task<OrderResponseDto> ArrivedToClient(int orderId);
         public Task<OrderResponseDto> FinishOrderByWorker(int orderId);
         public Task<OrderResponseDto> SubmitAllOrderCosts(int orderId);

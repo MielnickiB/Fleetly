@@ -15,11 +15,9 @@ namespace FleetlyBackend.Mappings
                 Vehicle = o.Vehicle.ToResponseDto(),
 
                 StartLocation = o.StartLocation.ToLocationResponseDto(),
-                ServiceLocation = o.ServiceLocation?.ToLocationResponseDto() ?? new(),
                 EndLocation = o.EndLocation.ToLocationResponseDto(),
 
                 Status = o.Status,
-                Type = o.Type,
                 Details = o.Details,
 
                 RangeOfKm = o.RangeOfKm,
@@ -33,11 +31,9 @@ namespace FleetlyBackend.Mappings
                 EndContactPhone = o.EndContactPhone,
 
                 StartTime = o.StartTime,
-                ServiceTime = o.ServiceTime,
                 Deadline = o.Deadline,
 
                 ActualStartTime = o.ActualStartTime,
-                ActualServiceTime = o.ActualArrivedServiceTime,
                 ActualEndTime = o.ActualEndTime,
 
                 IsActive = o.IsActive,

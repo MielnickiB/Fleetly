@@ -43,5 +43,10 @@ namespace FleetlyWeb.Services.Orders
         {
             return await _api.PostAsync<object, OrderResponseDto>($"{BaseUrl}/{orderId}/costs/approve", new object());
         }
+        public async Task<ApiResponse<int>> CalculateDistanceAsync(string start, string end)
+        {
+            var url = $"{BaseUrl}/calculate-distance?start={Uri.EscapeDataString(start)}&end={Uri.EscapeDataString(end)}";
+            return await _api.GetAsync<int>(url);
+        }
     }
 }

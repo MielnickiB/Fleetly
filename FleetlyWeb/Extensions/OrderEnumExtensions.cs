@@ -11,8 +11,6 @@ namespace FleetlyWeb.Extensions
             OrderStatus.PendingApproval => "Oczekuje na akceptację",
             OrderStatus.Assigned => "Przypisane",
             OrderStatus.OrderStarted => "W trasie",
-            OrderStatus.ArrivedAtServiceLocation => "W serwisie",
-            OrderStatus.LeftServiceLocation => "Wyjazd z serwisu",
             OrderStatus.ArrivedToClient => "U klienta",
             OrderStatus.OrderFinishedByWorker => "Zakończone (Czeka na koszty)",
             OrderStatus.WaitingForCostApproval => "Weryfikacja kosztów",
@@ -30,13 +28,6 @@ namespace FleetlyWeb.Extensions
             OrderStatus.ApprovedByAdmin => Color.Success,
             OrderStatus.Cancelled => Color.Error,
             _ => Color.Default
-        };
-
-        public static string ToPolishName(this OrderType type) => type switch
-        {
-            OrderType.CountryRide => "Krajowy",
-            OrderType.ServiceRide => "Serwisowy",
-            _ => type.ToString()
         };
     }
 }
