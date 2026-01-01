@@ -10,21 +10,23 @@ namespace FleetlyBackend.Services.RouteService
 
         public async Task<int> CalculateDistanceAsync(string startAddress, string endAddress)
         {
-            var startCoords = await GetCoordinates(startAddress) 
+            var startCoordsTask = GetCoordinates(startAddress);
+            var endCoordsTask = GetCoordinates(endAddress);
+            await Task.WhenAll(startCoordsTask, endCoordsTask);
+
+            var (Lat, Lon) = await startCoordsTask
                 ?? throw new Exception($"Nie udało się odnaleźć adresu początkowego: '{startAddress}'. Sprawdź pisownię.");
-            var endCoords = await GetCoordinates(endAddress)
+            var endCoords = await endCoordsTask
                 ?? throw new Exception($"Nie udało się odnaleźć adresu końcowego: '{endAddress}'. Sprawdź pisownię.");
 
-            var sLat = startCoords.Lat.ToString(CultureInfo.InvariantCulture);
-            var sLon = startCoords.Lon.ToString(CultureInfo.InvariantCulture);
+            var sLat = Lat.ToString(CultureInfo.InvariantCulture);
+            var sLon = Lon.ToString(CultureInfo.InvariantCulture);
             var eLat = endCoords.Lat.ToString(CultureInfo.InvariantCulture);
             var eLon = endCoords.Lon.ToString(CultureInfo.InvariantCulture);
 
             var url = $"http://router.project-osrm.org/route/v1/driving/" +
                       $"{sLon},{sLat};" +
                       $"{eLon},{eLat}?overview=false";
-
-            _http.DefaultRequestHeaders.UserAgent.ParseAdd("FleetlyApp/1.0");
 
             var response = await _http.GetAsync(url);
             if (!response.IsSuccessStatusCode) return 0;
@@ -40,8 +42,6 @@ namespace FleetlyBackend.Services.RouteService
         private async Task<(double Lat, double Lon)?> GetCoordinates(string address)
         {
             var url = $"https://nominatim.openstreetmap.org/search?format=json&q={Uri.EscapeDataString(address)}&limit=1";
-
-            _http.DefaultRequestHeaders.UserAgent.ParseAdd("FleetlyApp/1.0");
 
             var response = await _http.GetAsync(url);
             if (!response.IsSuccessStatusCode) return null;

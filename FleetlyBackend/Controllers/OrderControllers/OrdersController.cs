@@ -99,14 +99,31 @@ namespace FleetlyBackend.Controllers.OrderControllers
         [HttpGet("calculate-distance")]
         public async Task<ActionResult<int>> CalculateDistance([FromQuery] string start, [FromQuery] string end, [FromServices] IRouteService routeService)
         {
+            if (string.IsNullOrWhiteSpace(start))
+            {
+                return BadRequest("Należy podać lokalizację początkową.");
+            }
+            if (string.IsNullOrWhiteSpace(end))
+            {
+                return BadRequest("Należy podać lokalizację końcową.");
+            }
+
             try
             {
                 var distance = await routeService.CalculateDistanceAsync(start, end);
                 return Ok(distance);
             }
-            catch (Exception ex)
+            catch (ArgumentException)
             {
-                return BadRequest(ex.Message);
+                return BadRequest("Niepoprawna lokalizacja początkowa lub końcowa");
+            }
+            catch (TimeoutException)
+            {
+                return StatusCode(503, "Serwis obliczania dystansu przekroczył limit czasowy. Proszę spróbować później.");
+            }
+            catch (HttpRequestException)
+            {
+                return StatusCode(503, "Serwis obliczania dystansu jest obecnie niedostępny. Proszę spróbować później.");
             }
         }
     }

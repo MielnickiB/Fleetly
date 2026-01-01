@@ -11,20 +11,20 @@ using FleetlyBackend.Services.ExpenseService;
 using FleetlyBackend.Services.FileService;
 using FleetlyBackend.Services.InvoiceService;
 using FleetlyBackend.Services.LocationService;
+using FleetlyBackend.Services.NotificationService;
+using FleetlyBackend.Services.OrderService;
+using FleetlyBackend.Services.RouteService;
 using FleetlyBackend.Services.UserDetailsService;
 using FleetlyBackend.Services.UserRoleService;
 using FleetlyBackend.Services.UserSerivce;
 using FleetlyBackend.Services.VehicleService;
-using FleetlyBackend.Services.NotificationService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.Filters;
-using FleetlyBackend.Services.OrderService;
-using Microsoft.Extensions.FileProviders;
-using FleetlyBackend.Services.RouteService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,7 +79,16 @@ builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddHttpClient<IRouteService, RouteService>();
+builder.Services.AddHttpClient<IRouteService, RouteService>(client =>
+{
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("FleetlyApp/1.0");
+}).
+AddStandardResilienceHandler(options =>
+{
+    options.Retry.MaxRetryAttempts = 3;
+    options.Retry.Delay = TimeSpan.FromSeconds(2);
+    options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+});
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -147,7 +156,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

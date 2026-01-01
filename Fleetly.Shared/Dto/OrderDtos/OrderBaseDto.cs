@@ -14,7 +14,7 @@ namespace Fleetly.Shared.Dto.OrderDtos
         public int EndLocationId { get; set; }
 
         [Required(ErrorMessage = "Dystans jest wymagany!")]
-        [Range(1, 5000, ErrorMessage = "Dystans musi być większy od 0 i mniejszy od 5000!")]
+        [Range(1, 5000, ErrorMessage = "Dystans musi być większy od 0 lub równy 5000!")]
         public int RangeOfKm { get; set; }
 
         [Required(ErrorMessage = "Data rozpoczęcia jest wymagana!")]

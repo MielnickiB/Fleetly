@@ -52,7 +52,7 @@
                          Value="_selectedEndLocation"
                          ValueChanged="OnEndLocationChanged"
                          SearchFunc="@SearchLocations"
-                         ToStringFunc="@(l => l == null ? null : $"{l.City}, {l.Street} {l.BuildingNumber}/{l.ApartmentNumber} ({l.PostalCode})")"
+                         ToStringFunc="@(l => l == null ? null : $"{l.City}, {l.Street} {l.BuildingNumber}" + (string.IsNullOrEmpty(l.ApartmentNumber) ? "" : $"/{l.ApartmentNumber}") + $" ({l.PostalCode})")"
                          Variant="Variant.Outlined"
                          Required
                          AdornmentIcon="@Icons.Material.Filled.LocationOn"
@@ -148,17 +148,6 @@
 
     // DODANO DRUGI PARAMETR: CancellationToken token
     private Task<IEnumerable<LocationResponseDto>> SearchLocations(string value, CancellationToken token)
-    {
-        if (string.IsNullOrEmpty(value))
-            return Task.FromResult<IEnumerable<LocationResponseDto>>(_locations);
-
-        return Task.FromResult(_locations.Where(x =>
-            x.City.Contains(value, StringComparison.InvariantCultureIgnoreCase) ||
-            x.Street.Contains(value, StringComparison.InvariantCultureIgnoreCase)
-        ));
-    }
-
-    private Task<IEnumerable<LocationResponseDto>> SearchLocations(string value)
     {
         if (string.IsNullOrEmpty(value))
             return Task.FromResult<IEnumerable<LocationResponseDto>>(_locations);
