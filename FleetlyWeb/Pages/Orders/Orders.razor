@@ -86,7 +86,7 @@
                             }
                             @if (context.Item.IsActive && context.Item.Status < OrderStatus.OrderStarted)
                             {
-                                <MudIconButton Disabled="@(!context.Item.IsActive || context.Item.Status == OrderStatus.Cancelled)" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
                             }
                         </CellTemplate>
                     </TemplateColumn>
