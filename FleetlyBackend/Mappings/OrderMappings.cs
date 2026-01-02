@@ -25,6 +25,9 @@ namespace FleetlyBackend.Mappings
                 AdditionalCosts = o.AdditionalCosts,
                 FuelCosts = o.FuelCosts,
 
+                MaxNonFuelCosts = o.CostLimit.MaxCosts,
+                MaxSalary = o.CostLimit.MaxSalary,
+
                 Expenses = o.Expenses?.Select(e => e.ToResponseDto()).ToList() ?? [],
 
                 EndContactName = o.EndContactName,

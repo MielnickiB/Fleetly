@@ -24,7 +24,10 @@ namespace Fleetly.Shared.Dto.OrderDtos
         public decimal Salary { get; set; }
         public decimal AdditionalCosts { get; set; }
         public decimal FuelCosts { get; set; }
-        public decimal TotalCosts => (Salary * 0.3m) + AdditionalCosts + FuelCosts;
+        public decimal TotalCosts => (Salary * 0.3m) + Salary + AdditionalCosts + FuelCosts;
+        public decimal MaxNonFuelCosts { get; set; }
+        public decimal MaxSalary { get; set; }
+        public decimal MaxProjectedValue => MaxSalary * 0.3m + MaxSalary + MaxNonFuelCosts;
 
         public List<ExpenseResponseDto> Expenses { get; set; } = [];
 

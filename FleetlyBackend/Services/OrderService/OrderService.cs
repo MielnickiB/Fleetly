@@ -136,6 +136,7 @@ namespace FleetlyBackend.Services.OrderService
                 EndLocationId = dto.EndLocationId,
                 Details = dto.Details,
                 RangeOfKm = dto.RangeOfKm,
+                CostLimitId = costLimit.Id,
                 Salary = costLimit.BaseSalary,
                 StartTime = dto.StartTime,
                 Deadline = dto.Deadline,
@@ -222,8 +223,12 @@ namespace FleetlyBackend.Services.OrderService
                 var costLimit = await _costLimitService.GetByRangeOfKm(dto.RangeOfKm)
                      ?? throw new InvalidOperationException("Brak limitu kosztów.");
 
+                if (costLimit.Id != order.CostLimitId)
+                {
+                    order.CostLimitId = costLimit.Id;
+                    order.Salary = costLimit.BaseSalary;
+                }
                 order.RangeOfKm = dto.RangeOfKm;
-                order.Salary = costLimit.BaseSalary;
             }
 
             ValidateOrderTime(dto.StartTime, dto.Deadline);
@@ -540,7 +545,7 @@ namespace FleetlyBackend.Services.OrderService
             order.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            var invoiceSum = Math.Round((order.Salary * 0.3m) + order.FuelCosts + order.AdditionalCosts);
+            var invoiceSum = Math.Round(order.Salary + (order.Salary * 0.3m) + order.FuelCosts + order.AdditionalCosts);
 
             var invoice = new InvoiceCreateDto
             {
@@ -646,6 +651,7 @@ namespace FleetlyBackend.Services.OrderService
                 .Include(o => o.Worker).ThenInclude(w => w.Role)
                 .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
                 .Include(o => o.Vehicle).ThenInclude(v => v.User).ThenInclude(u => u.Details)
+                .Include(o => o.CostLimit)
                 .Include(o => o.StartLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
                 .Include(o => o.EndLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
                 .Include(o => o.Expenses);

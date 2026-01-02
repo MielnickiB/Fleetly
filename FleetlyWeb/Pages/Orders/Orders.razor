@@ -53,7 +53,8 @@
                          Style="margin:4px"
                          FixedHeader="true"
                          Elevation="5"
-                         RowStyle="font-weight:bold; cursor:pointer">
+                         RowStyle="font-weight:bold; cursor:pointer"
+                         RowClick="OnRowClick">
                 <Columns>
                     <PropertyColumn Property="x => x.Id" Title="Nr Zlecenia" Editable="false" Filterable="false" StickyLeft />
                     @if (_isAdmin)
@@ -65,7 +66,13 @@
                     <PropertyColumn Property="x => x.StartTime" Title="Data i godzina pobrania" Format="dd.MM.yyyy HH:mm" />
                     <PropertyColumn Property="x => x.EndLocation.City" Title="Miasto zdania" />
                     <PropertyColumn Property="x => x.Deadline" Title="Data i godzina zdania" Format="dd.MM.yyyy HH:mm" />
-                    <PropertyColumn Property="x => x.Salary" Title="Wynagrodzenie" Format="0.00 'zł'" />
+                    <PropertyColumn Property="x => x.MaxProjectedValue" Title="Max. Wartość zlecenia" Format="N2">
+                        <CellTemplate>
+                            <MudTooltip Text="@($"Maksymalne wynagrodzenie z prowizją: {(context.Item.MaxSalary * 0.3m + context.Item.MaxSalary):N2} + Limit: {context.Item.MaxNonFuelCosts:N2}. Koszty paliwa są zawsze indywidualne.")">
+                                @context.Item.MaxProjectedValue.ToString("N2") zł
+                            </MudTooltip>
+                        </CellTemplate>
+                    </PropertyColumn>
                     <PropertyColumn Property="x => x.Status" Title="Status zlecenia">
                         <CellTemplate>
                             <MudChip T="string"
@@ -276,4 +283,8 @@
         }
     }
 
+    private void OnRowClick(DataGridRowClickEventArgs<OrderResponseDto> args)
+    {
+        Nav.NavigateTo($"/orders/{args.Item.Id}");
+    }
 }
