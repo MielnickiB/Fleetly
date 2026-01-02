@@ -1,0 +1,62 @@
+﻿@using FleetlyWeb.Components
+@using Fleetly.Shared.Dto.OrderDtos
+@using FleetlyWeb.Services.Orders
+@inject IOrderService OrderService
+@inherits FleetlyWeb.Base.DialogBase<OrderUpdateDto>
+
+<MudDialog>
+    <TitleContent>
+        <MudText Style="font-weight:bold" Typo="Typo.h6">
+            Edytuj zlecenie #@Order.Id
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="Model" @ref="EditForm">
+            <DataAnnotationsValidator />
+            <OrderForm Model="Model"/>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled" Disabled="@IsBusy">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" ButtonType="ButtonType.Submit" OnClick="SubmitForm" Disabled="@IsBusy">
+            @(IsBusy ? "Zapisywanie..." : "Zapisz zmiany")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public OrderResponseDto Order { get; set; } = default!;
+    [Parameter] public EventCallback OnOrderUpdated { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        Model = new OrderUpdateDto
+        {
+            StartLocationId = Order.StartLocation.Id,
+            EndLocationId = Order.EndLocation.Id,
+            StartTime = Order.StartTime,
+            Deadline = Order.Deadline,
+            VehicleId = Order.Vehicle.Id,
+            RangeOfKm = Order.RangeOfKm,
+            EndContactName = Order.EndContactName,
+            EndContactPhone = Order.EndContactPhone,
+            Details = Order.Details
+        };
+        return Task.CompletedTask;
+    }
+
+    protected override async Task Submit()
+    {
+        var res = await OrderService.UpdateOrderAsync(Order.Id, Model);
+        if (res.Success)
+        {
+            Snackbar.Add("Zmiany zostały zapisane.", Severity.Success);
+            await OnOrderUpdated.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add(res.Error ?? "Błąd aktualizacji danych, spróbuj ponownie", Severity.Error);
+        }
+    }
+}

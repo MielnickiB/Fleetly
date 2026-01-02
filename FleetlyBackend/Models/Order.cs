@@ -31,8 +31,8 @@ namespace FleetlyBackend.Models
         public decimal FuelCosts { get; set; } = 0m;
         public List<Expense> Expenses { get; set; } = [];
 
-        public string? EndContactName { get; set; }
-        public string? EndContactPhone { get; set; }
+        public string EndContactName { get; set; } = null!;
+        public string EndContactPhone { get; set; } = null!;
 
         public DateTime StartTime { get; set; }
         public DateTime Deadline { get; set; }
