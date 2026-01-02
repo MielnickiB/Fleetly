@@ -28,7 +28,7 @@ namespace FleetlyBackend.Migrations
                 column: "CostLimitId",
                 principalTable: "CostLimits",
                 principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                onDelete: ReferentialAction.Restrict);
         }
 
         /// <inheritdoc />
