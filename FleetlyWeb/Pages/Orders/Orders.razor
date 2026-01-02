@@ -65,8 +65,8 @@
                     <PropertyColumn Property="x => x.StartTime" Title="Data i godzina pobrania" Format="dd.MM.yyyy HH:mm" />
                     <PropertyColumn Property="x => x.EndLocation.City" Title="Miasto zdania" />
                     <PropertyColumn Property="x => x.Deadline" Title="Data i godzina zdania" Format="dd.MM.yyyy HH:mm" />
-                    <PropertyColumn Property="x => x.Salary" Title="Wynagrodzenie" Format="0.00 'zł'"/>
-                    <PropertyColumn Property="x => x.Status" Title="Status zlecenia" >
+                    <PropertyColumn Property="x => x.Salary" Title="Wynagrodzenie" Format="0.00 'zł'" />
+                    <PropertyColumn Property="x => x.Status" Title="Status zlecenia">
                         <CellTemplate>
                             <MudChip T="string"
                                      Color="@context.Item.Status.ToColor()"
@@ -79,6 +79,11 @@
                     <TemplateColumn Title="Akcje" StickyRight>
                         <CellTemplate>
                             <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+
+                            @if (_isAdmin && context.Item.Status == OrderStatus.PendingApproval)
+                            {
+                                <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" OnClick="@(() => OnAcceptClicked(context.Item))" />
+                            }
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
@@ -204,4 +209,48 @@
             Snackbar.Add(response.Error ?? "Błąd anulowania", Severity.Error);
         }
     }
+
+    private async Task OnAcceptClicked(OrderResponseDto order)
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+    {
+        { x => x.Title, "Akceptacja zlecenia" },
+        { x => x.Content, $"Czy na pewno chcesz zaakcteptować to zlecenie?" },
+        { x => x.ConfirmText, "Akceptuj" },
+        { x => x.Color, Color.Success },
+        { x => x.Icon, Icons.Material.Filled.Check },
+        { x => x.IconColor, Color.Success }
+    };
+
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.ExtraSmall,
+            BackdropClick = true,
+            CloseOnEscapeKey = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await ApproveOrder(order.Id);
+        }
+    }
+
+    private async Task ApproveOrder(int id)
+    {
+        var response = await OrderService.ApproveOrderAsync(id);
+        if (response.Success)
+        {
+            Snackbar.Add("Zlecenie zostało zaakceptowane", Severity.Success);
+            await LoadDataAsync();
+        }
+        else
+        {
+            Snackbar.Add(response.Error ?? "Błąd akceptacji", Severity.Error);
+        }
+    }
+
 }
