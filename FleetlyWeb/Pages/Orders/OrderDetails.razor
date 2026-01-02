@@ -353,9 +353,12 @@
 
     private string BuildImageUrl(string fileName)
     {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return string.Empty;
+
         var baseURL = Config["BaseURL"] ?? "http://localhost:5225/";
-        var safe = System.Text.RegularExpressions.Regex.Replace(fileName, @"[^a-zA-Z0-9_\-\.]", string.Empty);
-        return $"{baseURL}Uploads/Images/{safe}";
+
+        return $"{baseURL}Uploads/Images/{fileName}";
     }
 
     private async Task OpenImagePreviewAsync(string fileName)
