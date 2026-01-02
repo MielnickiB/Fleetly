@@ -25,6 +25,8 @@ namespace FleetlyBackend.Models
 
         public int RangeOfKm { get; set; }
 
+        public int CostLimitId { get; set; }
+        public virtual CostLimit CostLimit { get; set; } = null!;
         public decimal Salary { get; set; }
 
         public decimal AdditionalCosts { get; set; } = 0m;

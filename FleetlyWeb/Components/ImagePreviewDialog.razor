@@ -1,0 +1,28 @@
+﻿<MudDialog>
+    <DialogContent>
+        <div class="d-flex justify-center align-center" style="min-height: 200px;">
+            @if (!string.IsNullOrEmpty(ImageUrl))
+            {
+                <MudImage Src="@ImageUrl"
+                          ObjectFit="ObjectFit.Contain"
+                          Style="max-height: 80vh; max-width: 100%; border-radius: 8px;"
+                          Elevation="4" />
+            }
+            else
+            {
+                <MudText>Brak zdjęcia do wyświetlenia.</MudText>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Primary">Zamknij</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string ImageUrl { get; set; } = string.Empty;
+
+    private void Cancel() => MudDialog.Cancel();
+}
