@@ -1,4 +1,5 @@
-﻿using Fleetly.Shared.Dto.CostLimitDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.CostLimitDtos;
 using FleetlyBackend.Services.CostLimitService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,8 +14,8 @@ namespace FleetlyBackend.Controllers
         private readonly ICostLimitService _service = service;
 
         [HttpGet]
-        public async Task<ActionResult<List<CostLimitResponseDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-            => Ok(await _service.GetAll(page, pageSize));
+        public async Task<ActionResult<PagedResult<CostLimitResponseDto>>> GetAll()
+            => Ok(await _service.GetAll());
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<CostLimitResponseDto>> Get(int id)

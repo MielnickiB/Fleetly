@@ -1,10 +1,11 @@
-﻿using Fleetly.Shared.Dto.CostLimitDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.CostLimitDtos;
 
 namespace FleetlyBackend.Services.CostLimitService
 {
     public interface ICostLimitService
     {
-        Task<List<CostLimitResponseDto>> GetAll(int page = 1, int pageSize = 10);
+        Task<PagedResult<CostLimitResponseDto>> GetAll();
         Task<CostLimitResponseDto?> Get(int id);
         Task<CostLimitResponseDto> GetByRangeOfKm(int rangeOfKm);
         Task<CostLimitResponseDto> Create(CostLimitCreateDto dto);
