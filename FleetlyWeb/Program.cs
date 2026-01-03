@@ -11,6 +11,7 @@ using MudBlazor.Services;
 using FleetlyWeb.Services.Locations;
 using FleetlyWeb.Services.Orders;
 using FleetlyWeb.Services.Notifications;
+using FleetlyWeb.Services.CostLimits;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -42,5 +43,6 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ICostLimitService, CostLimitService>();
 
 await builder.Build().RunAsync();
