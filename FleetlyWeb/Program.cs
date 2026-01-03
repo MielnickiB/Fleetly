@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using FleetlyWeb.Services.Locations;
 using FleetlyWeb.Services.Orders;
+using FleetlyWeb.Services.Notifications;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -40,5 +41,6 @@ builder.Services.AddScoped<ICarBrandService, CarBrandService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 await builder.Build().RunAsync();

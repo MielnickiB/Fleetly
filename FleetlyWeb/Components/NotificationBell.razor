@@ -1,0 +1,249 @@
+﻿@using Fleetly.Shared.Dto.NotificationDtos
+@using FleetlyWeb.Services.Notifications
+@using Fleetly.Shared.Enums
+@implements IDisposable
+@inject INotificationService NotiService
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<div class="d-inline-flex align-center relative mx-2">
+    <MudBadge Content="_unreadCount" Color="Color.Error" Overlap="true" Visible="@(_unreadCount > 0)" Class="notification-badge">
+        <MudIconButton Icon="@Icons.Material.Filled.Notifications"
+                       Color="Color.Inherit"
+                       OnClick="ToggleOpen" />
+    </MudBadge>
+
+    <MudPopover Open="_isOpen"
+                AnchorOrigin="Origin.BottomRight"
+                TransformOrigin="Origin.TopRight"
+                Fixed="false"
+                Class="px-0 py-2 paper-blur"
+                Style="max-width: 70vw; width: 350px; max-height: 80vh; overflow-y: auto;">
+
+        <div class="d-flex justify-space-between align-center px-4 py-2">
+            <MudText Typo="Typo.subtitle1" Style="font-weight:bold">Powiadomienia</MudText>
+            @if (_notifications.Any(n => !n.IsRead))
+            {
+                <MudTooltip Text="Oznacz wszystkie jako przeczytane">
+                    <MudIconButton Icon="@Icons.Material.Filled.DoneAll" Size="Size.Small" OnClick="MarkAllRead" Color="Color.Primary" />
+                </MudTooltip>
+            }
+        </div>
+        <MudDivider />
+
+        @if (_loading)
+        {
+            <div class="d-flex justify-center my-4">
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            </div>
+        }
+        else if (!_notifications.Any())
+        {
+            <div class="d-flex flex-column align-center justify-center py-8">
+                <MudIcon Icon="@Icons.Material.Outlined.NotificationsNone" Size="Size.Large" Color="Color.Default" />
+                <MudText Typo="Typo.body2" Class="mt-2 text-muted">Brak powiadomień</MudText>
+            </div>
+        }
+        else
+        {
+            <MudList T="NotificationResponseDto" Clickable="true" Dense="true" Class="py-0">
+                @foreach (var item in _notifications)
+                {
+                    <MudListItem OnClick="@(() => OnNotificationClick(item))"
+                                 Class="@(item.IsRead ? "" : "unread-notification")">
+                        <div class="d-flex gap-3">
+                            <div class="mt-1">
+                                <MudIcon Icon="@GetIcon(item.Type)"
+                                         Color="@(item.IsRead ? Color.Default : Color.Primary)"
+                                         Size="Size.Medium" />
+                            </div>
+
+                            <div style="flex-grow:1; min-width:0;">
+                                <MudText Typo="Typo.subtitle2" Style="@(item.IsRead ? "" : "font-weight:bold")">
+                                    @item.Title
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Style="font-size: 0.85rem; line-height: 1.2em;">
+                                    @item.Message
+                                </MudText>
+                                <MudText Typo="Typo.caption" Class="mt-1 d-block" Color="Color.Default">
+                                    @GetTimeAgo(item.CreatedAt)
+                                </MudText>
+                            </div>
+
+                            <div>
+                                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                               Size="Size.Small"
+                                               OnClick="@((e) => DeleteNotification(item, e))" />
+                            </div>
+                        </div>
+                    </MudListItem>
+                    <MudDivider />
+                }
+            </MudList>
+        }
+    </MudPopover>
+</div>
+
+@if (_isOpen)
+{
+    <MudOverlay Visible="true" OnClick="ToggleOpen" DarkBackground="false" ZIndex="0" />
+}
+
+<style>
+    .unread-notification {
+        background-color: var(--mud-palette-action-hover);
+        border-left: 4px solid var(--mud-palette-primary);
+    }
+
+    .notification-badge .mud-badge {
+        top: 4px !important;
+    }
+</style>
+
+@code {
+    private bool _isOpen;
+    private int _unreadCount = 0;
+    private List<NotificationResponseDto> _notifications = new();
+    private bool _loading = false;
+    private System.Threading.Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        NotiService.OnChange += StateHasChangedWrapper;
+
+        await LoadUnreadCount();
+
+        _timer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(LoadUnreadCount);
+        }, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+    }
+
+    private async void StateHasChangedWrapper()
+    {
+        try
+        {
+            await LoadUnreadCount();
+            if (_isOpen) await LoadList();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add($"Wystąpił błąd podczas odświeżania powiadomień", Severity.Error);
+        }
+    }
+
+    private async Task LoadUnreadCount()
+    {
+        var res = await NotiService.GetUnreadCountAsync();
+        if (res.Success)
+        {
+            _unreadCount = res.Data;
+        }
+    }
+
+    private async Task ToggleOpen()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen)
+        {
+            await LoadList();
+        }
+    }
+
+    private async Task LoadList()
+    {
+        _loading = true;
+        try
+        {
+            var res = await NotiService.GetMyNotificationsAsync();
+            if (res.Success)
+            {
+                _notifications = res.Data ?? new();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add($"Wystąpił błąd podczas ładowania powiadomień", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OnNotificationClick(NotificationResponseDto item)
+    {
+        if (!item.IsRead)
+        {
+            item.IsRead = true;
+            _unreadCount = Math.Max(0, _unreadCount - 1);
+            await NotiService.MarkAsReadAsync(item.Id);
+        }
+
+        if (item.RelatedEntityId.HasValue)
+        {
+            _isOpen = false;
+            //Kiedy dojdą inne typy powiadomień, trzeba będzie dodać odpowiednie nawigacje z podziałem na type!!
+            Nav.NavigateTo($"/orders/{item.RelatedEntityId}");
+        }
+    }
+
+    private async Task MarkAllRead()
+    {
+        var res = await NotiService.MarkAllAsReadAsync();
+        if (res.Success)
+        {
+            _notifications.ForEach(x => x.IsRead = true);
+            _unreadCount = 0;
+        }
+        else
+        {
+            Snackbar.Add($"Wystąpił błąd podczas oznaczania powiadomień jako przeczytane", Severity.Error);
+        }
+    }
+
+    private async Task DeleteNotification(NotificationResponseDto item, MouseEventArgs e)
+    {
+        var res = await NotiService.DeleteAsync(item.Id);
+        if (res.Success)
+        {
+            _notifications.Remove(item);
+            if (!item.IsRead) _unreadCount--;
+        }
+        else
+        {
+            Snackbar.Add($"Wystąpił błąd podczas usuwania powiadomienia", Severity.Error);
+        }
+    }
+
+    private string GetIcon(NotificationType type) => type switch
+    {
+        NotificationType.OrderCreated => Icons.Material.Filled.AddCircle,
+        NotificationType.OrderApprovedByAdmin => Icons.Material.Filled.CheckCircle,
+        NotificationType.WorkerTookTheOrder => Icons.Material.Filled.Person,
+        NotificationType.WorkerResignedFromOrder => Icons.Material.Filled.PersonOff,
+        NotificationType.OrderCancelled => Icons.Material.Filled.Cancel,
+        NotificationType.AssignedToOrder => Icons.Material.Filled.AssignmentInd,
+        NotificationType.UnseatedFromOrder => Icons.Material.Filled.AssignmentReturn,
+        NotificationType.OrderUpdated => Icons.Material.Filled.Edit,
+        NotificationType.OrderCompleted => Icons.Material.Filled.DoneAll,
+        NotificationType.MessageFromAdmin => Icons.Material.Filled.AdminPanelSettings,
+        _ => Icons.Material.Filled.Info
+    };
+
+    private string GetTimeAgo(DateTime date)
+    {
+        var span = DateTime.UtcNow - date;
+        if (span.TotalMinutes < 1) return "Teraz";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} min temu";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours} godz. temu";
+        return date.ToString("dd.MM HH:mm");
+    }
+
+    public void Dispose()
+    {
+        NotiService.OnChange -= StateHasChangedWrapper;
+        _timer?.Dispose();
+    }
+}

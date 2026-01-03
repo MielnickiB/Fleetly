@@ -1,16 +1,17 @@
-﻿@inherits LayoutComponentBase
+﻿@using FleetlyWeb.Components
+@inherits LayoutComponentBase
 
 <MudThemeProvider Theme="@FleetlyWeb.Theme.FleetlyTheme.Default" />
 
 <MudLayout>
 
-    <MudAppBar Elevation="5" Color="Color.Surface" Dense="true">
+    <MudAppBar Elevation="5" Color="Color.Surface">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleOpen" Color="Color.Inherit" />
         <MudText Typo="Typo.h5" Class="ml-2">Fleetly</MudText>
 
         <MudSpacer />
 
-        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
+        <NotificationBell />
         <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
     </MudAppBar>
 
