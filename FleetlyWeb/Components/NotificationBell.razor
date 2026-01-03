@@ -116,14 +116,21 @@
         _timer = new System.Threading.Timer(async _ =>
         {
             await InvokeAsync(LoadUnreadCount);
-        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(60));
+        }, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
     }
 
     private async void StateHasChangedWrapper()
     {
-        await LoadUnreadCount();
-        if (_isOpen) await LoadList();
-        await InvokeAsync(StateHasChanged);
+        try
+        {
+            await LoadUnreadCount();
+            if (_isOpen) await LoadList();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add($"Wystąpił błąd podczas odświeżania powiadomień", Severity.Error);
+        }
     }
 
     private async Task LoadUnreadCount()
@@ -132,7 +139,6 @@
         if (res.Success)
         {
             _unreadCount = res.Data;
-            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -148,12 +154,22 @@
     private async Task LoadList()
     {
         _loading = true;
-        var res = await NotiService.GetMyNotificationsAsync();
-        if (res.Success)
+        try
         {
-            _notifications = res.Data ?? new();
+            var res = await NotiService.GetMyNotificationsAsync();
+            if (res.Success)
+            {
+                _notifications = res.Data ?? new();
+            }
         }
-        _loading = false;
+        catch (Exception)
+        {
+            Snackbar.Add($"Wystąpił błąd podczas ładowania powiadomień", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
     private async Task OnNotificationClick(NotificationResponseDto item)
@@ -168,7 +184,7 @@
         if (item.RelatedEntityId.HasValue)
         {
             _isOpen = false;
-
+            //Kiedy dojdą inne typy powiadomień, trzeba będzie dodać odpowiednie nawigacje z podziałem na type!!
             Nav.NavigateTo($"/orders/{item.RelatedEntityId}");
         }
     }
@@ -181,6 +197,10 @@
             _notifications.ForEach(x => x.IsRead = true);
             _unreadCount = 0;
         }
+        else
+        {
+            Snackbar.Add($"Wystąpił błąd podczas oznaczania powiadomień jako przeczytane", Severity.Error);
+        }
     }
 
     private async Task DeleteNotification(NotificationResponseDto item, MouseEventArgs e)
@@ -191,6 +211,10 @@
             _notifications.Remove(item);
             if (!item.IsRead) _unreadCount--;
         }
+        else
+        {
+            Snackbar.Add($"Wystąpił błąd podczas usuwania powiadomienia", Severity.Error);
+        }
     }
 
     private string GetIcon(NotificationType type) => type switch
@@ -200,6 +224,11 @@
         NotificationType.WorkerTookTheOrder => Icons.Material.Filled.Person,
         NotificationType.WorkerResignedFromOrder => Icons.Material.Filled.PersonOff,
         NotificationType.OrderCancelled => Icons.Material.Filled.Cancel,
+        NotificationType.AssignedToOrder => Icons.Material.Filled.AssignmentInd,
+        NotificationType.UnseatedFromOrder => Icons.Material.Filled.AssignmentReturn,
+        NotificationType.OrderUpdated => Icons.Material.Filled.Edit,
+        NotificationType.OrderCompleted => Icons.Material.Filled.DoneAll,
+        NotificationType.MessageFromAdmin => Icons.Material.Filled.AdminPanelSettings,
         _ => Icons.Material.Filled.Info
     };
 

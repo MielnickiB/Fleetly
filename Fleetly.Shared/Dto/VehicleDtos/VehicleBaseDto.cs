@@ -7,6 +7,7 @@ namespace Fleetly.Shared.Dto.VehicleDtos
     public class VehicleBaseDto
     {
         [Required(ErrorMessage = "Model pojazdu jest wymagany!")]
+        [Range(1, int.MaxValue, ErrorMessage = "Nieprawidłowy model pojazdu!")]
         public int BrandModelId { get; set; }
 
         [Required(ErrorMessage = "Wymagane jest podanie numeru rejestracyjnego!")]
