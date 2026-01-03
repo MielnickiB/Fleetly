@@ -30,7 +30,7 @@ namespace FleetlyBackend.Controllers
             try
             {
                 await _service.MarkAsRead(id);
-                return NoContent();
+                return Ok(true);
             }
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
@@ -39,7 +39,7 @@ namespace FleetlyBackend.Controllers
         public async Task<ActionResult> MarkAllAsRead()
         {
             await _service.MarkAllAsRead();
-            return NoContent();
+            return Ok(true);
         }
 
         [HttpDelete("{id:int}")]
@@ -48,7 +48,7 @@ namespace FleetlyBackend.Controllers
             try
             {
                 await _service.Delete(id);
-                return NoContent();
+                return Ok(true);
             }
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
