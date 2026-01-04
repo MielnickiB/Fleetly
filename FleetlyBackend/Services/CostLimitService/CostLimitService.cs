@@ -36,6 +36,7 @@ namespace FleetlyBackend.Services.CostLimitService
         {
             var c = await _context.CostLimits
                 .AsNoTracking()
+                .Where(c => c.IsActive)
                 .FirstOrDefaultAsync(c => rangeOfKm >= c.RangeOfKmMin && rangeOfKm <= c.RangeOfKmMax);
             return c is null
                 ? throw new ArgumentException("Nie znaleziono limitu kosztów dla podanego zakresu kilometrów.")
@@ -92,7 +93,9 @@ namespace FleetlyBackend.Services.CostLimitService
             var c = await _context.CostLimits.FindAsync(id)
                 ?? throw new ArgumentException("Nie znaleziono limitu kosztów.");
 
-            _context.CostLimits.Remove(c);
+            c.IsActive = false;
+            c.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
             return true;
         }
@@ -110,6 +113,7 @@ namespace FleetlyBackend.Services.CostLimitService
         {
             var existingLimits = await _context.CostLimits
                 .AsNoTracking()
+                .Where(x => x.IsActive)
                 .Where(x => !excludeId.HasValue || x.Id != excludeId)
                 .OrderBy(x => x.RangeOfKmMin)
                 .Select(x => new { x.RangeOfKmMin, x.RangeOfKmMax })

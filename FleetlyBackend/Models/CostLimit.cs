@@ -15,5 +15,7 @@ namespace FleetlyBackend.Models
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal MaxCosts { get; set; }
+
+        public bool IsActive { get; set; } = true;
     }
 }

@@ -41,6 +41,7 @@
     @if (User?.IsAdmin() ?? false)
     {
         <MudNavLink Href="/users" Icon="@Icons.Material.Filled.Person">Użytkownicy</MudNavLink>
+        <MudNavLink Href="/cost-limits" Icon="@Icons.Material.Filled.AttachMoney">Limity kosztów</MudNavLink>
     }
     <MudNavLink Icon="@Icons.Material.Filled.Logout" OnClick="LogoutAsync" Disabled="@_isLoggingOut">Wyloguj się</MudNavLink>
 

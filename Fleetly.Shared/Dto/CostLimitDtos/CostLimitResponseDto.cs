@@ -8,5 +8,6 @@
         public decimal BaseSalary { get; set; }
         public decimal MaxSalary { get; set; }
         public decimal MaxCosts { get; set; }
+        public bool IsActive { get; set; }
     }
 }
