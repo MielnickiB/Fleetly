@@ -46,7 +46,7 @@
         }
         else
         {
-            <MudList T="NotificationResponseDto" Clickable="true" Dense="true" Class="py-0">
+            <MudList T="NotificationResponseDto" Dense="true" Class="py-0">
                 @foreach (var item in _notifications)
                 {
                     <MudListItem OnClick="@(() => OnNotificationClick(item))"

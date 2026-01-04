@@ -168,6 +168,14 @@ namespace FleetlyBackend.Data
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // CostLimit 1:N Order
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.CostLimit)
+                .WithMany()
+                .HasForeignKey(o => o.CostLimitId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<User>()
                 .Navigation(u => u.Role)
                 .IsRequired();

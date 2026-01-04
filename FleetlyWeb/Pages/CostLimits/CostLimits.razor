@@ -1,0 +1,134 @@
+﻿@page "/cost-limits"
+@using Fleetly.Shared.Dto.CostLimitDtos
+@using FleetlyWeb.Services.CostLimits
+@using FleetlyWeb.Base
+@using FleetlyWeb.Components
+@using FleetlyWeb.Helpers
+@inject ICostLimitService CostLimitService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inherits PageBase<CostLimitResponseDto>
+
+<PageTitle>Lista limitów</PageTitle>
+
+<PageHeader Title="Lista limitów" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" OnClick="OpenAddDialogAsync" SearchPlaceholder="Szukaj..." IsLoading="@IsLoading" />
+@if (IsLoading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+}
+else
+{
+    @if (!Items.Any())
+    {
+        @if (string.IsNullOrWhiteSpace(SearchString))
+        {
+            <NoItems ItemName="Limity"
+                     Icon="@Icons.Material.Filled.AttachMoney" />
+        }
+        else
+        {
+            <NoSearchResult @bind-SearchString="SearchString" />
+        }
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var item in Items.Where(x => ShowInactive || x.IsActive))
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <CostLimitCard Item="@item" OnEditClick="OpenEditDialog" OnDeactivateClick="OnDeactivateClicked"/>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+}
+
+@if (TotalItems > 0)
+{
+    <MobileActionButton OnClick="OpenAddDialogAsync" />
+}
+
+@code {
+    protected override async Task OnInitializedAsync() =>
+        await LoadDataAsync();
+
+    protected override async Task LoadDataAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            var apiResponse = await CostLimitService.GetAllAsync();
+            if (apiResponse.Success)
+            {
+                Items = apiResponse.Data!.Items!;
+                TotalItems = apiResponse.Data.TotalCount;
+            }
+            else
+            {
+                Snackbar.Add($"Błąd ładowania limitów: {apiResponse.Error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd ładowania limitów: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task OpenAddDialogAsync()
+    {
+        var parameters = new DialogParameters<AddCostLimitDialog>
+            {
+                { x => x.OnCostLimitAdded, new EventCallback(this, LoadDataAsync) }
+            };
+
+        var dialogRef = await DialogService.ShowAsync<AddCostLimitDialog>("Dodaj limit kosztów", parameters, DialogHelper.GetStandardFormOptions());
+        await dialogRef.Result;
+    }
+
+    private async Task OpenEditDialog(CostLimitResponseDto item)
+    {
+        var parameters = new DialogParameters<EditCostLimitDialog>
+            {
+                { x => x.CostLimit, item },
+                { x => x.OnCostLimitUpdated, new EventCallback(this, LoadDataAsync) }
+            };
+
+        var dialogRef = await DialogService.ShowAsync<EditCostLimitDialog>("Edytuj limit kosztów", parameters, DialogHelper.GetStandardFormOptions());
+        await dialogRef.Result;
+    }
+
+    private async Task OnDeactivateClicked(CostLimitResponseDto item)
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+        {
+            { x => x.Title, "Dezaktywacja limitu" },
+            { x => x.Content, $"Czy na pewno chcesz dezaktywować limit dla zakresu {item.RangeOfKmMin} - {item.RangeOfKmMax} km?" },
+            { x => x.ConfirmText, "Dezaktywuj" },
+            { x => x.Color, Color.Error },
+            { x => x.Icon, Icons.Material.Filled.DeleteSweep },
+            { x => x.IconColor, Color.Error }
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, DialogHelper.GetConfirmationOptions());
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            var apiResult = await CostLimitService.DeleteAsync(item.Id);
+
+            if (apiResult.Success)
+            {
+                Snackbar.Add("Limit został dezaktywowany.", Severity.Success);
+                await LoadDataAsync();
+            }
+            else
+            {
+                Snackbar.Add(apiResult.Error ?? "Błąd podczas dezaktywacji.", Severity.Error);
+            }
+        }
+    }
+}

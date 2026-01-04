@@ -9,7 +9,7 @@ namespace FleetlyWeb.Services.Notifications
 
         public event Action? OnChange;
 
-        public async Task<ApiResponse<List<NotificationResponseDto>>> GetMyNotificationsAsync()
+        public async Task<ApiResponse<List<NotificationResponseDto>?>> GetMyNotificationsAsync()
         {
             return await _api.GetAsync<List<NotificationResponseDto>>(BaseUrl);
         }

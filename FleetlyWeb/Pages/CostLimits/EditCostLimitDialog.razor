@@ -1,0 +1,53 @@
+﻿@using FleetlyWeb.Components
+@using Fleetly.Shared.Dto.CostLimitDtos
+@using FleetlyWeb.Services.CostLimits
+@inject ICostLimitService CostLimitService
+@inherits FleetlyWeb.Base.DialogBase<CostLimitUpdateDto>
+
+<MudDialog>
+    <TitleContent>
+        <MudText Style="font-weight:bold" Typo="Typo.h6">Edytuj próg @CostLimit.RangeOfKmMin - @CostLimit.RangeOfKmMax km</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="Model" @ref="EditForm">
+            <DataAnnotationsValidator />
+            <CostLimitForm Model="Model" />
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled" Disabled="@IsBusy">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="@IsBusy">
+            @(IsBusy ? "Zapisywanie..." : "Zapisz zmiany")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public EventCallback OnCostLimitUpdated { get; set; }
+    [Parameter] public CostLimitResponseDto CostLimit { get; set; } = default!;
+
+    protected override Task OnInitializedAsync()
+    {
+        Model = new CostLimitUpdateDto
+        {
+            RangeOfKmMin = CostLimit.RangeOfKmMin,
+            RangeOfKmMax = CostLimit.RangeOfKmMax,
+            MaxCosts = CostLimit.MaxCosts,
+            BaseSalary = CostLimit.BaseSalary,
+            MaxSalary = CostLimit.MaxSalary,
+        };
+        return Task.CompletedTask;
+    }
+
+    protected override async Task Submit()
+    {
+        var res = await CostLimitService.UpdateAsync(CostLimit.Id, Model);
+        if (res.Success)
+        {
+            Snackbar.Add("Limit kosztów został zaktualizowany", Severity.Success);
+            await OnCostLimitUpdated.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else Snackbar.Add(res.Error ?? "Nie udało się zaktualizować limitu", Severity.Error);
+    }
+}

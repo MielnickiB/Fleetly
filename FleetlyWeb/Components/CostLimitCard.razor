@@ -1,0 +1,59 @@
+﻿@using Fleetly.Shared.Dto.CostLimitDtos
+
+<MudCard Elevation="@(Item.IsActive ? 5 : 0)" Class="@($"h-100 d-flex flex-column {(Item.IsActive ? "" : "mud-theme-dark opacity-50")}")">
+    <MudCardHeader Class="grey lighten-4">
+        <CardHeaderContent>
+            <div class="d-flex align-center gap-2">
+                <MudIcon Icon="@Icons.Material.Filled.Speed" Color="Color.Primary" />
+                <MudText Typo="Typo.h6">
+                    @Item.RangeOfKmMin - @Item.RangeOfKmMax km
+                </MudText>
+                @if (!Item.IsActive)
+                {
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small" Class="ml-2">Nieaktywny</MudChip>
+                }
+            </div>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Disabled="!Item.IsActive">
+                <MudMenuItem OnClick="@HandleEdit">Edytuj</MudMenuItem>
+                <MudMenuItem OnClick="@HandleDeactivate">Dezaktywuj</MudMenuItem>
+            </MudMenu>
+        </CardHeaderActions>
+    </MudCardHeader>
+
+    <MudCardContent Class="flex-grow-1">
+        <MudList T="string" Dense="true">
+            <MudListItem Icon="@Icons.Material.Filled.AttachMoney">
+                <div class="d-flex justify-space-between">
+                    <MudText>Podstawa:</MudText>
+                    <MudText Color="Color.Success">@Item.BaseSalary.ToString("N2") zł</MudText>
+                </div>
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.TrendingUp">
+                <div class="d-flex justify-space-between">
+                    <MudText>Max Wynagr.:</MudText>
+                    <MudText Color="Color.Success" Style="font-weight:bold">@Item.MaxSalary.ToString("N2") zł</MudText>
+                </div>
+            </MudListItem>
+            <MudDivider Class="my-2" />
+            <MudListItem Icon="@Icons.Material.Filled.ShoppingCart">
+                <div class="d-flex justify-space-between">
+                    <MudText>Max Koszty:</MudText>
+                    <MudText Color="Color.Warning">@Item.MaxCosts.ToString("N2") zł</MudText>
+                </div>
+            </MudListItem>
+        </MudList>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public CostLimitResponseDto Item { get; set; } = default!;
+
+    [Parameter] public EventCallback<CostLimitResponseDto> OnEditClick { get; set; }
+    [Parameter] public EventCallback<CostLimitResponseDto> OnDeactivateClick { get; set; }
+
+    private async Task HandleEdit() => await OnEditClick.InvokeAsync(Item);
+
+    private async Task HandleDeactivate() => await OnDeactivateClick.InvokeAsync(Item);
+}

@@ -150,7 +150,7 @@
             return true;
         if (x.Client.Email.Contains(SearchString, StringComparison.OrdinalIgnoreCase))
             return true;
-        if (x.Client.Details.Company.Contains(SearchString, StringComparison.OrdinalIgnoreCase))
+        if (x.Client.Details.Company != null && x.Client.Details.Company.Contains(SearchString, StringComparison.OrdinalIgnoreCase))
             return true;
         if (x.StartLocation.City.Contains(SearchString, StringComparison.OrdinalIgnoreCase))
             return true;
@@ -161,40 +161,23 @@
 
     private async Task OpenAddDialogAsync()
     {
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            CloseOnEscapeKey = true,
-            CloseButton = true,
-            BackgroundClass = "blurry-bg"
-        };
-
         var parameters = new DialogParameters<AddOrderDialog>
             {
                 { x => x.OnOrderAdded, new EventCallback(this, LoadDataAsync) }
             };
 
-        var dialogRef = await DialogService.ShowAsync<AddOrderDialog>("Dodaj zlecenie", parameters, options);
+        var dialogRef = await DialogService.ShowAsync<AddOrderDialog>("Dodaj zlecenie", parameters, DialogHelper.GetStandardFormOptions());
         await dialogRef.Result;
     }
 
     private async Task OpenEditDialogAsync(OrderResponseDto order)
     {
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            CloseOnEscapeKey = true,
-            CloseButton = true,
-            BackgroundClass = "blurry-bg"
-        };
         var parameters = new DialogParameters<EditOrderDialog>
             {
                 { x => x.Order, order },
                 { x => x.OnOrderUpdated, new EventCallback(this, LoadDataAsync) }
             };
-        var dialogRef = await DialogService.ShowAsync<EditOrderDialog>("Edytuj zlecenie", parameters, options);
+        var dialogRef = await DialogService.ShowAsync<EditOrderDialog>("Edytuj zlecenie", parameters, DialogHelper.GetStandardFormOptions());
         await dialogRef.Result;
     }
 
@@ -210,15 +193,7 @@
         { x => x.IconColor, Color.Error }
     };
 
-        var options = new DialogOptions
-        {
-            CloseButton = true,
-            MaxWidth = MaxWidth.ExtraSmall,
-            BackdropClick = true,
-            CloseOnEscapeKey = true
-        };
-
-        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, options);
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, DialogHelper.GetConfirmationOptions());
         var result = await dialog.Result;
 
         if (result != null && !result.Canceled)
@@ -253,15 +228,7 @@
         { x => x.IconColor, Color.Success }
     };
 
-        var options = new DialogOptions
-        {
-            CloseButton = true,
-            MaxWidth = MaxWidth.ExtraSmall,
-            BackdropClick = true,
-            CloseOnEscapeKey = true
-        };
-
-        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, options);
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, DialogHelper.GetConfirmationOptions());
         var result = await dialog.Result;
 
         if (result != null && !result.Canceled)

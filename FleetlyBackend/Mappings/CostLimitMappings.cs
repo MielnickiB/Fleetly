@@ -13,7 +13,8 @@ namespace FleetlyBackend.Mappings
                 RangeOfKmMax = c.RangeOfKmMax,
                 BaseSalary = c.BaseSalary,
                 MaxSalary = c.MaxSalary,
-                MaxCosts = c.MaxCosts
+                MaxCosts = c.MaxCosts,
+                IsActive = c.IsActive
             };
     }
 }

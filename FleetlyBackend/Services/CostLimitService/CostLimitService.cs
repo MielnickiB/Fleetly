@@ -1,6 +1,6 @@
-﻿using Fleetly.Shared.Dto.CostLimitDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.CostLimitDtos;
 using FleetlyBackend.Data;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -11,17 +11,19 @@ namespace FleetlyBackend.Services.CostLimitService
     {
         private readonly FleetlyContext _context = context;
 
-        public async Task<List<CostLimitResponseDto>> GetAll(int page = 1, int pageSize = 10)
+        public async Task<PagedResult<CostLimitResponseDto>> GetAll()
         {
-            var (skip, safe) = PaginationHelper.Calculate(page, pageSize);
-
-            return await _context.CostLimits
+            var totalCount = await _context.CostLimits.CountAsync();
+            var items = await _context.CostLimits
                 .AsNoTracking()
                 .OrderBy(c => c.RangeOfKmMin)
-                .Skip(skip)
-                .Take(safe)
                 .Select(c => c.ToResponseDto())
                 .ToListAsync();
+            return new PagedResult<CostLimitResponseDto>
+            {
+                Items = items,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<CostLimitResponseDto?> Get(int id)
@@ -34,6 +36,7 @@ namespace FleetlyBackend.Services.CostLimitService
         {
             var c = await _context.CostLimits
                 .AsNoTracking()
+                .Where(c => c.IsActive)
                 .FirstOrDefaultAsync(c => rangeOfKm >= c.RangeOfKmMin && rangeOfKm <= c.RangeOfKmMax);
             return c is null
                 ? throw new ArgumentException("Nie znaleziono limitu kosztów dla podanego zakresu kilometrów.")
@@ -42,15 +45,9 @@ namespace FleetlyBackend.Services.CostLimitService
 
         public async Task<CostLimitResponseDto> Create(CostLimitCreateDto dto)
         {
-            if (dto.RangeOfKmMin <= 0 || dto.RangeOfKmMax <= 0 || dto.BaseSalary <= 0 || dto.MaxSalary <= 0 || dto.MaxCosts <= 0)
-                throw new InvalidOperationException("Wartości muszą być większe od 0.");
+            ValidateLogicalRules(dto.RangeOfKmMin, dto.RangeOfKmMax, dto.BaseSalary, dto.MaxSalary, dto.MaxCosts);
 
-            if (dto.BaseSalary > dto.MaxSalary)
-                throw new InvalidOperationException("Podstawowe wynagrodzenie nie może być większe niż Maksymalne wynagrodzenie.");
-
-            var exists = await _context.CostLimits.AnyAsync(c => c.RangeOfKmMin < dto.RangeOfKmMax && c.RangeOfKmMax > dto.RangeOfKmMin);
-            if (exists)
-                throw new InvalidOperationException("Limit dla podanego zakresu kilometrów już istnieje.");
+            await ValidateTimelineContinuity(dto.RangeOfKmMin, dto.RangeOfKmMax);
 
             var cost = new CostLimit
             {
@@ -72,42 +69,18 @@ namespace FleetlyBackend.Services.CostLimitService
             var c = await _context.CostLimits.FindAsync(id)
                 ?? throw new ArgumentException("Nie znaleziono limitu kosztów.");
 
-            var finalMin = dto.RangeOfKmMin ?? c.RangeOfKmMin;
-            var finalMax = dto.RangeOfKmMax ?? c.RangeOfKmMax;
-            if (finalMin <= 0 || finalMax <= 0)
-                throw new InvalidOperationException("Zasięg musi być większy od 0.");
+            ValidateLogicalRules(dto.RangeOfKmMin, dto.RangeOfKmMax, dto.BaseSalary, dto.MaxSalary, dto.MaxCosts);
 
-            if (finalMin >= finalMax)
-                throw new InvalidOperationException("Początek zakresu musi być mniejszy niż Koniec.");
+            if (c.RangeOfKmMin != dto.RangeOfKmMin || c.RangeOfKmMax != dto.RangeOfKmMax)
+            {
+                await ValidateTimelineContinuity(dto.RangeOfKmMin, dto.RangeOfKmMax, excludeId: id);
+            }
 
-            var exists = await _context.CostLimits.AnyAsync(c => c.RangeOfKmMin < finalMax && c.RangeOfKmMax > finalMin && c.Id != id);
-            if (exists)
-                throw new InvalidOperationException("Limit dla podanego zakresu kilometrów już istnieje.");
-
-            c.RangeOfKmMax = finalMax;
-            c.RangeOfKmMin = finalMin;
-
-            if (dto.BaseSalary is not null)
-                if (dto.BaseSalary <= 0)
-                    throw new InvalidOperationException("Podstawowe wynagrodzenie musi być większe od 0.");
-                else
-                    c.BaseSalary = dto.BaseSalary.Value;
-
-            if (dto.MaxSalary is not null)
-                if (dto.MaxSalary <= 0)
-                    throw new InvalidOperationException("Maksymalne wynagrodzenie musi być większe od 0.");
-                else
-                    c.MaxSalary = dto.MaxSalary.Value;
-
-            if (c.BaseSalary > c.MaxSalary)
-                throw new InvalidOperationException("Podstawowe wynagrodzenie nie może być większe niż Maksymalne wynagrodzenie.");
-
-            if (dto.MaxCosts is not null)
-                if (dto.MaxCosts <= 0)
-                    throw new InvalidOperationException("Maksymalne koszty muszą być większe od 0.");
-                else
-                    c.MaxCosts = dto.MaxCosts.Value;
-
+            c.RangeOfKmMin = dto.RangeOfKmMin;
+            c.RangeOfKmMax = dto.RangeOfKmMax;
+            c.BaseSalary = dto.BaseSalary;
+            c.MaxSalary = dto.MaxSalary;
+            c.MaxCosts = dto.MaxCosts;
             c.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -120,9 +93,53 @@ namespace FleetlyBackend.Services.CostLimitService
             var c = await _context.CostLimits.FindAsync(id)
                 ?? throw new ArgumentException("Nie znaleziono limitu kosztów.");
 
-            _context.CostLimits.Remove(c);
+            c.IsActive = false;
+            c.UpdatedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private static void ValidateLogicalRules(int minKm, int maxKm, decimal baseSalary, decimal maxSalary, decimal maxCost)
+        {
+            if (minKm < 0 || maxKm < 0 || baseSalary < 0 || maxSalary < 0 || maxCost < 0)
+                throw new InvalidOperationException("Wszystkie wartości muszą być większe bądź równe od zeru.");
+
+            if (minKm >= maxKm)
+                throw new InvalidOperationException("Minimalny dystans musi być mniejszy niż maksymalny.");
+
+            if (baseSalary > maxSalary)
+                throw new InvalidOperationException("Podstawowe wynagrodzenie nie może być większe niż maksymalne.");
+        }
+
+        private async Task ValidateTimelineContinuity(int newMin, int newMax, int? excludeId = null)
+        {
+            var existingLimits = await _context.CostLimits
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .Where(x => !excludeId.HasValue || x.Id != excludeId)
+                .OrderBy(x => x.RangeOfKmMin)
+                .Select(x => new { x.RangeOfKmMin, x.RangeOfKmMax })
+                .ToListAsync();
+
+            var timeline = existingLimits
+                .Select(x => (Min: x.RangeOfKmMin, Max: x.RangeOfKmMax))
+                .ToList();
+
+            timeline.Add((Min: newMin, Max: newMax));
+
+            timeline = timeline.OrderBy(x => x.Min).ToList();
+            for (int i = 0; i < timeline.Count - 1; i++)
+            {
+                var current = timeline[i];
+                var next = timeline[i + 1];
+
+                if (current.Max + 1 < next.Min)
+                    throw new InvalidOperationException($"Zakresy kilometrów muszą być ciągłe, bez przerw. Wykryto przerwę w zakresie kilometrów między {current.Max} a {next.Min}.");
+
+                if (current.Max >= next.Min)
+                    throw new InvalidOperationException($"Wykryto nakładanie się zakresów: {current.Max} zachodzi na {next.Min}.");
+            }
         }
     }
 }

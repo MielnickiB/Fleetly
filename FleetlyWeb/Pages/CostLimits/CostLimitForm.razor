@@ -1,0 +1,60 @@
+﻿@using Fleetly.Shared.Dto.CostLimitDtos
+@typeparam T where T : CostLimitBaseDto
+
+<MudGrid>
+    <MudItem xs="12" sm="6">
+        <MudNumericField @bind-Value="Model.RangeOfKmMin"
+                         Label="Od (km)"
+                         For="@(() => Model.RangeOfKmMin)"
+                         Required
+                         Variant="Variant.Outlined"
+                         Min="0" />
+    </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudNumericField @bind-Value="Model.RangeOfKmMax"
+                         Label="Do (km)"
+                         For="@(() => Model.RangeOfKmMax)"
+                         Required
+                         Variant="Variant.Outlined"
+                         Min="@Model.RangeOfKmMin" />
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudDivider Class="my-2" />
+    </MudItem>
+
+    <MudItem xs="12" sm="4">
+        <MudNumericField @bind-Value="Model.BaseSalary"
+                         Label="Podstawa (PLN)"
+                         For="@(() => Model.BaseSalary)"
+                         Required
+                         Format="N2"
+                         Variant="Variant.Outlined"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.AttachMoney" />
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudNumericField @bind-Value="Model.MaxSalary"
+                         Label="Max Wynagrodzenie (PLN)"
+                         For="@(() => Model.MaxSalary)"
+                         Required
+                         Format="N2"
+                         Variant="Variant.Outlined"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.TrendingUp" />
+    </MudItem>
+    <MudItem xs="12" sm="4">
+        <MudNumericField @bind-Value="Model.MaxCosts"
+                         Label="Limit Kosztów (PLN)"
+                         For="@(() => Model.MaxCosts)"
+                         Required
+                         Format="N2"
+                         Variant="Variant.Outlined"
+                         Adornment="Adornment.Start"
+                         AdornmentIcon="@Icons.Material.Filled.ShoppingCart" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter] public T Model { get; set; } = default!;
+}

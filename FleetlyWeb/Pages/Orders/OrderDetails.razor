@@ -4,6 +4,7 @@
 @using FleetlyWeb.Helpers
 @using FleetlyWeb.Services.Orders
 @using FleetlyWeb.Components
+@using FleetlyWeb.Extensions
 @inject IConfiguration Config
 @inject IOrderService OrderService
 @inject NavigationManager Nav
@@ -38,7 +39,7 @@
                         <MudDivider />
                         <div class="row-line">
                             <span class="row-title">Status zlecenia</span>
-                            <span class="row-value">@_order.Status</span>
+                            <span class="row-value">@_order.Status.ToPolishName()</span>
                         </div>
                         <MudDivider />
                         <div class="row-line">
@@ -376,14 +377,6 @@
             { x => x.ImageUrl, fullUrl }
         };
 
-        var options = new DialogOptions
-        {
-            CloseButton = true,
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            BackgroundClass = "blurry-bg"
-        };
-
-        await DialogService.ShowAsync<ImagePreviewDialog>("Podgląd zdjęcia", parameters, options);
+        await DialogService.ShowAsync<ImagePreviewDialog>("Podgląd zdjęcia", parameters, DialogHelper.GetImagePreviewOptions());
     }
 }
