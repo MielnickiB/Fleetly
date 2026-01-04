@@ -93,7 +93,7 @@ else
                 { x => x.OnCostLimitAdded, new EventCallback(this, LoadDataAsync) }
             };
 
-        var dialogRef = await DialogService.ShowAsync<AddCostLimitDialog>("Dodaj lokalizację", parameters, options);
+        var dialogRef = await DialogService.ShowAsync<AddCostLimitDialog>("Dodaj limit kosztów", parameters, options);
         await dialogRef.Result;
     }
 
