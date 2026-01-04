@@ -135,7 +135,7 @@ namespace FleetlyBackend.Services.CostLimitService
                 var next = timeline[i + 1];
 
                 if (current.Max + 1 < next.Min)
-                    throw new InvalidOperationException($"Wykryto dziurę w zakresie kilometrów między {current.Max} a {next.Min}.");
+                    throw new InvalidOperationException($"Zakresy kilometrów muszą być ciągłe, bez przerw. Wykryto przerwę w zakresie kilometrów między {current.Max} a {next.Min}.");
 
                 if (current.Max >= next.Min)
                     throw new InvalidOperationException($"Wykryto nakładanie się zakresów: {current.Max} zachodzi na {next.Min}.");
