@@ -3,6 +3,7 @@
 @using FleetlyWeb.Services.CostLimits
 @using FleetlyWeb.Base
 @using FleetlyWeb.Components
+@using FleetlyWeb.Helpers
 @inject ICostLimitService CostLimitService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -93,28 +94,19 @@ else
                 { x => x.OnCostLimitAdded, new EventCallback(this, LoadDataAsync) }
             };
 
-        var dialogRef = await DialogService.ShowAsync<AddCostLimitDialog>("Dodaj limit kosztów", parameters, options);
+        var dialogRef = await DialogService.ShowAsync<AddCostLimitDialog>("Dodaj limit kosztów", parameters, DialogHelper.GetStandardFormOptions());
         await dialogRef.Result;
     }
 
     private async Task OpenEditDialog(CostLimitResponseDto item)
     {
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            CloseOnEscapeKey = true,
-            CloseButton = true,
-            BackgroundClass = "blurry-bg"
-        };
-
         var parameters = new DialogParameters<EditCostLimitDialog>
             {
                 { x => x.CostLimit, item },
                 { x => x.OnCostLimitUpdated, new EventCallback(this, LoadDataAsync) }
             };
 
-        var dialogRef = await DialogService.ShowAsync<EditCostLimitDialog>("Edytuj limit kosztów", parameters, options);
+        var dialogRef = await DialogService.ShowAsync<EditCostLimitDialog>("Edytuj limit kosztów", parameters, DialogHelper.GetStandardFormOptions());
         await dialogRef.Result;
     }
 
@@ -130,15 +122,7 @@ else
             { x => x.IconColor, Color.Error }
         };
 
-        var options = new DialogOptions
-        {
-            CloseButton = true,
-            MaxWidth = MaxWidth.ExtraSmall,
-            BackdropClick = true,
-            CloseOnEscapeKey = true
-        };
-
-        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, options);
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, DialogHelper.GetConfirmationOptions());
         var result = await dialog.Result;
 
         if (result != null && !result.Canceled)

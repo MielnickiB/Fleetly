@@ -41,33 +41,13 @@
 
     protected override async Task Submit()
     {
-        IsBusy = true;
-        try
+        var res = await CostLimitService.UpdateAsync(CostLimit.Id, Model);
+        if (res.Success)
         {
-            var res = await CostLimitService.UpdateAsync(CostLimit.Id, Model);
-            if (res.Success)
-            {
-                Snackbar.Add("Limit kosztów został zaaktualizowany.", Severity.Success);
-
-                if (OnCostLimitUpdated.HasDelegate)
-                {
-                    await OnCostLimitUpdated.InvokeAsync();
-                }
-
-                MudDialog.Close(DialogResult.Ok(true));
-            }
-            else
-            {
-                Snackbar.Add(res.Error ?? "Błąd edycji limitu.", Severity.Error);
-            }
+            Snackbar.Add("Limit kosztów został zaktualizowany", Severity.Success);
+            await OnCostLimitUpdated.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Wystąpił błąd: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        else Snackbar.Add(res.Error ?? "Nie udało się zaktualizować limitu", Severity.Error);
     }
 }
