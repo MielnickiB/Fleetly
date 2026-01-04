@@ -15,7 +15,7 @@
             </div>
         </CardHeaderContent>
         <CardHeaderActions>
-            <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Disabled="!Item.IsActive">
                 <MudMenuItem OnClick="@HandleEdit">Edytuj</MudMenuItem>
                 <MudMenuItem OnClick="@HandleDeactivate">Dezaktywuj</MudMenuItem>
             </MudMenu>

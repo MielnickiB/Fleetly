@@ -10,7 +10,7 @@
 
 <PageTitle>Lista limitów</PageTitle>
 
-<PageHeader Title="Lista limitów" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj..." IsLoading="@IsLoading" />
+<PageHeader Title="Lista limitów" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" OnClick="OpenAddDialogAsync" SearchPlaceholder="Szukaj..." IsLoading="@IsLoading" />
 @if (IsLoading)
 {
     <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
@@ -32,7 +32,7 @@ else
     else
     {
         <MudGrid>
-            @foreach (var item in Items)
+            @foreach (var item in Items.Where(x => ShowInactive || x.IsActive))
             {
                 <MudItem xs="12" sm="6" md="4" lg="3">
                     <CostLimitCard Item="@item" OnEditClick="OpenEditDialog" OnDeactivateClick="OnDeactivateClicked"/>
@@ -40,6 +40,11 @@ else
             }
         </MudGrid>
     }
+}
+
+@if (TotalItems > 0)
+{
+    <MobileActionButton OnClick="OpenAddDialogAsync" />
 }
 
 @code {
@@ -70,6 +75,26 @@ else
         {
             IsLoading = false;
         }
+    }
+
+    private async Task OpenAddDialogAsync()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            BackgroundClass = "blurry-bg"
+        };
+
+        var parameters = new DialogParameters<AddCostLimitDialog>
+            {
+                { x => x.OnCostLimitAdded, new EventCallback(this, LoadDataAsync) }
+            };
+
+        var dialogRef = await DialogService.ShowAsync<AddCostLimitDialog>("Dodaj limit kosztów", parameters, options);
+        await dialogRef.Result;
     }
 
     private async Task OpenEditDialog(CostLimitResponseDto item)
