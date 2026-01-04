@@ -61,10 +61,6 @@
                 Snackbar.Add(res.Error ?? "Błąd edycji limitu.", Severity.Error);
             }
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Wystąpił błąd: {ex.Message}", Severity.Error);
-        }
         finally
         {
             IsBusy = false;
