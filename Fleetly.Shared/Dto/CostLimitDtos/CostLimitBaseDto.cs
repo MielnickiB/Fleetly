@@ -16,8 +16,8 @@ namespace Fleetly.Shared.Dto.CostLimitDtos
         [Required(ErrorMessage = "Maksymalne wynagrodzenie jest wymagane!")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Maksymalne wynagrodzenie musi być większe niż 0!")]
         public decimal MaxSalary { get; set; }
-        [Required(ErrorMessage = "Maksymalne koszty są wymagane!")]
-        [Range(0.01, double.MaxValue, ErrorMessage = "Maksymalne koszty muszą być większe niż 0!")]
+        [Required(ErrorMessage = "Limit kosztów jest wymagany!")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Limit kosztów musi być większe niż 0!")]
         public decimal MaxCosts { get; set; }
         public bool IsActive { get; set; }
     }
