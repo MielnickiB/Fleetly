@@ -45,7 +45,7 @@ namespace FleetlyBackend.Services.CostLimitService
 
         public async Task<CostLimitResponseDto> Create(CostLimitCreateDto dto)
         {
-            ValidateLogicalRules(dto.RangeOfKmMin, dto.RangeOfKmMax, dto.BaseSalary, dto.MaxSalary);
+            ValidateLogicalRules(dto.RangeOfKmMin, dto.RangeOfKmMax, dto.BaseSalary, dto.MaxSalary, dto.MaxCosts);
 
             await ValidateTimelineContinuity(dto.RangeOfKmMin, dto.RangeOfKmMax);
 
@@ -69,7 +69,7 @@ namespace FleetlyBackend.Services.CostLimitService
             var c = await _context.CostLimits.FindAsync(id)
                 ?? throw new ArgumentException("Nie znaleziono limitu kosztów.");
 
-            ValidateLogicalRules(dto.RangeOfKmMin, dto.RangeOfKmMax, dto.BaseSalary, dto.MaxSalary);
+            ValidateLogicalRules(dto.RangeOfKmMin, dto.RangeOfKmMax, dto.BaseSalary, dto.MaxSalary, dto.MaxCosts);
 
             if (c.RangeOfKmMin != dto.RangeOfKmMin || c.RangeOfKmMax != dto.RangeOfKmMax)
             {
@@ -100,8 +100,11 @@ namespace FleetlyBackend.Services.CostLimitService
             return true;
         }
 
-        private static void ValidateLogicalRules(int minKm, int maxKm, decimal baseSalary, decimal maxSalary)
+        private static void ValidateLogicalRules(int minKm, int maxKm, decimal baseSalary, decimal maxSalary, decimal maxCost)
         {
+            if (minKm < 0 || maxKm < 0 || baseSalary < 0 || maxSalary < 0 || maxCost < 0)
+                throw new InvalidOperationException("Wszystkie wartości muszą być większe bądź równe od zeru.");
+
             if (minKm >= maxKm)
                 throw new InvalidOperationException("Minimalny dystans musi być mniejszy niż maksymalny.");
 

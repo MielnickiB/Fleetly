@@ -80,15 +80,6 @@ else
 
     private async Task OpenAddDialogAsync()
     {
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            CloseOnEscapeKey = true,
-            CloseButton = true,
-            BackgroundClass = "blurry-bg"
-        };
-
         var parameters = new DialogParameters<AddCostLimitDialog>
             {
                 { x => x.OnCostLimitAdded, new EventCallback(this, LoadDataAsync) }
