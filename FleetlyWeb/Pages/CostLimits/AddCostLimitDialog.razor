@@ -27,34 +27,13 @@
 
     protected override async Task Submit()
     {
-        IsBusy = true;
-        try
+        var res = await CostLimitService.CreateAsync(Model);
+        if (res.Success)
         {
-            var res = await CostLimitService.CreateAsync(Model);
-            if (res.Success)
-            {
-                Snackbar.Add("Limit kosztów został dodany.", Severity.Success);
-
-                if (OnCostLimitAdded.HasDelegate)
-                {
-                    await OnCostLimitAdded.InvokeAsync();
-                }
-
-                MudDialog.Close(DialogResult.Ok(true));
-            }
-            else
-            {
-                // Tutaj wyświetli się np. błąd o dziurze w danych z backendu
-                Snackbar.Add(res.Error ?? "Błąd dodawania limitu.", Severity.Error);
-            }
+            Snackbar.Add("Limit kosztów został dodany", Severity.Success);
+            await OnCostLimitAdded.InvokeAsync();
+            MudDialog.Close(DialogResult.Ok(true));
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Wystąpił błąd: {ex.Message}", Severity.Error);
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        else Snackbar.Add(res.Error ?? "Nie udało się dodać limitu", Severity.Error);
     }
 }

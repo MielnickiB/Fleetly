@@ -191,21 +191,12 @@
 
     private async Task OpenAddDialogAsync()
     {
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            CloseOnEscapeKey = true,
-            CloseButton = true,
-            BackgroundClass = "blurry-bg"
-        };
-
         var parameters = new DialogParameters<AddLocationDialog>
             {
                 { x => x.OnLocationAdded, new EventCallback(this, LoadDataAsync) }
             };
 
-        var dialogRef = await DialogService.ShowAsync<AddLocationDialog>("Dodaj lokalizację", parameters, options);
+        var dialogRef = await DialogService.ShowAsync<AddLocationDialog>("Dodaj lokalizację", parameters, DialogHelper.GetStandardFormOptions());
         await dialogRef.Result;
     }
 
@@ -217,16 +208,8 @@
             { x => x.Location, location },
             { x => x.OnLocationUpdated, new EventCallback(this, LoadDataAsync)  }
         };
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-            CloseOnEscapeKey = true,
-            CloseButton = true,
-            BackgroundClass = "blurry-bg"
-        };
-
-        var dialogRef = await DialogService.ShowAsync<EditLocationDialog>("Edytuj lokalizację", parameters, options);
+        
+        var dialogRef = await DialogService.ShowAsync<EditLocationDialog>("Edytuj lokalizację", parameters, DialogHelper.GetStandardFormOptions());
         await dialogRef.Result;
     }
 
@@ -242,15 +225,7 @@
         { x => x.IconColor, Color.Error }
     };
 
-        var options = new DialogOptions
-        {
-            CloseButton = true,
-            MaxWidth = MaxWidth.ExtraSmall,
-            BackdropClick = true,
-            CloseOnEscapeKey = true
-        };
-
-        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, options);
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, DialogHelper.GetConfirmationOptions());
         var result = await dialog.Result;
 
         if (result != null && !result.Canceled)
