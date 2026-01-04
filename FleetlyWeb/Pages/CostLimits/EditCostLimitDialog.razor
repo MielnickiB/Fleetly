@@ -2,11 +2,11 @@
 @using Fleetly.Shared.Dto.CostLimitDtos
 @using FleetlyWeb.Services.CostLimits
 @inject ICostLimitService CostLimitService
-@inherits FleetlyWeb.Base.DialogBase<CostLimitCreateDto>
+@inherits FleetlyWeb.Base.DialogBase<CostLimitUpdateDto>
 
 <MudDialog>
     <TitleContent>
-        <MudText style="font-weight:bold" Typo="Typo.h6">Dodaj nowy próg kosztowy</MudText>
+        <MudText style="font-weight:bold" Typo="Typo.h6">Edytuj próg @Model.RangeOfKmMin - @Model.RangeOfKmMax km</MudText>
     </TitleContent>
     <DialogContent>
         <EditForm Model="Model" @ref="EditForm">
@@ -17,34 +17,48 @@
     <DialogActions>
         <MudButton OnClick="Cancel" Color="Color.Default" Variant="Variant.Filled" Disabled="@IsBusy">Anuluj</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="@IsBusy">
-            @(IsBusy ? "Dodawanie..." : "Dodaj")
+            @(IsBusy ? "Zapisywanie..." : "Zapisz zmiany")
         </MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
-    [Parameter] public EventCallback OnCostLimitAdded { get; set; }
+    [Parameter] public EventCallback OnCostLimitUpdated { get; set; }
+    [Parameter] public CostLimitResponseDto CostLimit { get; set; } = default!;
+
+    protected override Task OnInitializedAsync()
+    {
+        Model = new CostLimitUpdateDto
+        {
+            RangeOfKmMin = CostLimit.RangeOfKmMin,
+            RangeOfKmMax = CostLimit.RangeOfKmMax,
+            MaxCosts = CostLimit.MaxCosts,
+            BaseSalary = CostLimit.BaseSalary,
+            MaxSalary = CostLimit.MaxSalary,
+        };
+        return Task.CompletedTask;
+    }
 
     protected override async Task Submit()
     {
         IsBusy = true;
         try
         {
-            var res = await CostLimitService.CreateAsync(Model);
+            var res = await CostLimitService.UpdateAsync(CostLimit.Id, Model);
             if (res.Success)
             {
-                Snackbar.Add("Limit kosztów został dodany.", Severity.Success);
+                Snackbar.Add("Limit kosztów został zaaktualizowany.", Severity.Success);
 
-                if (OnCostLimitAdded.HasDelegate)
+                if (OnCostLimitUpdated.HasDelegate)
                 {
-                    await OnCostLimitAdded.InvokeAsync();
+                    await OnCostLimitUpdated.InvokeAsync();
                 }
 
                 MudDialog.Close(DialogResult.Ok(true));
             }
             else
             {
-                Snackbar.Add(res.Error ?? "Błąd dodawania limitu.", Severity.Error);
+                Snackbar.Add(res.Error ?? "Błąd edycji limitu.", Severity.Error);
             }
         }
         catch (Exception ex)

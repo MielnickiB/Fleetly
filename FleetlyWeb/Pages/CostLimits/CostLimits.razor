@@ -35,7 +35,7 @@ else
             @foreach (var item in Items.Where(x => ShowInactive || x.IsActive))
             {
                 <MudItem xs="12" sm="6" md="4" lg="3">
-                    <CostLimitCard Item="@item" OnEditClick="OpenEditDialog" OnDeactivateClick="OnDeactivateClicked"/>
+                    <CostLimitCard Item="@item" OnEditClick="@(() => OpenEditDialog(item))" OnDeactivateClick="OnDeactivateClicked"/>
                 </MudItem>
             }
         </MudGrid>
@@ -99,7 +99,23 @@ else
 
     private async Task OpenEditDialog(CostLimitResponseDto item)
     {
-        Snackbar.Add($"Kliknięto edycję dla ID: {item.Id}", Severity.Info);
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            CloseButton = true,
+            BackgroundClass = "blurry-bg"
+        };
+
+        var parameters = new DialogParameters<EditCostLimitDialog>
+            {
+                { x => x.CostLimit, item },
+                { x => x.OnCostLimitUpdated, new EventCallback(this, LoadDataAsync) }
+            };
+
+        var dialogRef = await DialogService.ShowAsync<EditCostLimitDialog>("Edytuj limit kosztów", parameters, options);
+        await dialogRef.Result;
     }
 
     private async Task OnDeactivateClicked(CostLimitResponseDto item)
