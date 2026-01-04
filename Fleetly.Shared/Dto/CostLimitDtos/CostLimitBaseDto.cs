@@ -19,6 +19,5 @@ namespace Fleetly.Shared.Dto.CostLimitDtos
         [Required(ErrorMessage = "Limit kosztów jest wymagany!")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Limit kosztów musi być większe niż 0!")]
         public decimal MaxCosts { get; set; }
-        public bool IsActive { get; set; }
     }
 }
