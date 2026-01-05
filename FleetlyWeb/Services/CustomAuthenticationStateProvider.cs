@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 using Blazored.LocalStorage;
+using FleetlyWeb.Constants;
 
 namespace FleetlyWeb.Services
 {
@@ -11,13 +12,11 @@ namespace FleetlyWeb.Services
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            var token = await _localStorage.GetItemAsync<string>("fleetly_token");
-            var user = await _localStorage.GetItemAsync<UserResponseDto>("fleetly_user");
+            var token = await _localStorage.GetItemAsync<string>(StorageKeys.AccessToken);
+            var user = await _localStorage.GetItemAsync<UserResponseDto>(StorageKeys.UserProfile);
 
             if (string.IsNullOrWhiteSpace(token) || user == null)
-            {
                 return EmptyState();
-            }
 
             if (!user.IsActive)
                 return EmptyState();

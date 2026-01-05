@@ -1,6 +1,7 @@
 ﻿using Fleetly.Shared.Dto.AuthDtos;
 using Fleetly.Shared.Dto.UserDtos;
 using Blazored.LocalStorage;
+using FleetlyWeb.Constants;
 
 namespace FleetlyWeb.Services.Authorization
 {
@@ -29,8 +30,8 @@ namespace FleetlyWeb.Services.Authorization
                 if(!authResult.User.IsActive)
                     return "Konto jest nieaktywne. Skontaktuj się z administratorem.";
 
-                await _localStorage.SetItemAsync("fleetly_token", authResult.AccessToken);
-                await _localStorage.SetItemAsync("fleetly_user", authResult.User);
+                await _localStorage.SetItemAsync(StorageKeys.AccessToken, authResult.AccessToken);
+                await _localStorage.SetItemAsync(StorageKeys.UserProfile, authResult.User);
 
                 _state.NotifyAuthStateChanged();
                 return null;
@@ -41,8 +42,8 @@ namespace FleetlyWeb.Services.Authorization
 
         public async Task Logout()
         {
-            await _localStorage.RemoveItemAsync("fleetly_token");
-            await _localStorage.RemoveItemAsync("fleetly_user");
+            await _localStorage.RemoveItemAsync(StorageKeys.AccessToken);
+            await _localStorage.RemoveItemAsync(StorageKeys.UserProfile);
             _state.NotifyAuthStateChanged();
         }
 

@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using Blazored.LocalStorage;
+using FleetlyWeb.Constants;
 
 namespace FleetlyWeb.Services
 {
@@ -9,7 +10,7 @@ namespace FleetlyWeb.Services
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var token = await _localStorage.GetItemAsync<string>("fleetly_token", cancellationToken);
+            var token = await _localStorage.GetItemAsync<string>(StorageKeys.AccessToken, cancellationToken);
 
             if (!string.IsNullOrEmpty(token))
             {

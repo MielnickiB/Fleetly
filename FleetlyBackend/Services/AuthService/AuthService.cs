@@ -23,11 +23,11 @@ namespace FleetlyBackend.Services.AuthService
 
             if (user is null) return null;
 
-            if (!user.IsActive) 
-                throw new UnauthorizedAccessException("Konto jest nieaktywne. Skontaktuj się z administratorem.");
-
             var verify = _hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
             if (verify == PasswordVerificationResult.Failed) throw new UnauthorizedAccessException("Nieprawidłowy email lub hasło");
+
+            if (!user.IsActive)
+                throw new UnauthorizedAccessException("Konto jest nieaktywne. Skontaktuj się z administratorem.");
 
             return CreateResponseToken(user);
         }
