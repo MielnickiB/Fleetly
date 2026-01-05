@@ -1,4 +1,5 @@
-﻿using FleetlyBackend.Services.DashboardService;
+﻿using Fleetly.Shared.Dto.DashboardDtos;
+using FleetlyBackend.Services.DashboardService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,8 +12,8 @@ namespace FleetlyBackend.Controllers
     {
         private readonly IDashboardService _service = service;
 
-        [HttpGet("stats")]
-        public async Task<ActionResult> GetStats()
+        [HttpGet]
+        public async Task<ActionResult<DashboardStatsDto>> GetStats()
         {
             var stats = await _service.GetStatsAsync();
             return Ok(stats);
