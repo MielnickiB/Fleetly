@@ -12,6 +12,7 @@ using FleetlyWeb.Services.Locations;
 using FleetlyWeb.Services.Orders;
 using FleetlyWeb.Services.Notifications;
 using FleetlyWeb.Services.CostLimits;
+using FleetlyWeb.Services.Dashboard;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -44,5 +45,6 @@ builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ICostLimitService, CostLimitService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 await builder.Build().RunAsync();

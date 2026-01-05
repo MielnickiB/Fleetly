@@ -37,9 +37,9 @@ namespace FleetlyBackend.Services.DashboardService
 
             if (isAdmin)
             {
-                stats.TotalClients = await _context.Users.AsNoTracking().CountAsync(u => u.Role.Equals("Client"));
+                stats.TotalClients = await _context.Users.AsNoTracking().CountAsync(u => u.Role.RoleName.Equals("Client"));
 
-                stats.TotalDrivers = await _context.Users.AsNoTracking().CountAsync(u => u.Role.Equals("Worker"));
+                stats.TotalDrivers = await _context.Users.AsNoTracking().CountAsync(u => u.Role.RoleName.Equals("Worker"));
             }
 
             await PrepareRevenueChartData(stats, ordersQuery, now);

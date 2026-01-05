@@ -43,7 +43,8 @@ namespace FleetlyWeb.Services
             [
             new Claim(ClaimTypes.NameIdentifier, user!.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.RoleName)
+            new Claim(ClaimTypes.Role, user.RoleName),
+            new Claim("FullName", $"{user.Details.Name} {user.Details.Surname}"),
             ], "jwt");
 
             var principal = new ClaimsPrincipal(identity);
