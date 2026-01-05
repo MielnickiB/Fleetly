@@ -7,6 +7,7 @@ using FleetlyBackend.Services.BrandModelService;
 using FleetlyBackend.Services.CarBrandService;
 using FleetlyBackend.Services.CostLimitService;
 using FleetlyBackend.Services.DamageService;
+using FleetlyBackend.Services.DashboardService;
 using FleetlyBackend.Services.ExpenseService;
 using FleetlyBackend.Services.FileService;
 using FleetlyBackend.Services.InvoiceService;
@@ -79,6 +80,7 @@ builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddHttpClient<IRouteService, RouteService>(client =>
 {
     client.DefaultRequestHeaders.UserAgent.ParseAdd("FleetlyApp/1.0");
