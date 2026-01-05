@@ -1,16 +1,19 @@
 ﻿using Fleetly.Shared.Dto.AuthDtos;
 using Fleetly.Shared.Dto.UserDtos;
+using Blazored.LocalStorage;
+using FleetlyWeb.Constants;
 
-namespace FleetlyWeb.Services
+namespace FleetlyWeb.Services.Authorization
 {
-    public class AuthService(ApiClient api, ILocalStorage storage, CustomAuthStateProvider state) : IAuthService
+    public class AuthService(ApiClient api, ILocalStorageService localStorage, CustomAuthStateProvider state) : IAuthService
     {
         private readonly ApiClient _api = api;
-        private readonly ILocalStorage _storage = storage;
+        private readonly ILocalStorageService _localStorage = localStorage;
         private readonly CustomAuthStateProvider _state = state;
+        private readonly string _baseUrl = "api/Auth/";
         public async Task<string?> Login(UserLoginDto dto)
         {
-            var resp = await _api.PostAsync<UserLoginDto, AuthResultDto>("api/Auth/login", dto);
+            var resp = await _api.PostAsync<UserLoginDto, AuthResultDto>($"{_baseUrl}login", dto);
 
             if (resp is null)
             {
@@ -24,7 +27,12 @@ namespace FleetlyWeb.Services
             var authResult = resp.Data;
             if (authResult is not null && !string.IsNullOrEmpty(authResult.AccessToken) && authResult.User is not null)
             {
-                await _storage.SaveLoginAsync(authResult.AccessToken, authResult.User);
+                if(!authResult.User.IsActive)
+                    return "Konto jest nieaktywne. Skontaktuj się z administratorem.";
+
+                await _localStorage.SetItemAsync(StorageKeys.AccessToken, authResult.AccessToken);
+                await _localStorage.SetItemAsync(StorageKeys.UserProfile, authResult.User);
+
                 _state.NotifyAuthStateChanged();
                 return null;
             }
@@ -34,13 +42,14 @@ namespace FleetlyWeb.Services
 
         public async Task Logout()
         {
-            await _storage.LogoutAsync();
+            await _localStorage.RemoveItemAsync(StorageKeys.AccessToken);
+            await _localStorage.RemoveItemAsync(StorageKeys.UserProfile);
             _state.NotifyAuthStateChanged();
         }
 
         public async Task<string?> Register(UserRegisterDto dto)
         {
-            var resp = await _api.PostAsync<UserRegisterDto, UserResponseDto>("api/Auth/register", dto);
+            var resp = await _api.PostAsync<UserRegisterDto, UserResponseDto>($"{_baseUrl}register", dto);
             if (resp is null)
             {
                 return "Brak odpowiedzi z serwera. Spróbuj ponownie";

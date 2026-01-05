@@ -13,6 +13,9 @@ using FleetlyWeb.Services.Orders;
 using FleetlyWeb.Services.Notifications;
 using FleetlyWeb.Services.CostLimits;
 using FleetlyWeb.Services.Dashboard;
+using FleetlyWeb.Services.Vehicles;
+using FleetlyWeb.Services.Authorization;
+using Blazored.LocalStorage;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -21,8 +24,8 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 var apiUrl = builder.Configuration.GetValue<string>("ApiUrl") ?? "http://localhost:5225/";
 
 builder.Services.AddMudServices();
+builder.Services.AddBlazoredLocalStorage();
 
-builder.Services.AddScoped<ILocalStorage, LocalStorage>();
 builder.Services.AddScoped<TokenHandler>();
 
 builder.Services.AddAuthorizationCore();
