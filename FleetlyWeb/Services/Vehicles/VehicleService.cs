@@ -1,7 +1,7 @@
 ﻿using Fleetly.Shared.Dto;
 using Fleetly.Shared.Dto.VehicleDtos;
 
-namespace FleetlyWeb.Services
+namespace FleetlyWeb.Services.Vehicles
 {
     public class VehicleService(ApiClient api) : IVehicleService
     {

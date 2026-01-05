@@ -1,6 +1,6 @@
 ﻿using Fleetly.Shared.Dto.AuthDtos;
 
-namespace FleetlyWeb.Services
+namespace FleetlyWeb.Services.Authorization
 {
     public interface IAuthService
     {

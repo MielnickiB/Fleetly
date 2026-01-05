@@ -14,7 +14,6 @@ namespace FleetlyBackend.Services.AuthService
         private readonly IPasswordHasher<User> _hasher = hasher;
         private readonly ITokenService _tokenService = tokenService;
 
-        // Login zwraca token + refreshToken + zmapowanego usera
         public async Task<AuthResultDto?> LoginAsync(UserLoginDto request)
         {
             var user = await _context.Users
@@ -24,13 +23,15 @@ namespace FleetlyBackend.Services.AuthService
 
             if (user is null) return null;
 
+            if (!user.IsActive) 
+                throw new UnauthorizedAccessException("Konto jest nieaktywne. Skontaktuj się z administratorem.");
+
             var verify = _hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
             if (verify == PasswordVerificationResult.Failed) throw new UnauthorizedAccessException("Nieprawidłowy email lub hasło");
 
             return CreateResponseToken(user);
         }
 
-        // Rejestracja zwraca zmapowanego usera (bez hasha)
         public async Task<UserResponseDto?> RegisterAsync(UserRegisterDto request)
         {
             if (request is null) return null;
@@ -67,7 +68,6 @@ namespace FleetlyBackend.Services.AuthService
             return user.ToResponseDto();
         }
 
-        // Metoda pomocnicza do tworzenia odpowiedzi z tokenem i danymi użytkownika
         private AuthResultDto CreateResponseToken(User user)
         {
             return new AuthResultDto

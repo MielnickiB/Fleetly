@@ -1,55 +1,36 @@
 ﻿using Fleetly.Shared.Dto.UserDtos;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
-using System.Text.Json;
+using Blazored.LocalStorage;
 
 namespace FleetlyWeb.Services
 {
-    public class CustomAuthStateProvider(ILocalStorage storage) : AuthenticationStateProvider
+    public class CustomAuthStateProvider(ILocalStorageService localStorage) : AuthenticationStateProvider
     {
-        private readonly ILocalStorage _storage = storage;
+        private readonly ILocalStorageService _localStorage = localStorage;
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            var token = await _storage.GetTokenAsync();
-            if (string.IsNullOrWhiteSpace(token))
-                return EmptyState();
+            var token = await _localStorage.GetItemAsync<string>("fleetly_token");
+            var user = await _localStorage.GetItemAsync<UserResponseDto>("fleetly_user");
 
-            var userJson = await _storage.GetUserJsonAsync();
-            if (string.IsNullOrWhiteSpace(userJson))
-                return EmptyState();
-
-            UserResponseDto? user;
-            try
-            {
-                user = JsonSerializer.Deserialize<UserResponseDto>(userJson);
-            }
-            catch (JsonException)
+            if (string.IsNullOrWhiteSpace(token) || user == null)
             {
                 return EmptyState();
             }
-            catch (ArgumentNullException)
-            {
-                return EmptyState();
-            }
-            if (user == null)
-                return EmptyState();
 
-            if (string.IsNullOrWhiteSpace(user.Email) || string.IsNullOrEmpty(user.RoleName))
+            if (!user.IsActive)
                 return EmptyState();
-
 
             var identity = new ClaimsIdentity(
             [
             new Claim(ClaimTypes.NameIdentifier, user!.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.RoleName),
+            new Claim(ClaimTypes.Role, user.RoleName ?? string.Empty),
             new Claim("FullName", $"{user.Details.Name} {user.Details.Surname}"),
             ], "jwt");
 
-            var principal = new ClaimsPrincipal(identity);
-
-            return new AuthenticationState(principal);
+            return new AuthenticationState(new ClaimsPrincipal(identity));
         }
 
         private static AuthenticationState EmptyState()
