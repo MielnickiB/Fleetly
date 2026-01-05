@@ -3,16 +3,18 @@
 @using FleetlyWeb.Services
 @using FleetlyWeb.Services.Dashboard
 @using Fleetly.Shared.Dto.DashboardDtos
+@using FleetlyWeb.Components
+@using FleetlyWeb.Extensions
 @inject IDashboardService DashboardService
 @inject ISnackbar Snackbar
 
 <PageTitle>Panel główny</PageTitle>
 
-<div>
+<div class="py-4">
     @if (_isAuthenticated)
     {
-        <MudText Typo="Typo.h4">Witaj, @_fullName!</MudText>
-        <MudText Typo="Typo.subtitle1">Twoja rola w systetmie to: @_userRole</MudText>
+        <MudText Typo="Typo.h5" Style="font-weight: bold">Witaj, @_fullName!</MudText>
+        <MudText Typo="Typo.subtitle2">Twoja rola w systetmie to: <span style="font-weight:bold; text-transform:uppercase">@_userRole</span></MudText>
     }
     else
     {
@@ -28,52 +30,70 @@
         <MudItem xs="12" sm="6" md="3"><MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100px" /></MudItem>
         <MudItem xs="12" sm="6" md="3"><MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100px" /></MudItem>
         <MudItem xs="12" sm="6" md="3"><MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="100px" /></MudItem>
+        <MudItem xs="12" md="8"><MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="300px" /></MudItem>
+        <MudItem xs="12" md="4"><MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="350px" /></MudItem>
     </MudGrid>
 }
 else if (_stats != null)
 {
     <MudGrid Class="mb-5">
         <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="3" Class="pa-4 d-flex flex-column align-center justify-center mud-theme-primary">
-                <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_stats.ActiveOrdersCount</MudText>
-                <MudText Typo="Typo.subtitle1">W realizacji</MudText>
-            </MudPaper>
+            <DashboardCard Title="Wszystkich zleceń" Value="@_stats.TotalOrders.ToString()"
+                           Icon="@Icons.Material.Filled.Assignment" ColorClass="mud-theme-primary" />
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="3" Class="pa-4 d-flex flex-column align-center justify-center mud-theme-success">
-                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_stats.CompletedOrdersCount</MudText>
-                <MudText Typo="Typo.subtitle1">Zakończone</MudText>
-            </MudPaper>
+            <DashboardCard Title="W realizacji" Value="@_stats.ActiveOrdersCount.ToString()"
+                           Icon="@Icons.Material.Filled.FiberNew" ColorClass="mud-theme-secondary" />
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="3" Class="pa-4 d-flex flex-column align-center justify-center mud-theme-warning">
-                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_stats.TotalRevenueMonth.ToString("N0") PLN</MudText>
-                <MudText Typo="Typo.subtitle1">Obrót (Msc)</MudText>
-            </MudPaper>
+            <DashboardCard Title="Zakończone" Value="@_stats.CompletedOrdersCount.ToString()"
+                           Icon="@Icons.Material.Filled.CheckCircle" ColorClass="mud-theme-success" />
+        </MudItem>
+        @if (_isAdmin)
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <DashboardCard Title="Obrót (Msc)" Value="@($"{_stats.TotalRevenueMonth:N0} zł")"
+                               Icon="@Icons.Material.Filled.AttachMoney" ColorClass="mud-theme-warning" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <DashboardCard Title="Klientów" Value="@_stats.TotalClients.ToString()"
+                               Icon="@Icons.Material.Filled.People" ColorClass="mud-theme-info" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <DashboardCard Title="Pracowników" Value="@_stats.TotalDrivers.ToString()"
+                               Icon="@Icons.Material.Filled.Work" ColorClass="mud-theme-secondary" />
+            </MudItem>
+        }
+        else
+        {
+            <MudItem xs="12" sm="6" md="3" Style="cursor:help">
+                        <DashboardCard Title="Twoje oszczędności*" Value="@($"{_stats.TotalSavings:N0} zł")"
+                                       Icon="@Icons.Material.Filled.Savings" ColorClass="mud-theme-secondary" />
+            </MudItem>
+
+        }
+
+        <MudItem xs="12" sm="6" md="3">
+            <DashboardCard Title="Pojazdów" Value="@_stats.TotalVehicles.ToString()"
+                           Icon="@Icons.Material.Filled.DirectionsCar" ColorClass="mud-theme-dark" />
         </MudItem>
 
         <MudItem xs="12" sm="6" md="3">
-            <MudPaper Elevation="3" Class="pa-4 d-flex flex-column align-center justify-center mud-theme-info">
-                <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" />
-                <MudText Typo="Typo.h4">@_stats.TotalClients</MudText>
-                <MudText Typo="Typo.subtitle1">Klientów</MudText>
-            </MudPaper>
+            <DashboardCard Title="Lokalizacji" Value="@_stats.TotalLocations.ToString()"
+                           Icon="@Icons.Material.Filled.Place" ColorClass="mud-theme-tertiary" />
         </MudItem>
-    </MudGrid>
 
-    <MudGrid>
         <MudItem xs="12" md="8">
             <MudPaper Elevation="3" Class="pa-4">
-                <MudText Typo="Typo.h6" Class="mb-4">Przychody (ostatnie 6 msc)</MudText>
+                <MudText Typo="Typo.h6" Class="mb-4"> @(_isAdmin ? "Przychody (ostatnie 6 msc)" : "Ilość wykonanych zleceń (ostatnie 6 msc)")</MudText>
                 <MudChart ChartType="ChartType.Line"
                           ChartSeries="@_revenueSeries"
                           XAxisLabels="@_stats.RevenueMonthsLabels"
-                          Width="100%" Height="350px"></MudChart>
+                          Width="100%" Height="300px"></MudChart>
             </MudPaper>
         </MudItem>
 
@@ -83,8 +103,17 @@ else if (_stats != null)
                 <MudChart ChartType="ChartType.Donut"
                           InputData="@_stats.OrdersStatusData"
                           InputLabels="@_stats.OrdersStatusLabels"
-                          Width="100%" Height="300px" />
+                          Width="100%" Height="350px" />
             </MudPaper>
+        </MudItem>
+        <MudItem xs="12">
+            @if (!_isAdmin)
+            {
+                <MudText Typo="Typo.caption" Class="mt-2">
+                    *Szacowana kwota zaoszczędzona dzięki wyborze usługi kierowcy zamiast tradycyjnej lawety.
+                    Nasze rozwiązanie (dojazd komunikacją miejską + transport na kołach) jest średnio o 50% tańsze niż transport lawetą.
+                </MudText>
+            }
         </MudItem>
     </MudGrid>
 }
@@ -100,6 +129,8 @@ else if (_stats != null)
 
     private string _fullName = string.Empty;
     private string _userRole = string.Empty;
+
+    private bool _isAdmin = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -118,6 +149,7 @@ else if (_stats != null)
 
             _fullName = user.FindFirst("FullName")?.Value ?? "Użytkowniku";
             _userRole = TranslateRole(user.FindFirst(ClaimTypes.Role)?.Value);
+            _isAdmin = user.IsInRole("Admin");
         }
     }
 
@@ -131,9 +163,11 @@ else if (_stats != null)
             if (response.Success && response.Data != null)
             {
                 _stats = response.Data;
+
+                var seriesName = _isAdmin ? "Przychód (zł)" : "Ilość zleceń";
                 _revenueSeries.Add(new ChartSeries()
                 {
-                    Name = "Przychód (PLN)",
+                    Name = seriesName,
                     Data = _stats.RevenueLast6Months
                 });
             }

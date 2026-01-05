@@ -7,6 +7,11 @@
         public decimal TotalRevenueMonth { get; set; }
         public int TotalClients { get; set; }
         public int TotalDrivers { get; set; }
+        public int TotalVehicles { get; set; }
+        public int TotalLocations { get; set; }
+        public int TotalOrders { get; set; }
+
+        public decimal TotalSavings { get; set; }
 
         public double[] RevenueLast6Months { get; set; } = [];
         public string[] RevenueMonthsLabels { get; set; } = [];

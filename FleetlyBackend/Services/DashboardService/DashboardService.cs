@@ -35,6 +35,22 @@ namespace FleetlyBackend.Services.DashboardService
                 .Where(o => o.Status == OrderStatus.ApprovedByAdmin && o.ActualEndTime.HasValue && o.ActualEndTime.Value.Month == DateTime.UtcNow.Month && o.ActualEndTime.Value.Year == DateTime.UtcNow.Year)
                 .SumAsync(o => o.Salary * 0.3m);
 
+            stats.TotalSavings = await ordersQuery
+                .Where(o => o.Status == OrderStatus.ApprovedByAdmin)
+                .SumAsync(o => (o.CostLimit.MaxSalary + o.CostLimit.MaxCosts) * 0.5m);
+
+            if (!isAdmin)
+                stats.TotalVehicles = await _context.Vehicles.AsNoTracking().CountAsync(v => v.UserId == userId);
+            else
+                stats.TotalVehicles = await _context.Vehicles.AsNoTracking().CountAsync();
+
+            if (!isAdmin)
+                stats.TotalLocations = await _context.Locations.AsNoTracking().CountAsync(l => l.UserId == userId);
+            else
+                stats.TotalLocations = await _context.Locations.AsNoTracking().CountAsync();
+
+            stats.TotalOrders = await ordersQuery.CountAsync();
+
             if (isAdmin)
             {
                 stats.TotalClients = await _context.Users.AsNoTracking().CountAsync(u => u.Role.RoleName.Equals("Client"));
@@ -42,57 +58,65 @@ namespace FleetlyBackend.Services.DashboardService
                 stats.TotalDrivers = await _context.Users.AsNoTracking().CountAsync(u => u.Role.RoleName.Equals("Worker"));
             }
 
-            await PrepareRevenueChartData(stats, ordersQuery, now);
+            await PrepareHistoryChartData(stats, ordersQuery, now, isAdmin);
 
             await PrepareStatusChartData(stats, ordersQuery);
 
             return stats;
         }
 
-        private async Task PrepareRevenueChartData(DashboardStatsDto stats, IQueryable<Order> baseQuery, DateTime now)
+        private static async Task PrepareHistoryChartData(DashboardStatsDto stats, IQueryable<Order> baseQuery, DateTime now, bool isAdmin)
         {
-            var sixMonthsAgo = now.AddMonths(-5); // Bieżący + 5 wstecz = 6
+            var sixMonthsAgo = now.AddMonths(-5);
 
-            // Pobieramy dane z bazy zgrupowane po miesiącach
-            var dbData = await baseQuery
+            var query = baseQuery
                 .Where(x => x.Status == OrderStatus.ApprovedByAdmin && x.ActualEndTime >= new DateTime(sixMonthsAgo.Year, sixMonthsAgo.Month, 1))
-                .GroupBy(x => new { x.ActualEndTime!.Value.Year, x.ActualEndTime.Value.Month })
-                .Select(g => new
-                {
-                    Year = g.Key.Year,
-                    Month = g.Key.Month,
-                    Total = g.Sum(x => x.Salary * 0.3m)
-                })
-                .ToListAsync();
+                .GroupBy(x => new { x.ActualEndTime!.Value.Year, x.ActualEndTime.Value.Month });
+
+            var dbData = await query.Select(g => new
+            {
+                g.Key.Year,
+                g.Key.Month,
+                Value = isAdmin ? g.Sum(x => x.Salary * 0.3m) : g.Count()
+            })
+            .ToListAsync();
 
             var dataPoints = new List<double>();
             var labels = new List<string>();
 
-            // Pętla po ostatnich 6 miesiącach, żeby wypełnić luki zerami
             for (int i = 0; i < 6; i++)
             {
                 var currentLoopDate = sixMonthsAgo.AddMonths(i);
 
-                // Szukamy czy mamy dane dla tego miesiąca w bazie
                 var monthData = dbData.FirstOrDefault(d => d.Year == currentLoopDate.Year && d.Month == currentLoopDate.Month);
 
-                dataPoints.Add(monthData != null ? (double)monthData.Total : 0);
+                dataPoints.Add(monthData != null ? (double)monthData.Value : 0);
 
-                // Format etykiety np. "Sty", "Lut" lub "01/2024"
                 labels.Add(currentLoopDate.ToString("MMM", new System.Globalization.CultureInfo("pl-PL")));
             }
 
             stats.RevenueLast6Months = dataPoints.ToArray();
             stats.RevenueMonthsLabels = labels.ToArray();
         }
-        private async Task PrepareStatusChartData(DashboardStatsDto stats, IQueryable<Order> baseQuery)
+        private static async Task PrepareStatusChartData(DashboardStatsDto stats, IQueryable<Order> baseQuery)
         {
             var statusCounts = await baseQuery
                 .GroupBy(x => x.Status)
                 .Select(g => new { Status = g.Key, Count = g.Count() })
                 .ToListAsync();
 
-            var orderStatuses = new[] { OrderStatus.PendingApproval, OrderStatus.Created, OrderStatus.Assigned, OrderStatus.OrderStarted, OrderStatus.ArrivedToClient, OrderStatus.OrderFinishedByWorker, OrderStatus.WaitingForCostApproval, OrderStatus.ApprovedByAdmin, OrderStatus.Cancelled };
+            var orderStatuses = new[]
+            {
+                OrderStatus.PendingApproval,
+                OrderStatus.Created,
+                OrderStatus.Assigned,
+                OrderStatus.OrderStarted,
+                OrderStatus.ArrivedToClient,
+                OrderStatus.OrderFinishedByWorker,
+                OrderStatus.WaitingForCostApproval,
+                OrderStatus.ApprovedByAdmin,
+                OrderStatus.Cancelled
+            };
 
             var data = new List<double>();
             var labels = new List<string>();
@@ -100,12 +124,32 @@ namespace FleetlyBackend.Services.DashboardService
             foreach (var status in orderStatuses)
             {
                 var count = statusCounts.FirstOrDefault(x => x.Status == status)?.Count ?? 0;
+                if (count > 0)
+                {
                     data.Add(count);
-                    labels.Add(status.ToString());
+                    labels.Add(TranslateStatus(status));
+                }
             }
 
             stats.OrdersStatusData = data.ToArray();
             stats.OrdersStatusLabels = labels.ToArray();
+        }
+
+        private static string TranslateStatus(OrderStatus status)
+        {
+            return status switch
+            {
+                OrderStatus.PendingApproval => "Oczekuje na dodanie do systemu",
+                OrderStatus.Created => "Dodane do systemu",
+                OrderStatus.Assigned => "Przypisane do pracownika",
+                OrderStatus.OrderStarted => "Zlecenie rozpoczęte",
+                OrderStatus.ArrivedToClient => "Pracownik u klienta",
+                OrderStatus.OrderFinishedByWorker => "Zlecenie zakończone przez pracownika",
+                OrderStatus.WaitingForCostApproval => "Oczekuje na zatwierdzenie kosztów",
+                OrderStatus.ApprovedByAdmin => "Zatwierdzone przez administratora",
+                OrderStatus.Cancelled => "Anulowane",
+                _ => status.ToString()
+            };
         }
     }
 }
