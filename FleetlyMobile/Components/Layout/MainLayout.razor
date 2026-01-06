@@ -1,0 +1,48 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager Nav
+@inject IAuthService AuthService
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
+<MudLayout>
+    <AuthorizeView>
+        <Authorized>
+            <MudAppBar Elevation="5" Color="Color.Primary" Dense="true">
+                <MudText Typo="Typo.h5" Style="font-weight:bold">Fleetly</MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="Logout" />
+            </MudAppBar>
+
+            <MudMainContent>
+                <MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
+                    @Body
+                </MudContainer>
+            </MudMainContent>
+
+            <NavMenu />
+
+        </Authorized>
+
+        <NotAuthorized>
+            <MudMainContent>
+                <MudAppBar Elevation="5" Color="Color.Primary" Dense="true">
+                    <MudText Typo="Typo.h5" Style="font-weight:bold">Fleetly</MudText>
+                </MudAppBar>
+                <MudContainer MaxWidth="MaxWidth.False" Class="d-flex align-center justify-center" Style="min-height:90vh">
+                    @Body
+                </MudContainer>
+            </MudMainContent>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudLayout>
+
+@code {
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        Nav.NavigateTo("/login");
+    }
+}

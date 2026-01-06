@@ -1,0 +1,59 @@
+﻿@inject NavigationManager Nav
+
+<MudAppBar Bottom="true" Fixed="true" Color="Color.Surface" Elevation="5" Class="px-4 d-flex justify-space-around min-vw-100">
+    
+    <MudIconButton Icon="@Icons.Material.Filled.Home" 
+                   Color="@GetColor("/")" 
+                   OnClick="@(() => Navigate("/"))" />
+    
+    <MudFab Color="Color.Secondary" 
+            StartIcon="@Icons.Material.Filled.Assignment" 
+            Size="Size.Medium" 
+            OnClick="@(() => Navigate("/orders"))" 
+            Style="position:relative; top:-20px; border: 4px solid white;" />
+    
+    <MudIconButton Icon="@Icons.Material.Filled.Person" 
+                   Color="@GetColor("/profile")" 
+                   OnClick="@(() => Navigate("/profile"))" />
+
+</MudAppBar>
+
+@code {
+    private void Navigate(string path)
+    {
+        Nav.NavigateTo(path);
+    }
+
+    private Color GetColor(string path)
+    {
+        // Logika podświetlania aktywnej ikony
+        // Pobieramy samą ścieżkę bez adresu bazowego
+        var currentUri = Nav.Uri.Replace(Nav.BaseUri, "/");
+        
+        // Specjalne traktowanie strony głównej "/"
+        if (path == "/" && (currentUri == "/" || currentUri == "")) 
+            return Color.Primary;
+            
+        // Inne strony
+        if (path != "/" && Nav.Uri.Contains(path)) 
+            return Color.Primary;
+            
+        return Color.Default;
+    }
+
+    // Musimy nasłuchiwać zmian URL, aby odświeżyć kolory ikon
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        StateHasChanged(); // Wymuś przerysowanie komponentu po zmianie strony
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

@@ -1,4 +1,4 @@
-﻿namespace FleetlyWeb.Services;
+﻿namespace Fleetly.Shared.Client;
 
 public sealed record ApiResponse<T>
 {

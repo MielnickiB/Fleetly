@@ -1,4 +1,5 @@
 ﻿using Fleetly.Shared.Dto.DashboardDtos;
+using Fleetly.Shared.Client;
 
 namespace FleetlyWeb.Services.Dashboard
 {

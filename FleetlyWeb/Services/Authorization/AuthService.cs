@@ -2,6 +2,7 @@
 using Fleetly.Shared.Dto.UserDtos;
 using Blazored.LocalStorage;
 using FleetlyWeb.Constants;
+using Fleetly.Shared.Client;
 
 namespace FleetlyWeb.Services.Authorization
 {

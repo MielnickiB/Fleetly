@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto;
 using Fleetly.Shared.Dto.OrderDtos;
+using Fleetly.Shared.Client;
 
 namespace FleetlyWeb.Services.Orders
 {

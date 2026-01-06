@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto;
 using Fleetly.Shared.Dto.UserDtos;
+using Fleetly.Shared.Client;
 
 namespace FleetlyWeb.Services.Users
 {

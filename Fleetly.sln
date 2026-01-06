@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FleetlyBackend", "FleetlyBa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FleetlyWeb", "FleetlyWeb\FleetlyWeb.csproj", "{5E8A1E64-3519-470C-ADDF-AEE94A44C6FE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FleetlyMobile", "FleetlyMobile\FleetlyMobile.csproj", "{8019D71F-728A-4429-9BA4-71CEF6C8DED7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,12 @@ Global
 		{5E8A1E64-3519-470C-ADDF-AEE94A44C6FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E8A1E64-3519-470C-ADDF-AEE94A44C6FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5E8A1E64-3519-470C-ADDF-AEE94A44C6FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8019D71F-728A-4429-9BA4-71CEF6C8DED7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8019D71F-728A-4429-9BA4-71CEF6C8DED7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8019D71F-728A-4429-9BA4-71CEF6C8DED7}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{8019D71F-728A-4429-9BA4-71CEF6C8DED7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8019D71F-728A-4429-9BA4-71CEF6C8DED7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8019D71F-728A-4429-9BA4-71CEF6C8DED7}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
