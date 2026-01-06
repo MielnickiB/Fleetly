@@ -2,7 +2,7 @@
 @inject NavigationManager Nav
 @inject IAuthService AuthService
 
-<MudThemeProvider />
+<MudThemeProvider Theme="@FleetlyMobile.Theme.FleetlyTheme.Default" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
@@ -13,10 +13,11 @@
             <MudAppBar Elevation="5" Color="Color.Primary" Dense="true">
                 <MudText Typo="Typo.h5" Style="font-weight:bold">Fleetly</MudText>
                 <MudSpacer />
+                @*Do wyrzucenia*@
                 <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="Logout" />
             </MudAppBar>
 
-            <MudMainContent>
+            <MudMainContent Class="pb-16">
                 <MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
                     @Body
                 </MudContainer>

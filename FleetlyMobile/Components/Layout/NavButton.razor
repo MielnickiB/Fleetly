@@ -1,0 +1,30 @@
+﻿@inject NavigationManager Nav
+
+<div @onclick="@(() => OnClick.InvokeAsync(Path))"
+     class="d-flex flex-column align-center justify-center cursor-pointer"
+     style="min-width: 60px;">
+
+    <MudIcon Icon="@Icon" Color="@IsActive()" Size="Size.Medium" />
+
+    <MudText Typo="Typo.caption"
+             Color="@IsActive()"
+             Style="@($"font-size: 10px; font-weight: {(IsActive() == Color.Default ? "400" : "600")}")">
+        @Title
+    </MudText>
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; }
+    [Parameter] public string Title { get; set; }
+    [Parameter] public string Path { get; set; }
+    [Parameter] public string CurrentPath { get; set; }
+    [Parameter] public Color ActiveColor { get; set; } = Color.Primary;
+    [Parameter] public EventCallback<string> OnClick { get; set; }
+
+    private Color IsActive()
+    {
+        if (Path == "/" && (CurrentPath == "/" || CurrentPath == "")) return ActiveColor;
+        if (Path != "/" && CurrentPath.StartsWith(Path)) return ActiveColor;
+        return Color.Default;
+    }
+}
