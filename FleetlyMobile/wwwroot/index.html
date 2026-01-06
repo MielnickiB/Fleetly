@@ -17,11 +17,18 @@
 
     <div class="status-bar-safe-area"></div>
 
-    <div id="app">Loading...</div>
+    <div id="app">
+        <div class="app-loading">
+            <svg class="mud-spinner" viewBox="22 22 44 44">
+                <circle class="mud-spinner-circle" cx="44" cy="44" r="20"></circle>
+            </svg>
+            <div class="loading-text">Ładowanie...</div>
+        </div>
+    </div>
 
     <div id="blazor-error-ui">
-        Wystąpił nieobsłużony błąd.
-        <a href="" class="reload">Przeładuj</a>
+        Wystąpił nieoczekiwany błąd.
+        <a href="" class="reload">Odśwież</a>
         <a class="dismiss">🗙</a>
     </div>
 

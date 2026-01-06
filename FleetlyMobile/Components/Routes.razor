@@ -1,4 +1,6 @@
-﻿<CascadingAuthenticationState>
+﻿@inject NavigationManager Nav
+
+<CascadingAuthenticationState>
     <Router AppAssembly="@typeof(MauiProgram).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" >
@@ -9,7 +11,29 @@
         </Found>
         <NotFound>
             <LayoutView Layout="@typeof(Layout.MainLayout)">
-                <p role="alert">Nie znaleziono takiej strony.</p>
+                <MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center" Style="height: 80vh;">
+                    <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                        <MudIcon Icon="@Icons.Material.Filled.SearchOff"
+                                 Color="Color.Error"
+                                 Size="Size.Large"/>
+
+                        <MudText Typo="Typo.h5" Align="Align.Center" GutterBottom="true">
+                            Ups! 404
+                        </MudText>
+
+                        <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">
+                            Strona, której szukasz, nie istnieje lub została przeniesiona.
+                        </MudText>
+
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Home"
+                                   OnClick="@(() => Nav.NavigateTo("/"))"
+                                   Class="mt-4">
+                            Wróć do Pulpitu
+                        </MudButton>
+                    </MudStack>
+                </MudContainer>
             </LayoutView>
         </NotFound>
     </Router>
