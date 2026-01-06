@@ -1,55 +1,44 @@
-﻿@inject NavigationManager Nav
+﻿@implements IDisposable
+@inject NavigationManager Nav
 
-<MudAppBar Bottom="true" Fixed="true" Color="Color.Surface" Elevation="5" Class="px-4 d-flex justify-space-around min-vw-100">
-    
-    <MudIconButton Icon="@Icons.Material.Filled.Home" 
-                   Color="@GetColor("/")" 
-                   OnClick="@(() => Navigate("/"))" />
-    
-    <MudFab Color="Color.Secondary" 
-            StartIcon="@Icons.Material.Filled.Assignment" 
-            Size="Size.Medium" 
-            OnClick="@(() => Navigate("/orders"))" 
-            Style="position:relative; top:-20px; border: 4px solid white;" />
-    
-    <MudIconButton Icon="@Icons.Material.Filled.Person" 
-                   Color="@GetColor("/profile")" 
-                   OnClick="@(() => Navigate("/profile"))" />
+<MudPaper Elevation="4" Class="d-flex justify-space-around align-center py-2 fixed-bottom mud-theme-surface bottom-nav">
 
-</MudAppBar>
+    <NavButton Icon="@Icons.Material.Filled.Home" Title="Pulpit" Path="/" ActiveColor="Color.Primary" OnClick="Navigate" CurrentPath="@currentPath" />
+
+    <NavButton Icon="@Icons.Material.Filled.ListAlt" Title="Zlecenia" Path="/orders" ActiveColor="Color.Primary" OnClick="Navigate" CurrentPath="@currentPath" />
+
+    <NavButton Icon="@Icons.Material.Filled.EventAvailable" Title="Dostępność" Path="/availability" ActiveColor="Color.Primary" OnClick="Navigate" CurrentPath="@currentPath" />
+
+    <NavButton Icon="@Icons.Material.Filled.Person" Title="Profil" Path="/profile" ActiveColor="Color.Primary" OnClick="Navigate" CurrentPath="@currentPath" />
+
+</MudPaper>
 
 @code {
-    private void Navigate(string path)
-    {
-        Nav.NavigateTo(path);
-    }
+    private string currentPath = "/";
 
-    private Color GetColor(string path)
-    {
-        // Logika podświetlania aktywnej ikony
-        // Pobieramy samą ścieżkę bez adresu bazowego
-        var currentUri = Nav.Uri.Replace(Nav.BaseUri, "/");
-        
-        // Specjalne traktowanie strony głównej "/"
-        if (path == "/" && (currentUri == "/" || currentUri == "")) 
-            return Color.Primary;
-            
-        // Inne strony
-        if (path != "/" && Nav.Uri.Contains(path)) 
-            return Color.Primary;
-            
-        return Color.Default;
-    }
-
-    // Musimy nasłuchiwać zmian URL, aby odświeżyć kolory ikon
     protected override void OnInitialized()
     {
+        currentPath = GetRelativePath();
         Nav.LocationChanged += OnLocationChanged;
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        StateHasChanged(); // Wymuś przerysowanie komponentu po zmianie strony
+        if (sender is not NavigationManager) return;
+        currentPath = GetRelativePath();
+        StateHasChanged();
+    }
+
+    private string GetRelativePath()
+    {
+        var uri = Nav.Uri.Replace(Nav.BaseUri, "/");
+        if (uri.Length > 1 && uri.EndsWith("/")) return uri.Substring(0, uri.Length - 1);
+        return uri;
+    }
+
+    private void Navigate(string path)
+    {
+        Nav.NavigateTo(path);
     }
 
     public void Dispose()
