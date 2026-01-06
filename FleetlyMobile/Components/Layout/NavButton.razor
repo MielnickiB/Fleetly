@@ -14,17 +14,32 @@
 </div>
 
 @code {
-    [Parameter] public string Icon { get; set; }
-    [Parameter] public string Title { get; set; }
-    [Parameter] public string Path { get; set; }
-    [Parameter] public string CurrentPath { get; set; }
+    [Parameter, EditorRequired] public string Icon { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; }
+    [Parameter, EditorRequired] public string Path { get; set; }
+    [Parameter, EditorRequired] public string CurrentPath { get; set; }
     [Parameter] public Color ActiveColor { get; set; } = Color.Primary;
     [Parameter] public EventCallback<string> OnClick { get; set; }
+
+    private bool IsPathMatch(string current, string target)
+    {
+        if (string.IsNullOrEmpty(current) || string.IsNullOrEmpty(target))
+            return false;
+
+        if (!current.StartsWith(target))
+            return false;
+
+        if (current.Length == target.Length)
+            return true;
+
+        var nextChar = current[target.Length];
+        return nextChar == '/' || nextChar == '?' || nextChar == '#';
+    }
 
     private Color IsActive()
     {
         if (Path == "/" && (CurrentPath == "/" || CurrentPath == "")) return ActiveColor;
-        if (Path != "/" && CurrentPath.StartsWith(Path)) return ActiveColor;
+        if (Path != "/" && IsPathMatch(CurrentPath, Path)) return ActiveColor;
         return Color.Default;
     }
 }

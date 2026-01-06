@@ -84,3 +84,10 @@ h1:focus {
         padding-left: env(safe-area-inset-left);
     }
 }
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 1000;
+}

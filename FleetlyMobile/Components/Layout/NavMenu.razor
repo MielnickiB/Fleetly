@@ -1,6 +1,7 @@
-﻿@inject NavigationManager Nav
+﻿@implements IDisposable
+@inject NavigationManager Nav
 
-<MudPaper Elevation="4" Class="d-flex justify-space-around align-center py-2 fixed-bottom mud-theme-surface" Style="position:fixed; bottom: 0; width: 100%; z-index: 1000;">
+<MudPaper Elevation="4" Class="d-flex justify-space-around align-center py-2 fixed-bottom mud-theme-surface bottom-nav">
 
     <NavButton Icon="@Icons.Material.Filled.Home" Title="Pulpit" Path="/" ActiveColor="Color.Primary" OnClick="Navigate" CurrentPath="@currentPath" />
 
@@ -23,6 +24,7 @@
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
+        if (sender is not NavigationManager) return;
         currentPath = GetRelativePath();
         StateHasChanged();
     }
