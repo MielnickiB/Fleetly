@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
+using Fleetly.Shared.Client;
 using FleetlyWeb.Services.Locations;
 using FleetlyWeb.Services.Orders;
 using FleetlyWeb.Services.Notifications;

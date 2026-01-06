@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto;
 using Fleetly.Shared.Dto.CostLimitDtos;
+using Fleetly.Shared.Client;
 
 namespace FleetlyWeb.Services.CostLimits
 {

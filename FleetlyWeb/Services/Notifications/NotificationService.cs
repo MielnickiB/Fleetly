@@ -1,4 +1,5 @@
 ﻿using Fleetly.Shared.Dto.NotificationDtos;
+using Fleetly.Shared.Client;
 
 namespace FleetlyWeb.Services.Notifications
 {
