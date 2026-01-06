@@ -1,0 +1,91 @@
+﻿@page "/login"
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<MudPaper Elevation="5" Class="pa-6 rounded-lg">
+    <EditForm Model="_model" OnValidSubmit="HandleLogin">
+        <DataAnnotationsValidator />
+
+        <MudText Typo="Typo.h5" Class="mb-4" Style="font-weight:bold" Align="Align.Center">Logowanie</MudText>
+        <MudTextField T="string" For="@(() => _model.Email)" @bind-Value="_model.Email" Label="Email" Required="true" Class="mb-3" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        <MudTextField T="string"
+                      InputType="@PasswordInput"
+                      For="@(() => _model.Password)"
+                      @bind-Value="_model.Password"
+                      Label="Hasło"
+                      Required="true"
+                      Class="mb-3"
+                      Adornment="Adornment.End"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      AdornmentIcon="@PasswordInputIcon"
+                      OnAdornmentClick="ShowPassword"
+                      AdornmentAriaLabel="Show Password" />
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-3">@_errorMessage</MudAlert>
+        }
+        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Disabled="_isBusy">
+            @if (_isBusy)
+            {
+                <MudProgressCircular Size="Size.Small" Color="Color.Secondary" Indeterminate="true" />
+            }
+            else
+            {
+                <MudText Typo="Typo.button">Zaloguj się</MudText>
+            }
+        </MudButton>
+    </EditForm>
+</MudPaper>
+
+@code {
+    private UserLoginDto _model = new();
+    private bool _isBusy;
+    private string? _errorMessage;
+    private bool _isShowingPassword;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    private async Task HandleLogin()
+    {
+        try 
+        {
+            _isBusy = true;
+            var error = await AuthService.LoginAsync(_model);
+
+            if (error == null)
+            {
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                _errorMessage = error;
+            }
+        }
+        catch
+        {
+            _errorMessage = "Wystąpił błąd, spróbuj ponownie.";
+        }
+        finally {
+            _isBusy = false;
+        }
+    }
+
+    void ShowPassword()
+    {
+        if (_isShowingPassword)
+        {
+            _isShowingPassword = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            _isShowingPassword = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+}

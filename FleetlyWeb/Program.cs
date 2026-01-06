@@ -22,7 +22,7 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-var apiUrl = builder.Configuration.GetValue<string>("ApiUrl") ?? "http://localhost:5225/";
+var apiUrl = builder.Configuration.GetValue<string>("ApiUrl") ?? "http://192.168.0.104:5225/";
 
 builder.Services.AddMudServices();
 builder.Services.AddBlazoredLocalStorage();

@@ -1,27 +1,59 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">FleetlyMobile</a>
-    </div>
-</div>
+﻿@inject NavigationManager Nav
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+<MudAppBar Bottom="true" Fixed="true" Color="Color.Surface" Elevation="5" Class="px-4 d-flex justify-space-around min-vw-100">
+    
+    <MudIconButton Icon="@Icons.Material.Filled.Home" 
+                   Color="@GetColor("/")" 
+                   OnClick="@(() => Navigate("/"))" />
+    
+    <MudFab Color="Color.Secondary" 
+            StartIcon="@Icons.Material.Filled.Assignment" 
+            Size="Size.Medium" 
+            OnClick="@(() => Navigate("/orders"))" 
+            Style="position:relative; top:-20px; border: 4px solid white;" />
+    
+    <MudIconButton Icon="@Icons.Material.Filled.Person" 
+                   Color="@GetColor("/profile")" 
+                   OnClick="@(() => Navigate("/profile"))" />
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
+</MudAppBar>
+
+@code {
+    private void Navigate(string path)
+    {
+        Nav.NavigateTo(path);
+    }
+
+    private Color GetColor(string path)
+    {
+        // Logika podświetlania aktywnej ikony
+        // Pobieramy samą ścieżkę bez adresu bazowego
+        var currentUri = Nav.Uri.Replace(Nav.BaseUri, "/");
+        
+        // Specjalne traktowanie strony głównej "/"
+        if (path == "/" && (currentUri == "/" || currentUri == "")) 
+            return Color.Primary;
+            
+        // Inne strony
+        if (path != "/" && Nav.Uri.Contains(path)) 
+            return Color.Primary;
+            
+        return Color.Default;
+    }
+
+    // Musimy nasłuchiwać zmian URL, aby odświeżyć kolory ikon
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        StateHasChanged(); // Wymuś przerysowanie komponentu po zmianie strony
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

@@ -1,24 +1,48 @@
 ﻿@inherits LayoutComponentBase
-
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+@inject NavigationManager Nav
+@inject IAuthService AuthService
 
 <MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 <MudPopoverProvider />
 
-<MudDialogProvider />
+<MudLayout>
+    <AuthorizeView>
+        <Authorized>
+            <MudAppBar Elevation="5" Color="Color.Primary" Dense="true">
+                <MudText Typo="Typo.h5" Style="font-weight:bold">Fleetly</MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" OnClick="Logout" />
+            </MudAppBar>
 
-<MudSnackbarProvider />
+            <MudMainContent>
+                <MudContainer MaxWidth="MaxWidth.False" Class="mt-4">
+                    @Body
+                </MudContainer>
+            </MudMainContent>
+
+            <NavMenu />
+
+        </Authorized>
+
+        <NotAuthorized>
+            <MudMainContent>
+                <MudAppBar Elevation="5" Color="Color.Primary" Dense="true">
+                    <MudText Typo="Typo.h5" Style="font-weight:bold">Fleetly</MudText>
+                </MudAppBar>
+                <MudContainer MaxWidth="MaxWidth.False" Class="d-flex align-center justify-center" Style="min-height:90vh">
+                    @Body
+                </MudContainer>
+            </MudMainContent>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudLayout>
+
+@code {
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        Nav.NavigateTo("/login");
+    }
+}

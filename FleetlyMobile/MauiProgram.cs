@@ -3,6 +3,7 @@ using FleetlyMobile.Services;
 using FleetlyMobile.Services.Auth;
 using FleetlyMobile.Constants;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 
@@ -28,6 +29,8 @@ namespace FleetlyMobile
 #endif
 
             builder.Services.AddMudServices();
+
+            builder.Services.AddAuthorizationCore();
 
             builder.Services.AddScoped<CustomAuthStateProvider>();
             builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
