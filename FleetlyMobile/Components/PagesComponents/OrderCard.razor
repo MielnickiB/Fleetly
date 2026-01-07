@@ -1,0 +1,43 @@
+﻿@using Fleetly.Shared.Dto.OrderDtos
+
+<MudPaper Elevation="3" Class="pa-4 mb-3 mud-theme-surface" Style="@GetBorderStyle()">
+    <MudStack>
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.subtitle1"><b>@Order.Car</b></MudText>
+            <MudChip T="string" Color="@(IsToday? Color.Info: Color.Default)" Size="Size.Small" Label="true">
+                @Order.StartTime.ToString("HH:mm")
+            </MudChip>
+        </MudStack>
+
+        <MudText Typo="Typo.caption" Color="Color.Secondary">@Order.RegistrationNumber</MudText>
+
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-1">
+            <MudText Typo="Typo.body2">@Order.StartCity</MudText>
+            <MudIcon Icon="@Icons.Material.Filled.ArrowRightAlt" Size="Size.Small" Color="Color.Default" />
+            <MudText Typo="Typo.body2"><b>@Order.EndCity</b></MudText>
+        </MudStack>
+
+        @if (IsToday)
+        {
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       OnClick="@(() => OnClick.InvokeAsync(Order.Id))"
+                       Class="mt-2">
+                Realizuj
+            </MudButton>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public OrderLiteDto Order { get; set; } = null!;
+    [Parameter] public EventCallback<int> OnClick { get; set; }
+    [Parameter] public bool IsToday { get; set; }
+
+    private string GetBorderStyle()
+    {
+        var color = IsToday ? "var(--mud-palette-primary)" : "var(--mud-palette-grey)";
+        return $"border-left: 6px solid {color};";
+    }
+}

@@ -43,5 +43,17 @@ namespace FleetlyBackend.Mappings
                 CreatedAt = o.CreatedAt,
                 UpdatedAt = o.UpdatedAt
             };
+
+        public static OrderLiteDto ToLiteDto(this Order o)
+            => new()
+            {
+                Id = o.Id,
+                Car = $"{o.Vehicle.BrandModel.CarBrand.BrandName} {o.Vehicle.BrandModel.ModelName}",
+                RegistrationNumber = o.Vehicle.RegistrationNumber,
+                StartCity = o.StartLocation.City,
+                EndCity = o.EndLocation.City,
+                StartTime = o.StartTime,
+                Status = o.Status
+            };
     }
 }

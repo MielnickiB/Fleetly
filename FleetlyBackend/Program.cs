@@ -14,6 +14,7 @@ using FleetlyBackend.Services.InvoiceService;
 using FleetlyBackend.Services.LocationService;
 using FleetlyBackend.Services.NotificationService;
 using FleetlyBackend.Services.OrderService;
+using FleetlyBackend.Services.PayrollService;
 using FleetlyBackend.Services.RouteService;
 using FleetlyBackend.Services.UserDetailsService;
 using FleetlyBackend.Services.UserRoleService;
@@ -81,6 +82,7 @@ builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IPayrollService, PayrollService>();
 builder.Services.AddHttpClient<IRouteService, RouteService>(client =>
 {
     client.DefaultRequestHeaders.UserAgent.ParseAdd("FleetlyApp/1.0");

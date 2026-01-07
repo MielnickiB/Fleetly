@@ -4,6 +4,7 @@ using FleetlyBackend.Data;
 using FleetlyBackend.Extensions;
 using FleetlyBackend.Models;
 using Microsoft.EntityFrameworkCore;
+using FleetlyBackend.Mappings;
 
 namespace FleetlyBackend.Services.DashboardService
 {
@@ -63,6 +64,48 @@ namespace FleetlyBackend.Services.DashboardService
             await PrepareStatusChartData(stats, ordersQuery);
 
             return stats;
+        }
+
+        public async Task<DriverDashboardDto> GetDriverDashboardAsync()
+        {
+            var now = DateTime.UtcNow;
+            var today = now.Date;
+            var tomorrow = today.AddDays(1);
+            var userId = _http.CurrentUser().GetUserId();
+            var startOfMonth = new DateTime(now.Year, now.Month, 1);
+
+            var payroll = await _context.Payrolls
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.WorkerId == userId && p.Date == startOfMonth);
+
+            var currentMonthSalary = payroll?.TotalAmount ?? 0m;
+
+            var ordersQuery = _context.Orders
+                .AsNoTracking()
+                .Where(o => o.WorkerId == userId);
+
+            var todayOrders = await ordersQuery
+                .Where(o => o.StartTime.Date == today)
+                .OrderBy(o => o.StartTime)
+                .Select(o => o.ToLiteDto())
+                .ToListAsync();
+
+            var tomorrowOrders = await ordersQuery
+                .Where(o => o.StartTime.Date == tomorrow)
+                .OrderBy(o => o.StartTime)
+                .Select(o => o.ToLiteDto())
+                .ToListAsync();
+
+            var completedOrdersCount = await ordersQuery
+                .CountAsync(o => o.Status == OrderStatus.ApprovedByAdmin);
+
+            return new DriverDashboardDto 
+            {
+                TodayOrders = todayOrders,
+                TomorrowOrders = tomorrowOrders,
+                CurrentMonthSalary = currentMonthSalary,
+                CompletedOrdersCount = completedOrdersCount
+            };
         }
 
         private static async Task PrepareHistoryChartData(DashboardStatsDto stats, IQueryable<Order> baseQuery, DateTime now, bool isAdmin)

@@ -1,9 +1,9 @@
 ﻿using Fleetly.Shared.Client;
 using FleetlyMobile.Services;
+using FleetlyMobile.Services.Dashboard;
 using FleetlyMobile.Services.Auth;
 using FleetlyMobile.Constants;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 
@@ -45,6 +45,7 @@ namespace FleetlyMobile
             .AddHttpMessageHandler<TokenHandler>();
 
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IDashboardService, DashboardService>();
 
             return builder.Build();
         }

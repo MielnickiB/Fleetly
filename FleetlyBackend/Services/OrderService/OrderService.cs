@@ -12,6 +12,7 @@ using Fleetly.Shared.Dto.InvoiceDtos;
 using Fleetly.Shared.Dto;
 using Fleetly.Shared.Enums;
 using FleetlyBackend.Extensions;
+using FleetlyBackend.Services.PayrollService;
 
 namespace FleetlyBackend.Services.OrderService
 {
@@ -21,6 +22,7 @@ namespace FleetlyBackend.Services.OrderService
         INotificationService notificationService,
         IExpenseService expenseService,
         ICostLimitService costLimitService,
+        IPayrollService payrollService,
         IHttpContextAccessor http
     ) : IOrderService
     {
@@ -29,6 +31,7 @@ namespace FleetlyBackend.Services.OrderService
         private readonly INotificationService _notificationService = notificationService;
         private readonly IExpenseService _expenseService = expenseService;
         private readonly ICostLimitService _costLimitService = costLimitService;
+        private readonly IPayrollService _payrollService = payrollService;
         private readonly IHttpContextAccessor _http = http;
 
         #region GET
@@ -534,31 +537,41 @@ namespace FleetlyBackend.Services.OrderService
 
             using var tx = await _context.Database.BeginTransactionAsync();
 
-            var order = await _context.Orders
-                            .FirstOrDefaultAsync(o => o.Id == orderId)
-                            ?? throw new ArgumentException("Zlecenie nie istnieje.");
-
-            if (order.Status != OrderStatus.WaitingForCostApproval)
-                throw new InvalidOperationException("Koszty nie mogą zostać zatwierdzone w bieżącym statusie zlecenia.");
-
-            order.Status = OrderStatus.ApprovedByAdmin;
-            order.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-
-            var invoiceSum = Math.Round(order.Salary + (order.Salary * 0.3m) + order.FuelCosts + order.AdditionalCosts);
-
-            var invoice = new InvoiceCreateDto
+            try
             {
-                OrderId = order.Id,
-                Sum = invoiceSum
-            };
+                var order = await _context.Orders
+                                .FirstOrDefaultAsync(o => o.Id == orderId)
+                                ?? throw new ArgumentException("Zlecenie nie istnieje.");
 
-            await _invoiceService.Create(invoice);
+                if (order.Status != OrderStatus.WaitingForCostApproval)
+                    throw new InvalidOperationException("Koszty nie mogą zostać zatwierdzone w bieżącym statusie zlecenia.");
 
-            await tx.CommitAsync();
+                order.Status = OrderStatus.ApprovedByAdmin;
+                order.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
 
-            await _notificationService.NotifyOrderApprovedByAdmin(order);
-            return await GetFresh(orderId);
+                var invoiceSum = Math.Round(order.Salary + (order.Salary * 0.3m) + order.FuelCosts + order.AdditionalCosts);
+
+                var invoice = new InvoiceCreateDto
+                {
+                    OrderId = order.Id,
+                    Sum = invoiceSum
+                };
+
+                await _invoiceService.Create(invoice);
+
+                await _payrollService.AddAmountToPayrollAsync(order.WorkerId!.Value, order.StartTime, order.Salary);
+
+                await tx.CommitAsync();
+
+                await _notificationService.NotifyOrderApprovedByAdmin(order);
+                return await GetFresh(orderId);
+            }
+            catch (Exception)
+            {
+                await tx.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<OrderResponseDto> ApproveOrder(int orderId)
