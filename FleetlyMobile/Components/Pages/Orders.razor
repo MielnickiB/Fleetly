@@ -1,3 +1,5 @@
 ﻿@page "/orders"
 @attribute [Authorize(Roles = "Worker")]
-<MudText Typo="Typo.h5">Lista Zleceń</MudText>
+@inherits FleetlyMobile.Base.FleetlyListPageBase<OrderLiteDto>
+
+<MudText Typo="Typo.h6">Giełda zleceń</MudText>
