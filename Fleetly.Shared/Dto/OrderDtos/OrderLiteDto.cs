@@ -9,6 +9,7 @@ namespace Fleetly.Shared.Dto.OrderDtos
         public string RegistrationNumber { get; set; } = string.Empty;
         public string StartCity { get; set; } = string.Empty;
         public string EndCity { get; set; } = string.Empty;
+        public decimal Salary { get; set; }
         public DateTime StartTime { get; set; }
         public OrderStatus Status { get; set; }
     }
