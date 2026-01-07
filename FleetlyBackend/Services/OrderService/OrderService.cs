@@ -33,6 +33,7 @@ namespace FleetlyBackend.Services.OrderService
         private readonly ICostLimitService _costLimitService = costLimitService;
         private readonly IPayrollService _payrollService = payrollService;
         private readonly IHttpContextAccessor _http = http;
+        private const decimal ADMIN_INVOICE_OVERHEAD_PERCENTAGE = 0.3m;
 
         #region GET
 
@@ -550,7 +551,7 @@ namespace FleetlyBackend.Services.OrderService
                 order.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
-                var invoiceSum = Math.Round(order.Salary + (order.Salary * 0.3m) + order.FuelCosts + order.AdditionalCosts);
+                var invoiceSum = Math.Round(order.Salary + (order.Salary * ADMIN_INVOICE_OVERHEAD_PERCENTAGE) + order.FuelCosts + order.AdditionalCosts);
 
                 var invoice = new InvoiceCreateDto
                 {
@@ -570,7 +571,7 @@ namespace FleetlyBackend.Services.OrderService
             catch (Exception)
             {
                 await tx.RollbackAsync();
-                throw;
+                throw new Exception("Nie udało się zakceptować realizacja zlecenia.");
             }
         }
 
