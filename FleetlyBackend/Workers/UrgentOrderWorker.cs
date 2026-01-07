@@ -7,10 +7,13 @@ namespace FleetlyBackend.Workers
     public class UrgentOrderWorker(IServiceScopeFactory scopeFactory, ILogger<UrgentOrderWorker> logger) : BackgroundService
     {
         private readonly TimeSpan _checkInterval = TimeSpan.FromHours(1);
+        private readonly TimeSpan _initialInterval = TimeSpan.FromMinutes(5);
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            logger.LogInformation("Aktulizacja cen: Startuje algorytm wyceny.");
+            logger.LogInformation("Aktualizacja cen: Startuje algorytm wyceny.");
+
+            await Task.Delay(_initialInterval, stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -54,6 +57,9 @@ namespace FleetlyBackend.Workers
                 }
                 else
                 {
+                    if (order.Salary >= maxSalary)
+                        continue;
+
                     var bump = (maxSalary - order.Salary) / 2;
                     order.Salary = Math.Min(order.Salary + bump, maxSalary);
                 }

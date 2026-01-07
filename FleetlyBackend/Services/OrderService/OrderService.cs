@@ -110,7 +110,7 @@ namespace FleetlyBackend.Services.OrderService
             {
                 var phrase = search.Trim().ToLower();
                 query = query.Where(o =>
-                    o.StartLocation.City.Contains(phrase, StringComparison.CurrentCultureIgnoreCase) ||
+                    o.StartLocation.City.ToLower().Contains(phrase, StringComparison.CurrentCultureIgnoreCase) ||
                     o.EndLocation.City.ToLower().Contains(phrase, StringComparison.CurrentCultureIgnoreCase) ||
                     o.Vehicle.BrandModel.CarBrand.BrandName.ToLower().Contains(phrase, StringComparison.CurrentCultureIgnoreCase) ||
                     o.Vehicle.BrandModel.ModelName.ToLower().Contains(phrase, StringComparison.CurrentCultureIgnoreCase));
@@ -131,12 +131,9 @@ namespace FleetlyBackend.Services.OrderService
                 _ => query.OrderByDescending(o => o.CreatedAt)
             };
 
-            var totalCount = await _context.Orders
-                .AsNoTracking()
-                .Where(o => o.Status == OrderStatus.Created && o.WorkerId == null)
-                .CountAsync();
+            var totalCount = await query.CountAsync();
 
-            var orders = await _context.Orders
+            var orders = await query
                .IncludeAllLiteOrderRelations()
                .Skip(skip)
                .Take(safe)
@@ -713,7 +710,9 @@ namespace FleetlyBackend.Services.OrderService
                 .Include(o => o.Client).ThenInclude(c => c.Details)
                 .Include(o => o.Worker).ThenInclude(w => w.Details)
                 .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
-                .Include(o => o.CostLimit);
+                .Include(o => o.CostLimit)
+                .Include(o => o.StartLocation)
+                .Include(o => o.EndLocation);
         }
     }
 }
