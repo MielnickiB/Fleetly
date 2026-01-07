@@ -8,16 +8,11 @@ namespace FleetlyBackend.Services.OrderService
     {
         public Task<OrderResponseDto?> GetOrderById(int orderId);
         public Task<PagedResult<OrderResponseDto>> GetAllOrders();
-        public Task<PagedResult<OrderLiteDto>> GetAvailableOrders(
-            int page = 1, 
-            int pageSize = 10,
-            string? search = null,
-            string? sortBy = null,
-            bool descending = false);
+        public Task<PagedResult<OrderResponseDto>> GetAvailableOrders();
         public Task<OrderResponseDto> CreateOrder(OrderCreateDto orderCreateDto);
         public Task<OrderResponseDto> UpdateOrder(int orderId, OrderUpdateDto orderUpdateDto);
         public Task<OrderResponseDto> CancelOrder(int orderId);
-        public Task AcceptOrder(int orderId);
+        public Task<OrderResponseDto> AcceptOrder(int orderId);
         public Task<OrderResponseDto> ResignOrder(int orderId);
         public Task<OrderResponseDto> StartOrder(int orderId);
         public Task<OrderResponseDto> ArrivedToClient(int orderId);

@@ -22,14 +22,9 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
     }
 
     [HttpGet("available")]
-    public async Task<ActionResult<PagedResult<OrderLiteDto>>> GetAllAvailableOrders(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
-            [FromQuery] string? search = null,
-            [FromQuery] string? sortBy = null,
-            [FromQuery] bool descending = false)
+    public async Task<ActionResult<PagedResult<OrderResponseDto>>> GetAllAvailableOrders()
     {
-        return Ok(await _service.GetAvailableOrders(page, pageSize, search, sortBy, descending));
+        return Ok(await _service.GetAvailableOrders());
     }
 
     [HttpGet("{orderId:int}")]
@@ -47,13 +42,9 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
     }
 
     [HttpPost("{orderId:int}/accept")]
-    public async Task<ActionResult> Accept(int orderId)
+    public async Task<ActionResult<OrderResponseDto>> Accept(int orderId)
     {
-        try 
-        { 
-            await _service.AcceptOrder(orderId); 
-            return NoContent();
-        }
+        try { return Ok(await _service.AcceptOrder(orderId)); }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         catch (UnauthorizedAccessException) { return Forbid(); }

@@ -13,7 +13,6 @@ using Fleetly.Shared.Dto;
 using Fleetly.Shared.Enums;
 using FleetlyBackend.Extensions;
 using FleetlyBackend.Services.PayrollService;
-using FleetlyBackend.Helpers;
 
 namespace FleetlyBackend.Services.OrderService
 {
@@ -93,62 +92,25 @@ namespace FleetlyBackend.Services.OrderService
             };
         }
 
-        public async Task<PagedResult<OrderLiteDto>> GetAvailableOrders(
-            int page = 1,
-            int pageSize = 10,
-            string? search = null,
-            string? sortBy = null,
-            bool descending = false)
+        public async Task<PagedResult<OrderResponseDto>> GetAvailableOrders()
         {
-            var (skip, safe) = PaginationHelper.Calculate(page, pageSize);
-
-            var query = _context.Orders
-                .AsNoTracking()
-                .Where(o => o.Status == OrderStatus.Created && o.WorkerId == null);
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var phrase = search.Trim().ToLower();
-                query = query.Where(o =>
-                    o.StartLocation.City.Contains(phrase, StringComparison.CurrentCultureIgnoreCase) ||
-                    o.EndLocation.City.ToLower().Contains(phrase, StringComparison.CurrentCultureIgnoreCase) ||
-                    o.Vehicle.BrandModel.CarBrand.BrandName.ToLower().Contains(phrase, StringComparison.CurrentCultureIgnoreCase) ||
-                    o.Vehicle.BrandModel.ModelName.ToLower().Contains(phrase, StringComparison.CurrentCultureIgnoreCase));
-            }
-
-            query = sortBy?.ToLower() switch
-            {
-                "salary" => descending
-                ? query.OrderByDescending(o => o.Salary)
-                : query.OrderBy(o => o.Salary),
-                "starttime" => descending
-                ? query.OrderByDescending(o => o.StartTime)
-                : query.OrderBy(o => o.StartTime),
-                "city" => descending
-                ? query.OrderByDescending(o => o.StartLocation.City)
-                : query.OrderBy(o => o.StartLocation.City),
-
-                _ => query.OrderByDescending(o => o.CreatedAt)
-            };
-
             var totalCount = await _context.Orders
                 .AsNoTracking()
                 .Where(o => o.Status == OrderStatus.Created && o.WorkerId == null)
                 .CountAsync();
 
             var orders = await _context.Orders
-               .IncludeAllLiteOrderRelations()
-               .Skip(skip)
-               .Take(safe)
-               .Select(o => o.ToLiteDto())
+               .AsNoTracking()
+               .IncludeAllOrderRelations()
+               .Where(o => o.Status == OrderStatus.Created && o.WorkerId == null)
+               .OrderByDescending(o => o.CreatedAt)
+               .Select(o => o.ToResponseDto())
                .ToListAsync();
 
-            return new PagedResult<OrderLiteDto>
+            return new PagedResult<OrderResponseDto>
             {
                 Items = orders,
-                TotalCount = totalCount,
-                PageSize = safe,
-                PageNumber = page
+                TotalCount = totalCount
             };
         }
 
@@ -335,7 +297,7 @@ namespace FleetlyBackend.Services.OrderService
 
         #region WORKER ACTIONS
 
-        public async Task AcceptOrder(int orderId)
+        public async Task<OrderResponseDto> AcceptOrder(int orderId)
         {
             var user = _http.CurrentUser();
 
@@ -360,6 +322,8 @@ namespace FleetlyBackend.Services.OrderService
             await _context.SaveChangesAsync();
 
             await _notificationService.NotifyWorkerAccepted(order);
+
+            return await GetFresh(orderId);
         }
 
         public async Task<OrderResponseDto> ResignOrder(int orderId)
@@ -705,15 +669,6 @@ namespace FleetlyBackend.Services.OrderService
                 .Include(o => o.StartLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
                 .Include(o => o.EndLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
                 .Include(o => o.Expenses);
-        }
-
-        public static IQueryable<Order> IncludeAllLiteOrderRelations(this IQueryable<Order> query)
-        {
-            return query
-                .Include(o => o.Client).ThenInclude(c => c.Details)
-                .Include(o => o.Worker).ThenInclude(w => w.Details)
-                .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
-                .Include(o => o.CostLimit);
         }
     }
 }
