@@ -2,7 +2,7 @@
 @using Fleetly.Shared.Dto.DashboardDtos
 @using Fleetly.Shared.Dto.OrderDtos
 @using FleetlyMobile.Services.Dashboard
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Worker")]
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IDashboardService DashboardService
 @inject ISnackbar Snackbar

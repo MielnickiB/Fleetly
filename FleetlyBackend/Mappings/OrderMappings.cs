@@ -52,6 +52,7 @@ namespace FleetlyBackend.Mappings
                 RegistrationNumber = o.Vehicle.RegistrationNumber,
                 StartCity = o.StartLocation.City,
                 EndCity = o.EndLocation.City,
+                Salary = o.Salary,
                 StartTime = o.StartTime,
                 Status = o.Status
             };

@@ -20,6 +20,7 @@ using FleetlyBackend.Services.UserDetailsService;
 using FleetlyBackend.Services.UserRoleService;
 using FleetlyBackend.Services.UserSerivce;
 using FleetlyBackend.Services.VehicleService;
+using FleetlyBackend.Workers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -129,6 +130,7 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddHostedService<UrgentOrderWorker>();
 
 var app = builder.Build();
 
