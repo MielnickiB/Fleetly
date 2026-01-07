@@ -1,9 +1,7 @@
 ﻿@page "/"
-@using Microsoft.AspNetCore.Authorization
 @using Fleetly.Shared.Dto.DashboardDtos
 @using Fleetly.Shared.Dto.OrderDtos
 @using FleetlyMobile.Services.Dashboard
-@using FleetlyMobile.Components.PagesComponents
 @attribute [Authorize]
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IDashboardService DashboardService
@@ -22,61 +20,71 @@
 
 @if (isLoading)
 {
-    <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="d-flex mx-auto mt-8" />
+    <Loading />
 }
 else if (data == null)
 {
-    <MudAlert Severity="Severity.Error">Nie udało się pobrać danych. Sprawdź połączenie.</MudAlert>
-    <MudButton Variant="Variant.Outlined" OnClick="LoadData" Class="mt-2">Spróbuj ponownie</MudButton>
+    <OfflineView OnRetry="LoadData" IsBusy="@isLoading" />
 }
 else
 {
-    <MudStack Spacing="4" Class="mb-16">
+    <MudStack Spacing="4" Class="pb-4">
 
         <MudText Typo="Typo.h6" Class="ml-1"><b>Dziś (@data.TodayOrders.Count)</b></MudText>
         @if (data.TodayOrders.Any())
         {
             @foreach (var order in data.TodayOrders)
             {
-                <OrderCard Order="order" OnClick="OpenOrder" IsToday="true"/>
+                <OrderCard Order="order" OnClick="OpenOrder" IsToday="true" />
             }
         }
         else
         {
-             <MudText Typo="Typo.body2" Class="pa-4" Color="Color.Secondary">Brak zleceń na dzisiaj.</MudText>
+            <MudText Typo="Typo.body2" Class="pa-4" Color="Color.Secondary">Brak zleceń na dzisiaj.</MudText>
         }
 
+        <MudText Typo="Typo.h6" Class="ml-1 mt-2"><b>Jutro (@data.TomorrowOrders.Count)</b></MudText>
         @if (data.TomorrowOrders.Any())
         {
-            <MudText Typo="Typo.h6" Class="ml-1 mt-2"><b>Jutro (@data.TomorrowOrders.Count)</b></MudText>
             @foreach (var order in data.TomorrowOrders)
             {
-                <OrderCard Order="order" OnClick="OpenOrder" IsToday="false"/>
+                <OrderCard Order="order" OnClick="OpenOrder" IsToday="false" />
             }
         }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="pa-4" Color="Color.Secondary">Brak zleceń na jutrzejszy dzień.</MudText>
+        }
 
-        <MudPaper Elevation="0" Outlined="true" Class="pa-4 rounded-xl mt-2" Style="background: var(--mud-palette-surface);">
+        <MudPaper Elevation="5" Class="pa-4 mt-2 rounded-lg" Style="background: var(--mud-palette-surface);">
             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                 <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Szacowane wynagrodzenie</MudText>
                 <MudToggleIconButton @bind-Toggled="showMoney"
                                      Icon="@Icons.Material.Filled.VisibilityOff" Color="Color.Default"
                                      ToggledIcon="@Icons.Material.Filled.Visibility" ToggledColor="Color.Primary" />
             </MudStack>
-            
-            <MudText Typo="Typo.h4" Style="font-weight: 800; color: var(--mud-palette-success);">
+
+            <MudText Typo="Typo.h4" Color="Color.Success" Style="font-weight: 800">
                 @(showMoney ? $"{data.CurrentMonthSalary:N2} zł" : "••••••")
             </MudText>
             <MudText Typo="Typo.caption">Za bieżący miesiąc (@data.CompletedOrdersCount zleceń)</MudText>
+        </MudPaper>
+
+        <MudPaper Elevation="5" Class="pa-4 mt-2 rounded-lg" Style="background: var(--mud-palette-surface);">
+            <MudText Typo=Typo.subtitle2 Color=Color.Secondary>Ilość wykonanych zleceń ogółem</MudText>
+            <MudText Typo=Typo.h4 Style="font-weight: 800" Color=Color.Success>@data.CompletedOrdersCount</MudText>
+            <MudText Typo=Typo.caption>Dziękujemy Ci za twoją ciężką pracę!</MudText>
         </MudPaper>
 
     </MudStack>
 }
 
 @code {
-    private string userName = "Kierowca";
+    private string userName = string.Empty;
     private bool isLoading = true;
-    private bool showMoney = false;
+    private bool showMoney = true;
     private DriverDashboardDto? data;
+    private bool useFakeData = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -87,24 +95,32 @@ else
     private async Task LoadUserData()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        userName = authState.User.Identity?.Name ?? authState.User.FindFirst("FullName")?.Value ?? "Kierowca";
+        userName = authState.User.Identity?.Name ?? authState.User.FindFirst("FullName")?.Value ?? "Kierowco";
     }
 
     private async Task LoadData()
     {
+        isLoading = true;
+        await Task.Delay(800);
         try
         {
-            isLoading = true;
-            var response = await DashboardService.GetDashboardDataAsync();
-            if (response.Success && response.Data != null)
+            if (useFakeData)
             {
-                data = response.Data;
+                data = GenerateFakeData();
             }
             else
             {
-                var errorMsg = $"Błąd {response.StatusCode}: {response.Error ?? "Brak szczegółów"}";
-                Console.WriteLine(errorMsg);
-                Snackbar.Add(errorMsg, Severity.Error);
+                var response = await DashboardService.GetDashboardDataAsync();
+                if (response.Success && response.Data != null)
+                {
+                    data = response.Data;
+                }
+                else
+                {
+                    var errorMsg = $"Błąd {response.StatusCode}: {response.Error ?? "Brak szczegółów"}";
+                    Console.WriteLine(errorMsg);
+                    Snackbar.Add(errorMsg, Severity.Error);
+                }
             }
         }
         catch (Exception)
@@ -120,5 +136,50 @@ else
     private void OpenOrder(int id)
     {
         Nav.NavigateTo($"/orders/{id}");
+    }
+
+    private DriverDashboardDto GenerateFakeData()
+    {
+        return new DriverDashboardDto
+        {
+            CurrentMonthSalary = 4250.50m,
+            CompletedOrdersCount = 15,
+            TodayOrders = new List<OrderLiteDto>
+            {
+                new()
+                {
+                    Id = 1,
+                    Car = "Toyota Corolla",
+                    RegistrationNumber = "WA 88291",
+                    StartCity = "Warszawa",
+                    EndCity = "Kraków",
+                    StartTime = DateTime.Now.AddHours(1),
+                    Status = OrderStatus.Assigned
+                },
+                new()
+                {
+                    Id = 2,
+                    Car = "Skoda Octavia",
+                    RegistrationNumber = "KR 12345",
+                    StartCity = "Kraków",
+                    EndCity = "Katowice",
+                    StartTime = DateTime.Now.AddHours(4),
+                    Status = OrderStatus.Assigned
+                }
+            },
+            TomorrowOrders = new List<OrderLiteDto>
+            {
+                new()
+                {
+                    Id = 3,
+                    Car = "Mercedes Sprinter",
+                    RegistrationNumber = "PO 55122",
+                    StartCity = "Poznań",
+                    EndCity = "Berlin",
+                    StartTime = DateTime.Now.AddDays(1).AddHours(2),
+                    Status = OrderStatus.Assigned
+                }
+            }
+        };
     }
 }
