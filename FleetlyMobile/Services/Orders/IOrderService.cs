@@ -12,6 +12,7 @@ namespace FleetlyMobile.Services.Orders
             string? search = null,
             string? sortBy = null,
             bool descending = false);
+        public Task<ApiResponse<OrderResponseDto?>> GetOrderByIdAsync(int orderId);
         public Task<ApiResponse<bool>> AcceptOrderAsync(int orderId);
         public Task<ApiResponse<bool>> ResignOrderAsync(int orderId);
     }

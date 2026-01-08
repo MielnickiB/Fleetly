@@ -29,10 +29,16 @@ namespace FleetlyMobile.Services.Orders
             return await _api.GetAsync<PagedResult<OrderLiteDto>?>(url);
         }
 
+        public async Task<ApiResponse<OrderResponseDto?>> GetOrderByIdAsync(int orderId)
+        {
+            return await _api.GetAsync<OrderResponseDto?>($"{BaseUrl}/{orderId}");
+        }
+
         public async Task<ApiResponse<bool>> AcceptOrderAsync(int orderId)
         {
             return await _api.PostNoResultAsync<object>($"{BaseUrl}/{orderId}/accept", null!);
         }
+
         public async Task<ApiResponse<bool>> ResignOrderAsync(int orderId)
         {
             return await _api.PostNoResultAsync<object>($"{BaseUrl}/{orderId}/resign", null!);
