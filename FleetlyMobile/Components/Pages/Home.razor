@@ -83,7 +83,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadUserData();
-        await LoadDataAsync();
+        await ExecuteSafeAsync(LoadDataAsync);
     }
 
     private async Task LoadUserData()
