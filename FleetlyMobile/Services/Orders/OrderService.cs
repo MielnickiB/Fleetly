@@ -33,5 +33,9 @@ namespace FleetlyMobile.Services.Orders
         {
             return await _api.PostNoResultAsync<object>($"{BaseUrl}/{orderId}/accept", null!);
         }
+        public async Task<ApiResponse<bool>> ResignOrderAsync(int orderId)
+        {
+            return await _api.PostNoResultAsync<object>($"{BaseUrl}/{orderId}/resign", null!);
+        }
     }
 }

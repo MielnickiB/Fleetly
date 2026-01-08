@@ -11,10 +11,11 @@
             <MudSelect T="string"
                        Label="Sortuj"
                        ValueChanged="HandleSortChange"
+                       Adornment="Adornment.Start"
+                       AdornmentIcon="@Icons.Material.Filled.Sort"
                        Variant="Variant.Outlined"
                        AnchorOrigin="Origin.BottomLeft"
                        Margin="Margin.Dense"
-                       Value="@("date_desc")"
                        Class="rounded-lg">
                 <MudSelectItem Value="@("date_asc")">Najbliższy termin</MudSelectItem>
                 <MudSelectItem Value="@("date_desc")">Najdalszy termin</MudSelectItem>

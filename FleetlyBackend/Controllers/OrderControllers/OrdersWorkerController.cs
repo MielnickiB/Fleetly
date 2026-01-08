@@ -59,9 +59,13 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
     }
 
     [HttpPost("{orderId:int}/resign")]
-    public async Task<ActionResult<OrderResponseDto>> Resign(int orderId)
+    public async Task<ActionResult> Resign(int orderId)
     {
-        try { return Ok(await _service.ResignOrder(orderId)); }
+        try 
+        { 
+            await _service.ResignOrder(orderId);
+            return NoContent();
+        }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         catch (UnauthorizedAccessException) { return Forbid(); }

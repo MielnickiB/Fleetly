@@ -70,7 +70,8 @@ namespace FleetlyBackend.Services.DashboardService
         {
             var now = DateTime.UtcNow;
             var today = now.Date;
-            var tomorrow = today.AddDays(1);
+            var rangeStart = today.AddDays(1);
+            var rangeEnd = today.AddDays(7);
             var userId = _http.CurrentUser().GetUserId();
             var startOfMonth = new DateTime(now.Year, now.Month, 1);
 
@@ -93,8 +94,8 @@ namespace FleetlyBackend.Services.DashboardService
                 .Select(o => o.ToLiteDto())
                 .ToListAsync();
 
-            var tomorrowOrders = await ordersQuery
-                .Where(o => o.StartTime.Date == tomorrow)
+            var upcomingOrders = await ordersQuery
+                .Where(o => o.StartTime.Date >= rangeStart && o.StartTime.Date <= rangeEnd)
                 .OrderBy(o => o.StartTime)
                 .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
                 .Include(o => o.StartLocation)
@@ -108,7 +109,7 @@ namespace FleetlyBackend.Services.DashboardService
             return new DriverDashboardDto 
             {
                 TodayOrders = todayOrders,
-                TomorrowOrders = tomorrowOrders,
+                UpcomingOrders = upcomingOrders,
                 CurrentMonthSalary = currentMonthSalary,
                 CompletedOrdersCount = completedOrdersCount
             };
