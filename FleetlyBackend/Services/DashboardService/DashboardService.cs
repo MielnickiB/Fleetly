@@ -82,12 +82,12 @@ namespace FleetlyBackend.Services.DashboardService
 
             var ordersQuery = _context.Orders
                 .AsNoTracking()
-                .Where(o => o.WorkerId == userId);
+                .Where(o => o.WorkerId == userId && o.IsActive);
 
             var todayOrders = await ordersQuery
                 .Where(o => o.StartTime.Date == today)
                 .OrderBy(o => o.StartTime)
-                .Include(o => o.Vehicle)
+                .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
                 .Include(o => o.StartLocation)
                 .Include(o => o.EndLocation)
                 .Select(o => o.ToLiteDto())
@@ -96,7 +96,7 @@ namespace FleetlyBackend.Services.DashboardService
             var tomorrowOrders = await ordersQuery
                 .Where(o => o.StartTime.Date == tomorrow)
                 .OrderBy(o => o.StartTime)
-                .Include(o => o.Vehicle)
+                .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
                 .Include(o => o.StartLocation)
                 .Include(o => o.EndLocation)
                 .Select(o => o.ToLiteDto())

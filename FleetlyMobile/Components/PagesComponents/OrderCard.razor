@@ -1,30 +1,75 @@
 ﻿@using Fleetly.Shared.Dto.OrderDtos
 
-<MudPaper Elevation="5" Class="pa-4 mb-3 mud-theme-surface rounded-lg" Style="@GetBorderStyle()">
+<MudPaper Elevation="5" Class="pa-4 mb-4 mud-theme-surface rounded-lg" Style="@GetBorderStyle()">
     <MudStack>
         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-            <MudText Typo="Typo.subtitle1"><b>@Order.Car</b></MudText>
-            <MudChip T="string" Color="@(IsToday? Color.Info: Color.Default)" Size="Size.Small" Label="true">
-                @Order.StartTime.ToString("HH:mm")
-            </MudChip>
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">TRASA</MudText>
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 700;">
+                    @Order.StartCity <MudIcon Icon="@Icons.Material.Filled.ArrowRightAlt" Size="Size.Small" Style="vertical-align: sub;" /> @Order.EndCity
+                </MudText>
+            </MudStack>
+
+            @if (CardType == OrderCardType.Marketplace)
+            {
+                <MudChip T="string" Color="Color.Success" Variant="Variant.Filled" Size="Size.Small">
+                    <MudText Typo="Typo.body2" Style="font-weight:bold">@Order.Salary zł</MudText>
+                </MudChip>
+            }
+            else
+            {
+                <MudChip T="string" Color="@(IsToday? Color.Info: Color.Default)" Variant="Variant.Filled" Size="Size.Small">
+                    <MudText Typo="Typo.body2" Style="font-weight:bold">@Order.StartTime.ToString("HH:mm")</MudText>
+                </MudChip>
+            }
         </MudStack>
 
-        <MudText Typo="Typo.caption" Color="Color.Secondary">@Order.RegistrationNumber</MudText>
+        <MudDivider Class="my-2" />
 
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-1">
-            <MudText Typo="Typo.body2">@Order.StartCity</MudText>
-            <MudIcon Icon="@Icons.Material.Filled.ArrowRightAlt" Size="Size.Small" Color="Color.Default" />
-            <MudText Typo="Typo.body2"><b>@Order.EndCity</b></MudText>
-        </MudStack>
+        <MudGrid Spacing="1">
+            <MudItem xs="7">
+                <MudStack Spacing="0">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.DirectionsCar" Size="Size.Small" Color="Color.Primary" />
+                        <MudText Typo="Typo.body2" Style="font-weight: 600;">@Order.Car</MudText>
+                    </MudStack>
+                    <MudText Typo="Typo.caption" Class="ml-6" Color="Color.Secondary">@Order.RegistrationNumber</MudText>
+                </MudStack>
+            </MudItem>
 
-        @if (IsToday)
+            <MudItem xs="5">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Justify="Justify.FlexEnd">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Color="Color.Primary" />
+                    <MudText Typo="Typo.body2">
+                        @(CardType == OrderCardType.Marketplace ? Order.StartTime.ToString("dd.MM HH:mm") : Order.StartTime.ToString("dd.MM"))
+                    </MudText>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+
+        @if (CardType == OrderCardType.Marketplace || (CardType == OrderCardType.MyOrder && IsToday))
         {
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        FullWidth="true"
-                       OnClick="@(() => OnClick.InvokeAsync(Order.Id))"
-                       Class="mt-2">
-                Realizuj
+                       Class="mt-2"
+                       OnClick="@(() => OnAction.InvokeAsync(Order.Id))"
+                       Disabled="@IsProcessing">
+                @if (IsProcessing)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                }
+                else
+                {
+                    @if (CardType == OrderCardType.Marketplace)
+                    {
+                        <MudText Typo="Typo.button">Przyjmuję</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.button">Realizuj</MudText>
+                    }
+                }
             </MudButton>
         }
     </MudStack>
@@ -32,12 +77,18 @@
 
 @code {
     [Parameter] public OrderLiteDto Order { get; set; } = null!;
-    [Parameter] public EventCallback<int> OnClick { get; set; }
-    [Parameter] public bool IsToday { get; set; }
+    [Parameter] public EventCallback<int> OnAction { get; set; }
+
+    [Parameter] public OrderCardType CardType { get; set; } = OrderCardType.MyOrder;
+
+    [Parameter] public bool IsToday { get; set; } = false;
+    [Parameter] public bool IsProcessing { get; set; } = false;
 
     private string GetBorderStyle()
     {
-        var color = IsToday ? "var(--mud-palette-primary)" : "var(--mud-palette-grey)";
+        var color = (CardType == OrderCardType.Marketplace || IsToday)
+            ? "var(--mud-palette-primary)"
+            : "var(--mud-palette-grey)";
         return $"border-left: 6px solid {color};";
     }
 }

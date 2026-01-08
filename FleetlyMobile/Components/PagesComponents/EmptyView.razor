@@ -10,7 +10,7 @@
                Color="Color.Primary"
                OnClick="HandleRetry"
                Disabled="@IsBusy"
-               StartIcon="@Icons.Material.Filled.Refresh"
+               StartIcon="@ButtonIcon"
                Class="mt-2">
         <MudText Typo="Typo.button">@ButtonText</MudText>
     </MudButton>
@@ -23,6 +23,7 @@
     [Parameter] public string Message { get; set; } = "Nie udało się pobrać danych z serwera.";
     [Parameter] public string ButtonText { get; set; } = "Spróbuj ponownie";
     [Parameter] public string Icon { get; set; } = Icons.Material.Filled.CloudOff;
+    [Parameter] public string ButtonIcon { get; set; } = Icons.Material.Filled.Refresh;
     [Parameter] public Size IconSize { get; set; } = Size.Large;
     [Parameter] public Color IconColor { get; set; } = Color.Error;
     [Parameter] public string Height { get; set; } = "70vh";
