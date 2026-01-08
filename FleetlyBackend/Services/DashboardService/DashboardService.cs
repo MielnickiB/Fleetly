@@ -82,7 +82,7 @@ namespace FleetlyBackend.Services.DashboardService
 
             var ordersQuery = _context.Orders
                 .AsNoTracking()
-                .Where(o => o.WorkerId == userId && o.IsActive == true);
+                .Where(o => o.WorkerId == userId && o.IsActive);
 
             var todayOrders = await ordersQuery
                 .Where(o => o.StartTime.Date == today)

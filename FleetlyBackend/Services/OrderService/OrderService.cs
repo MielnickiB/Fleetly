@@ -677,7 +677,7 @@ namespace FleetlyBackend.Services.OrderService
         {
             return query
                 .Include(o => o.Client).ThenInclude(c => c.Details)
-                .Include(o => o.Worker).ThenInclude(w => w!.Details)
+                .Include(o => o.Worker).ThenInclude(w => w.Details)
                 .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
                 .Include(o => o.CostLimit)
                 .Include(o => o.StartLocation)
