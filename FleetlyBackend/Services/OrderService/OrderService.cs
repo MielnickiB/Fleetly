@@ -303,15 +303,9 @@ namespace FleetlyBackend.Services.OrderService
 
         public async Task AcceptOrder(int orderId)
         {
-            var user = _http.CurrentUser();
+            var order = await GetOrderWithWorkerCheck(orderId);
 
-            if (!user.IsWorker())
-                throw new UnauthorizedAccessException("Tylko pracownik może przyjąć zlecenie.");
-
-            var workerId = user.GetUserId();
-
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId)
-                ?? throw new ArgumentException("Zlecenie nie istnieje.");
+            var workerId = _http.CurrentUser().GetUserId();
 
             if (order.Status != OrderStatus.Created)
                 throw new InvalidOperationException("Zlecenie nie jest dostępne do przyjęcia.");
@@ -328,7 +322,7 @@ namespace FleetlyBackend.Services.OrderService
             await _notificationService.NotifyWorkerAccepted(order);
         }
 
-        public async Task<OrderResponseDto> ResignOrder(int orderId)
+        public async Task ResignOrder(int orderId)
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
@@ -345,8 +339,6 @@ namespace FleetlyBackend.Services.OrderService
             await _context.SaveChangesAsync();
 
             await _notificationService.NotifyWorkerResigned(order);
-
-            return await GetFresh(orderId);
         }
 
         public async Task<OrderResponseDto> StartOrder(int orderId)
