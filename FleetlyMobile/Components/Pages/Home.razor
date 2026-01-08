@@ -1,12 +1,8 @@
 ﻿@page "/"
-@using Fleetly.Shared.Dto.DashboardDtos
-@using Fleetly.Shared.Dto.OrderDtos
-@using FleetlyMobile.Services.Dashboard
 @attribute [Authorize(Roles = "Worker")]
-@inject AuthenticationStateProvider AuthStateProvider
 @inject IDashboardService DashboardService
-@inject ISnackbar Snackbar
-@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+@inherits BasePage
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
     <MudAvatar Color="Color.Primary" Variant="Variant.Filled">
@@ -18,13 +14,13 @@
     </MudStack>
 </MudStack>
 
-@if (isLoading)
+@if (IsLoading)
 {
     <Loading />
 }
 else if (data == null)
 {
-    <EmptyView OnRetry="LoadData" IsBusy="@isLoading" />
+    <EmptyView OnRetry="LoadDataAsync" IsBusy="@IsLoading" />
 }
 else
 {
@@ -81,14 +77,13 @@ else
 
 @code {
     private string userName = string.Empty;
-    private bool isLoading = true;
     private bool showMoney = true;
     private DriverDashboardDto? data;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadUserData();
-        await LoadData();
+        await LoadDataAsync();
     }
 
     private async Task LoadUserData()
@@ -97,31 +92,17 @@ else
         userName = authState.User.Identity?.Name ?? authState.User.FindFirst("FullName")?.Value ?? "Kierowco";
     }
 
-    private async Task LoadData()
+    private async Task LoadDataAsync()
     {
-        isLoading = true;
-        try
-        {
-            var response = await DashboardService.GetDashboardDataAsync();
-            if (response.Success && response.Data != null)
-            {
-                data = response.Data;
-            }
-            else
-            {
-                var errorMsg = $"Błąd {response.StatusCode}: {response.Error ?? "Brak szczegółów"}";
-                Console.WriteLine(errorMsg);
-                Snackbar.Add(errorMsg, Severity.Error);
-            }
+        var response = await DashboardService.GetDashboardDataAsync();
 
-        }
-        catch (Exception)
+        if (response.Success && response.Data != null)
         {
-            Snackbar.Add("Wystąpił błąd podczas pobierania danych. Sprawdź połączenie i spróbuj ponownie.", Severity.Error);
+            data = response.Data;
         }
-        finally
+        else
         {
-            isLoading = false;
+            throw new Exception(response.Error ?? "Nie udało się pobrać danych pulpitu.");
         }
     }
 

@@ -1,5 +1,6 @@
 ﻿@page "/orders"
 @attribute [Authorize(Roles = "Worker")]
+@inject IOrderService OrderService
 @inherits BaseListPage<OrderLiteDto>
 
 <MudStack Spacing="4" Class="py-4">
@@ -59,8 +60,6 @@
 </MudStack>
 
 @code {
-    [Inject] IOrderService OrderService { get; set; } = default!;
-
     private bool _isError = false;
 
     protected override async Task LoadDataAsync()
@@ -83,7 +82,7 @@
         {
             _isError = true;
             Items = new List<OrderLiteDto>();
-            Snackbar.Add(result.Error ?? "Błąd pobierania danych", Severity.Error);
+            throw new Exception(result.Error ?? "Błąd pobierania danych");
         }
     }
 
@@ -104,7 +103,7 @@
             var result = await OrderService.AcceptOrderAsync(orderId);
             if (!result.Success)
             {
-                Snackbar.Add(result.Error ?? "Błąd przyjmowania zlecenia", Severity.Error);
+                throw new Exception(result.Error ?? "Błąd przyjmowania zlecenia");
             }
 
             await LoadDataAsync();
