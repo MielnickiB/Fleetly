@@ -303,9 +303,15 @@ namespace FleetlyBackend.Services.OrderService
 
         public async Task AcceptOrder(int orderId)
         {
-            var order = await GetOrderWithWorkerCheck(orderId);
+            var user = _http.CurrentUser();
 
-            var workerId = _http.CurrentUser().GetUserId();
+            if (!user.IsWorker())
+                throw new UnauthorizedAccessException("Tylko pracownik może przyjąć zlecenie.");
+
+            var workerId = user.GetUserId();
+
+            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId)
+                ?? throw new ArgumentException("Zlecenie nie istnieje.");
 
             if (order.Status != OrderStatus.Created)
                 throw new InvalidOperationException("Zlecenie nie jest dostępne do przyjęcia.");

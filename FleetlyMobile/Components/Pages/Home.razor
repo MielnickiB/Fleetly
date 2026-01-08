@@ -1,6 +1,7 @@
 ﻿@page "/"
 @attribute [Authorize(Roles = "Worker")]
 @inject IDashboardService DashboardService
+@inject IOrderService OrderService
 @inject AuthenticationStateProvider AuthStateProvider
 @inherits BasePage
 
@@ -26,7 +27,7 @@ else
 {
     <MudStack Spacing="4" Class="pb-4">
 
-        <MudText Typo="Typo.h6" Class="ml-1"><b>Dziś (@data.TodayOrders.Count)</b></MudText>
+        <MudText Typo="Typo.h6" Class="ml-1 fw-bold">Dziś (@data.TodayOrders.Count)</MudText>
         @if (data.TodayOrders.Any())
         {
             @foreach (var order in data.TodayOrders)
@@ -39,17 +40,34 @@ else
             <MudText Typo="Typo.body2" Class="pa-4" Color="Color.Secondary">Brak zleceń na dzisiaj.</MudText>
         }
 
-        <MudText Typo="Typo.h6" Class="ml-1 mt-2"><b>Jutro (@data.TomorrowOrders.Count)</b></MudText>
-        @if (data.TomorrowOrders.Any())
+        @if (data.UpcomingOrders.Any())
         {
-            @foreach (var order in data.TomorrowOrders)
+            var groups = data.UpcomingOrders.GroupBy(o => o.StartTime.Date).OrderBy(g => g.Key);
+
+            @foreach (var group in groups)
             {
-                <OrderCard Order="order" OnAction="OpenOrder" IsToday="false" />
+                var date = group.Key;
+                var isTomorrow = date == DateTime.Now.Date.AddDays(1);
+
+                <MudText Typo="Typo.subtitle1" Class="ml-1 mt-2 fw-bold" Color="Color.Default">
+                    @(isTomorrow ? "Jutro" : date.ToString("dddd, dd.MM").ToUpperInvariant())
+                    <span style="font-weight:normal; color:gray;">(@group.Count())</span>
+                </MudText>
+
+                @foreach (var order in group)
+                {
+                    var allowResign = !isTomorrow;
+                    <OrderCard Order="order"
+                               OnAction="OpenOrder"
+                               OnResign="ResignOrder"
+                               CanResign="@allowResign"
+                               IsToday="false" />
+                }
             }
         }
         else
         {
-            <MudText Typo="Typo.body2" Class="pa-4" Color="Color.Secondary">Brak zleceń na jutrzejszy dzień.</MudText>
+            <MudText Typo="Typo.body2" Class="pa-4" Color="Color.Secondary">Czysty kalendarz na najbliższy tydzień.</MudText>
         }
 
         <MudPaper Elevation="5" Class="pa-4 mt-2 rounded-lg" Style="background: var(--mud-palette-surface);">
@@ -103,6 +121,27 @@ else
         else
         {
             throw new Exception(response.Error ?? "Nie udało się pobrać danych pulpitu.");
+        }
+    }
+
+    private async Task ResignOrder(int orderId)
+    {
+        var confirmed = await Application.Current.MainPage.DisplayAlert("Potwierdzenie", "Czy na pewno chcesz zrezygnować z tego zlecenia?", "Tak", "Nie");
+        if (confirmed)
+        {
+            await ExecuteSafeAsync(async () =>
+            {
+                var response = await OrderService.ResignOrderAsync(orderId);
+                if (response.Success)
+                {
+                    await LoadDataAsync();
+                    Snackbar.Add("Pomyślnie zrezygnowano ze zlecenia.", Severity.Success);
+                }
+                else
+                {
+                    throw new Exception(response.Error ?? "Nie udało się zrezygnować ze zlecenia.");
+                }
+            });
         }
     }
 

@@ -11,7 +11,7 @@
         protected string SearchString { get; set; } = string.Empty;
 
         protected string SortBy { get; set; } = "date";
-        protected bool SortDescending { get; set; } = true;
+        protected bool SortDescending { get; set; } = false;
 
         protected abstract Task LoadDataAsync();
 
