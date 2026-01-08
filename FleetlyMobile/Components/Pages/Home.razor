@@ -47,7 +47,7 @@ else
             @foreach (var group in groups)
             {
                 var date = group.Key;
-                var isTomorrow = date == DateTime.Now.Date.AddDays(1);
+                var isTomorrow = date == DateTime.UtcNow.Date.AddDays(1);
 
                 <MudText Typo="Typo.subtitle1" Class="ml-1 mt-2 fw-bold" Color="Color.Default">
                     @(isTomorrow ? "Jutro" : date.ToString("dddd, dd.MM").ToUpperInvariant())
