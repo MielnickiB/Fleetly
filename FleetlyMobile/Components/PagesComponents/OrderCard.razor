@@ -63,11 +63,11 @@
                 {
                     @if (CardType == OrderCardType.Marketplace)
                     {
-                        <MudText Typo="Typo.button">przyjmuję</MudText>
+                        <MudText Typo="Typo.button">Przyjmuję</MudText>
                     }
                     else
                     {
-                        <MudText Typo="Typo.button">realizuj</MudText>
+                        <MudText Typo="Typo.button">Realizuj</MudText>
                     }
                 }
             </MudButton>
@@ -86,17 +86,9 @@
 
     private string GetBorderStyle()
     {
-        string color;
-
-        if (CardType == OrderCardType.Marketplace)
-        {
-            color = "var(--mud-palette-primary)";
-        }
-        else
-        {
-            color = IsToday ? "var(--mud-palette-primary)" : "var(--mud-palette-grey)";
-        }
-
+        var color = (CardType == OrderCardType.Marketplace || IsToday)
+            ? "var(--mud-palette-primary)"
+            : "var(--mud-palette-grey)";
         return $"border-left: 6px solid {color};";
     }
 }

@@ -13,12 +13,12 @@
                        Variant="Variant.Outlined"
                        AnchorOrigin="Origin.BottomLeft"
                        Margin="Margin.Dense"
-                       Value="@("date_asc")"
+                       Value="@("date_desc")"
                        Class="rounded-lg">
                 <MudSelectItem Value="@("date_asc")">Najbliższy termin</MudSelectItem>
                 <MudSelectItem Value="@("date_desc")">Najdalszy termin</MudSelectItem>
-                <MudSelectItem Value="@("price_asc")">Max wynagrodzenie</MudSelectItem>
-                <MudSelectItem Value="@("price_asc")">Min wynagrodzenie</MudSelectItem>
+                <MudSelectItem Value="@("salary_desc")">Max wynagrodzenie</MudSelectItem>
+                <MudSelectItem Value="@("salary_asc")">Min wynagrodzenie</MudSelectItem>
                 <MudSelectItem Value="@("city_asc")">Miasta a-Z</MudSelectItem>
                 <MudSelectItem Value="@("city_desc")">Miasta z-A</MudSelectItem>
             </MudSelect>
@@ -83,7 +83,7 @@
         {
             _isError = true;
             Items = new List<OrderLiteDto>();
-            Snackbar.Add(result.Error ?? "Bład pobierania danych", Severity.Error);
+            Snackbar.Add(result.Error ?? "Błąd pobierania danych", Severity.Error);
         }
     }
 
