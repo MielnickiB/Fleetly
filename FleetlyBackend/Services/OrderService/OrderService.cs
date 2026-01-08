@@ -130,9 +130,6 @@ namespace FleetlyBackend.Services.OrderService
                 "salary" => descending
                 ? query.OrderByDescending(o => o.Salary)
                 : query.OrderBy(o => o.Salary),
-                "starttime" => descending
-                ? query.OrderByDescending(o => o.StartTime)
-                : query.OrderBy(o => o.StartTime),
                 "city" => descending
                 ? query.OrderByDescending(o => o.StartLocation.City)
                 : query.OrderBy(o => o.StartLocation.City),

@@ -4,7 +4,26 @@
 
 <MudStack Spacing="4" Class="py-4">
     <MudText Typo="Typo.h5" Style="font-weight:bold">Giełda zleceń</MudText>
-    <SearchInput Value="@SearchString" ValueChanged="OnSearch" Placeholder="Szukaj zleceń..." />
+    <MudPaper Elevation="5" Class="pa-4 rounded-lg">
+        <MudStack Spacing="4">
+            <SearchInput Value="@SearchString" ValueChanged="OnSearch" Placeholder="Szukaj zleceń..." />
+            <MudSelect T="string"
+                       Label="Sortuj"
+                       ValueChanged="HandleSortChange"
+                       Variant="Variant.Outlined"
+                       AnchorOrigin="Origin.BottomLeft"
+                       Margin="Margin.Dense"
+                       Value="@("date_asc")"
+                       Class="rounded-lg">
+                <MudSelectItem Value="@("date_asc")">Najbliższy termin</MudSelectItem>
+                <MudSelectItem Value="@("date_desc")">Najdalszy termin</MudSelectItem>
+                <MudSelectItem Value="@("price_asc")">Max wynagrodzenie</MudSelectItem>
+                <MudSelectItem Value="@("price_asc")">Min wynagrodzenie</MudSelectItem>
+                <MudSelectItem Value="@("city_asc")">Miasta a-Z</MudSelectItem>
+                <MudSelectItem Value="@("city_desc")">Miasta z-A</MudSelectItem>
+            </MudSelect>
+        </MudStack>
+    </MudPaper>
     @if (IsLoading)
     {
         <Loading />

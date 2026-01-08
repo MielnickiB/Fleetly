@@ -1,16 +1,15 @@
-﻿<MudPaper Elevation="5" Class="pa-3 rounded-lg" Style="width:100%">
-    <MudTextField T="string"
-                  Value="@Value"
-                  ValueChanged="HandleValueChanged"
-                  Placeholder="@Placeholder"
-                  Adornment="Adornment.Start"
-                  AdornmentIcon="@Icons.Material.Filled.Search"
-                  Variant="Variant.Outlined" 
-                  Margin="Margin.Dense"
-                  DebounceInterval="500"
-                  Immediate="true"
-                  Class="rounded-xl flex-grow-1" />
- </MudPaper>
+﻿<MudTextField T="string"
+              Value="@Value"
+              ValueChanged="HandleValueChanged"
+              Placeholder="@Placeholder"
+              Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Search"
+              Variant="Variant.Outlined"
+              Margin="Margin.Dense"
+              DebounceInterval="500"
+              Immediate="true"
+              Clearable="true"
+              Class="rounded-lg flex-grow-1 mud-theme-surface" />
 
 @code {
     [Parameter] public string Value { get; set; } = string.Empty;
@@ -22,7 +21,7 @@
     private async Task HandleValueChanged(string newValue)
     {
         Value = newValue;
-        
+
         if (ValueChanged.HasDelegate)
         {
             await ValueChanged.InvokeAsync(newValue);
