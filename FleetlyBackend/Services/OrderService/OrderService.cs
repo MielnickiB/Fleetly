@@ -110,14 +110,23 @@ namespace FleetlyBackend.Services.OrderService
             {
                 var phrase = search.Trim().ToLower();
                 query = query.Where(o =>
-                    o.StartLocation.City.ToLower().Contains(phrase, StringComparison.CurrentCultureIgnoreCase) ||
-                    o.EndLocation.City.ToLower().Contains(phrase, StringComparison.CurrentCultureIgnoreCase) ||
-                    o.Vehicle.BrandModel.CarBrand.BrandName.ToLower().Contains(phrase, StringComparison.CurrentCultureIgnoreCase) ||
-                    o.Vehicle.BrandModel.ModelName.ToLower().Contains(phrase, StringComparison.CurrentCultureIgnoreCase));
+                        (o.StartLocation != null && o.StartLocation.City.ToLower().Contains(phrase)) ||
+
+                        (o.EndLocation != null && o.EndLocation.City.ToLower().Contains(phrase)) ||
+
+                        (o.Vehicle != null && o.Vehicle.BrandModel != null && o.Vehicle.BrandModel.CarBrand != null &&
+                         o.Vehicle.BrandModel.CarBrand.BrandName.ToLower().Contains(phrase)) ||
+
+                        (o.Vehicle != null && o.Vehicle.BrandModel != null &&
+                         o.Vehicle.BrandModel.ModelName.ToLower().Contains(phrase))
+                    );
             }
 
             query = sortBy?.ToLower() switch
             {
+                "date" => descending
+                ? query.OrderByDescending(o => o.StartTime)
+                : query.OrderBy(o => o.StartTime),
                 "salary" => descending
                 ? query.OrderByDescending(o => o.Salary)
                 : query.OrderBy(o => o.Salary),
@@ -210,34 +219,6 @@ namespace FleetlyBackend.Services.OrderService
             if (order.Status >= OrderStatus.OrderFinishedByWorker)
                 throw new InvalidOperationException("Nie można edytować zakończonego zlecenia.");
 
-            var oldWorkerId = order.WorkerId;
-            var workerChanged = false;
-
-            if (dto.WorkerId != order.WorkerId)
-            {
-                if (order.Status >= OrderStatus.OrderStarted)
-                    throw new InvalidOperationException("Nie można zmienić pracownika po rozpoczęciu zlecenia.");
-
-                if (dto.WorkerId.HasValue)
-                {
-                    var isWorker = await _context.Users
-                        .Include(u => u.Role)
-                        .AnyAsync(u => u.Id == dto.WorkerId && u.Role.RoleName == "Worker");
-
-                    if (!isWorker) throw new ArgumentException("Użytkownik nie jest pracownikiem.");
-
-                    order.WorkerId = dto.WorkerId;
-                    order.Status = OrderStatus.Assigned;
-                    workerChanged = true;
-                }
-                else
-                {
-                    order.WorkerId = null;
-                    order.Status = OrderStatus.Created;
-                    workerChanged = true;
-                }
-            }
-
             if (dto.VehicleId != order.VehicleId)
             {
                 if (!await _context.Vehicles.AnyAsync(v => v.Id == dto.VehicleId))
@@ -288,15 +269,6 @@ namespace FleetlyBackend.Services.OrderService
             await _context.SaveChangesAsync();
 
             await _notificationService.NotifyOrderUpdated(order, userId);
-
-            if (workerChanged)
-            {
-                if (oldWorkerId.HasValue)
-                    await _notificationService.NotifyWorkerUnassigned(order, oldWorkerId.Value);
-
-                if (order.WorkerId.HasValue)
-                    await _notificationService.NotifyWorkerAssigned(order, order.WorkerId.Value);
-            }
 
             return await GetFresh(orderId);
         }
@@ -708,7 +680,7 @@ namespace FleetlyBackend.Services.OrderService
         {
             return query
                 .Include(o => o.Client).ThenInclude(c => c.Details)
-                .Include(o => o.Worker).ThenInclude(w => w.Details)
+                .Include(o => o.Worker).ThenInclude(w => w!.Details)
                 .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
                 .Include(o => o.CostLimit)
                 .Include(o => o.StartLocation)

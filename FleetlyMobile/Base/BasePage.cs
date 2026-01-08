@@ -15,6 +15,7 @@ namespace FleetlyMobile.Base
         {
             try
             {
+                IsProcessing = true;
                 IsLoading = true;
                 StateHasChanged();
 
@@ -33,6 +34,7 @@ namespace FleetlyMobile.Base
             finally
             {
                 IsLoading = false;
+                IsProcessing = false;
                 StateHasChanged();
             }
         }

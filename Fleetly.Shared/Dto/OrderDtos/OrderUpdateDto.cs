@@ -1,7 +1,4 @@
 ﻿namespace Fleetly.Shared.Dto.OrderDtos
 {
-    public class OrderUpdateDto : OrderBaseDto
-    {
-        public int? WorkerId { get; set; }
-    }
+    public class OrderUpdateDto : OrderBaseDto { }
 }

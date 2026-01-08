@@ -1,0 +1,16 @@
+﻿<MudStack AlignItems="AlignItems.Center"
+          Justify="Justify.Center"
+          Style=@($"height: {Height}")>
+    <MudIcon Icon="@Icon" Size="@IconSize" Color="@IconColor" />
+    <MudText Typo="Typo.h6" Align="Align.Center">@Title</MudText>
+    <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">@Message</MudText>
+</MudStack>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Brak dostępnych elementów";
+    [Parameter] public string Message { get; set; } = "Spróbuj ponownie później";
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.Inbox;
+    [Parameter] public Size IconSize { get; set; } = Size.Large;
+    [Parameter] public Color IconColor { get; set; } = Color.Error;
+    [Parameter] public string Height { get; set; } = "70vh";
+}

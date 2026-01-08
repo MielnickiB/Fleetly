@@ -13,7 +13,7 @@
         @userName.FirstOrDefault()
     </MudAvatar>
     <MudStack Spacing="0">
-        <MudText Typo="Typo.h6"><b>Cześć, @userName!</b></MudText>
+        <MudText Typo="Typo.h6" Style="font-weight:bold">Cześć, @userName!</MudText>
         <MudText Typo="Typo.caption">Miłego dnia w pracy!</MudText>
     </MudStack>
 </MudStack>
@@ -24,7 +24,7 @@
 }
 else if (data == null)
 {
-    <OfflineView OnRetry="LoadData" IsBusy="@isLoading" />
+    <EmptyView OnRetry="LoadData" IsBusy="@isLoading" />
 }
 else
 {
@@ -35,7 +35,7 @@ else
         {
             @foreach (var order in data.TodayOrders)
             {
-                <OrderCard Order="order" OnClick="OpenOrder" IsToday="true" />
+                <OrderCard Order="order" OnAction="OpenOrder" IsToday="true" />
             }
         }
         else
@@ -48,7 +48,7 @@ else
         {
             @foreach (var order in data.TomorrowOrders)
             {
-                <OrderCard Order="order" OnClick="OpenOrder" IsToday="false" />
+                <OrderCard Order="order" OnAction="OpenOrder" IsToday="false" />
             }
         }
         else
@@ -84,7 +84,6 @@ else
     private bool isLoading = true;
     private bool showMoney = true;
     private DriverDashboardDto? data;
-    private readonly bool useFakeData = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -101,27 +100,20 @@ else
     private async Task LoadData()
     {
         isLoading = true;
-        // await Task.Delay(800);
         try
         {
-            if (useFakeData)
+            var response = await DashboardService.GetDashboardDataAsync();
+            if (response.Success && response.Data != null)
             {
-                data = GenerateFakeData();
+                data = response.Data;
             }
             else
             {
-                var response = await DashboardService.GetDashboardDataAsync();
-                if (response.Success && response.Data != null)
-                {
-                    data = response.Data;
-                }
-                else
-                {
-                    var errorMsg = $"Błąd {response.StatusCode}: {response.Error ?? "Brak szczegółów"}";
-                    Console.WriteLine(errorMsg);
-                    Snackbar.Add(errorMsg, Severity.Error);
-                }
+                var errorMsg = $"Błąd {response.StatusCode}: {response.Error ?? "Brak szczegółów"}";
+                Console.WriteLine(errorMsg);
+                Snackbar.Add(errorMsg, Severity.Error);
             }
+
         }
         catch (Exception)
         {
@@ -136,50 +128,5 @@ else
     private void OpenOrder(int id)
     {
         Nav.NavigateTo($"/orders/{id}");
-    }
-
-    private DriverDashboardDto GenerateFakeData()
-    {
-        return new DriverDashboardDto
-        {
-            CurrentMonthSalary = 4250.50m,
-            CompletedOrdersCount = 15,
-            TodayOrders = new List<OrderLiteDto>
-            {
-                new()
-                {
-                    Id = 1,
-                    Car = "Toyota Corolla",
-                    RegistrationNumber = "WA 88291",
-                    StartCity = "Warszawa",
-                    EndCity = "Kraków",
-                    StartTime = DateTime.Now.AddHours(1),
-                    Status = OrderStatus.Assigned
-                },
-                new()
-                {
-                    Id = 2,
-                    Car = "Skoda Octavia",
-                    RegistrationNumber = "KR 12345",
-                    StartCity = "Kraków",
-                    EndCity = "Katowice",
-                    StartTime = DateTime.Now.AddHours(4),
-                    Status = OrderStatus.Assigned
-                }
-            },
-            TomorrowOrders = new List<OrderLiteDto>
-            {
-                new()
-                {
-                    Id = 3,
-                    Car = "Mercedes Sprinter",
-                    RegistrationNumber = "PO 55122",
-                    StartCity = "Poznań",
-                    EndCity = "Berlin",
-                    StartTime = DateTime.Now.AddDays(1).AddHours(2),
-                    Status = OrderStatus.Assigned
-                }
-            }
-        };
     }
 }

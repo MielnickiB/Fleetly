@@ -1,5 +1,95 @@
 ﻿@page "/orders"
 @attribute [Authorize(Roles = "Worker")]
-@inherits FleetlyMobile.Base.FleetlyListPageBase<OrderLiteDto>
+@inherits BaseListPage<OrderLiteDto>
 
-<MudText Typo="Typo.h6">Giełda zleceń</MudText>
+<MudStack Spacing="4" Class="py-4">
+    <MudText Typo="Typo.h5" Style="font-weight:bold">Giełda zleceń</MudText>
+    <SearchInput Value="@SearchString" ValueChanged="OnSearch" Placeholder="Szukaj zleceń..." />
+    @if (IsLoading)
+    {
+        <Loading />
+    }
+    else if (_isError)
+    {
+        <EmptyView OnRetry="LoadDataAsync" IsBusy="@IsLoading" />
+    }
+    else if (!Items.Any())
+    {
+        @if (!string.IsNullOrWhiteSpace(SearchString))
+        {
+            <EmptyView OnRetry="@(() => OnSearch(string.Empty))"
+                       Title="Brak wyników"
+                       Message=@($"Nie znaleziono zleceń dla frazy: \"{SearchString}\"")
+                       Icon="@Icons.Material.Filled.SearchOff"
+                       ButtonIcon="@Icons.Material.Filled.Clear"
+                       ButtonText="Wyczyść filtry"
+                       Height="50vh" />
+        }
+        else
+        {
+            <NoItems Title="Brak dostępnych zleceń" Message="Spróbuj ponownie później lub odśwież stronę." Height="50vh" />
+        }
+    }
+    else
+    {
+        @foreach (var order in Items)
+        {
+            <OrderCard Order="order" IsProcessing="IsProcessing" OnAction="AcceptOrder" CardType="OrderCardType.Marketplace" />
+        }
+    }
+</MudStack>
+
+@code {
+    [Inject] IOrderService OrderService { get; set; } = default!;
+
+    private bool _isError = false;
+
+    protected override async Task LoadDataAsync()
+    {
+        _isError = false;
+
+        var result = await OrderService.GetAllAvailableAsync(
+            CurrentPage,
+            PageSize,
+            SearchString,
+            SortBy,
+            SortDescending);
+
+        if (result.Success && result.Data != null)
+        {
+            Items = result.Data.Items;
+            TotalItems = result.Data.TotalCount;
+        }
+        else
+        {
+            _isError = true;
+            Items = new List<OrderLiteDto>();
+            Snackbar.Add(result.Error ?? "Bład pobierania danych", Severity.Error);
+        }
+    }
+
+    private async Task HandleSortChange(string value)
+    {
+        var parts = value.Split('_');
+        var column = parts[0];
+        var isDesc = parts[1] == "desc";
+
+        await OnSortChanged(column, isDesc);
+    }
+
+    private async Task AcceptOrder(int orderId)
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+
+            var result = await OrderService.AcceptOrderAsync(orderId);
+            if (!result.Success)
+            {
+                Snackbar.Add(result.Error ?? "Błąd przyjmowania zlecenia", Severity.Error);
+            }
+
+            await LoadDataAsync();
+
+        }, successMessage: "Zlecenie przyjęte!");
+    }
+}
