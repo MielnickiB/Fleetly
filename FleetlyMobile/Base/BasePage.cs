@@ -9,13 +9,11 @@ namespace FleetlyMobile.Base
         [Inject] protected NavigationManager Nav { get; set; } = default!;
 
         protected bool IsLoading { get; set; } = false;
-        protected bool IsProcessing { get; set; } = false;
 
         protected async Task ExecuteSafeAsync(Func<Task> action, string? successMessage = null)
         {
             try
             {
-                IsProcessing = true;
                 IsLoading = true;
                 StateHasChanged();
 
@@ -34,7 +32,6 @@ namespace FleetlyMobile.Base
             finally
             {
                 IsLoading = false;
-                IsProcessing = false;
                 StateHasChanged();
             }
         }

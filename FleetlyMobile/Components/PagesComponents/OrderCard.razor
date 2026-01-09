@@ -1,6 +1,6 @@
-﻿@using Fleetly.Shared.Dto.OrderDtos
+﻿@inject NavigationManager Nav
 
-<MudPaper Elevation="5" Class="pa-4 mb-4 mud-theme-surface rounded-lg" Style="@GetBorderStyle()">
+<MudPaper Elevation="5" Class="pa-4 mb-4 mud-theme-surface rounded-lg" Style="@GetBorderStyle()" @onclick="OpenOrder">
     <MudStack>
         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
             <MudStack Spacing="0">
@@ -47,52 +47,54 @@
             </MudItem>
         </MudGrid>
 
-        @if (CardType == OrderCardType.Marketplace)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-2"
-                       OnClick="@(() => OnAction.InvokeAsync(Order.Id))" Disabled="@IsProcessing">
-                @if (IsProcessing)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                }
-                else
-                {
-                    <MudText Typo="Typo.button">Przyjmuję</MudText>
-                }
-            </MudButton>
-        }
-        else if (IsToday)
-        {
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-2"
-                       OnClick="@(() => OnAction.InvokeAsync(Order.Id))" Disabled="@IsProcessing">
-                @if (IsProcessing)
-                {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                }
-                else
-                {
-                    <MudText Typo="Typo.button">Realizuj</MudText>
-                }
-            </MudButton>
-        }
-        else
-        {
-            @if (CanResign)
+        <div @onclick:stopPropagation="true">
+            @if (CardType == OrderCardType.Marketplace)
             {
-                <MudButton Variant="Variant.Filled" Color="Color.Error" FullWidth="true" Class="mt-2"
-                           StartIcon="@Icons.Material.Filled.Cancel"
-                           OnClick="@(() => OnResign.InvokeAsync(Order.Id))" Disabled="@IsProcessing">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-2"
+                           OnClick="@(() => OnAction.InvokeAsync(Order.Id))" Disabled="@IsProcessing">
                     @if (IsProcessing)
                     {
                         <MudProgressCircular Size="Size.Small" Indeterminate="true" />
                     }
                     else
                     {
-                        <MudText Typo="Typo.button">Rezygnuję</MudText>
+                        <MudText Typo="Typo.button">Przyjmuję</MudText>
                     }
                 </MudButton>
             }
-        }
+            else if (IsToday)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-2"
+                           OnClick="@(() => OnAction.InvokeAsync(Order.Id))" Disabled="@IsProcessing">
+                    @if (IsProcessing)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.button">Realizuj</MudText>
+                    }
+                </MudButton>
+            }
+            else
+            {
+                @if (CanResign)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Error" FullWidth="true" Class="mt-2"
+                               StartIcon="@Icons.Material.Filled.Cancel"
+                               OnClick="@(() => OnResign.InvokeAsync(Order.Id))" Disabled="@IsProcessing">
+                        @if (IsProcessing)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.button">Rezygnuję</MudText>
+                        }
+                    </MudButton>
+                }
+            }
+        </div>
     </MudStack>
 </MudPaper>
 
@@ -114,5 +116,13 @@
             ? "var(--mud-palette-primary)"
             : "var(--mud-palette-grey)";
         return $"border-left: 6px solid {color};";
+    }
+
+    private void OpenOrder()
+    {
+        if (!IsProcessing)
+        {
+            Nav.NavigateTo($"/orders/{Order.Id}");
+        }
     }
 }
