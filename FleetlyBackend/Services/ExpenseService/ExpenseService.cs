@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto.ExpenseDtos;
 using FleetlyBackend.Data;
+using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using FleetlyBackend.Services.FileService;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ namespace FleetlyBackend.Services.ExpenseService
         private readonly FleetlyContext _context = context;
         private readonly IFileService _fileService = fileService;
 
-        public async Task Create(int orderId, ExpenseCreateDto dto)
+        public async Task<ExpenseResponseDto> Create(int orderId, ExpenseCreateDto dto)
         {
             if (!await _context.Orders.AnyAsync(o => o.Id == orderId))
                 throw new ArgumentException("Podane zlecenie nie istnieje.");
@@ -35,6 +36,7 @@ namespace FleetlyBackend.Services.ExpenseService
                 _context.Expenses.Add(exp);
 
                 await _context.SaveChangesAsync();
+                return exp.ToResponseDto();
             }
             catch
             {
@@ -46,7 +48,7 @@ namespace FleetlyBackend.Services.ExpenseService
             }
         }
 
-        public async Task Update(int id, ExpenseUpdateDto dto)
+        public async Task<ExpenseResponseDto> Update(int id, ExpenseUpdateDto dto)
         {
             var exp = await _context.Expenses.FindAsync(id)
                 ?? throw new ArgumentException("Nie znaleziono kosztu.");
@@ -102,9 +104,11 @@ namespace FleetlyBackend.Services.ExpenseService
                     // Orphaned file, Ignoruję ponieważ koszt został zaktualizowany w bazie danych i to jest najważniejsze.
                 }
             }
+
+            return exp.ToResponseDto();
         }
 
-        public async Task Delete(int id)
+        public async Task<bool> Delete(int id)
         {
             var exp = await _context.Expenses.FindAsync(id) ??
                 throw new ArgumentException("Nie znaleziono kosztu.");
@@ -123,6 +127,7 @@ namespace FleetlyBackend.Services.ExpenseService
                     // Orphaned file, Ignoruję ponieważ koszt został usunięty z bazy danych i to jest najważniejsze.
                 }
             }
+            return true;
         }
     }
 }
