@@ -4,8 +4,8 @@ namespace FleetlyBackend.Services.ExpenseService
 {
     public interface IExpenseService
     {
-        Task<ExpenseResponseDto> Create(int orderId, ExpenseCreateDto dto);
-        Task<ExpenseResponseDto> Update(int id, ExpenseUpdateDto dto);
-        Task<bool> Delete(int id);
+        Task Create(int orderId, ExpenseCreateDto dto);
+        Task Update(int id, ExpenseUpdateDto dto);
+        Task Delete(int id);
     }
 }
