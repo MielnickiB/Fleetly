@@ -29,7 +29,7 @@ namespace FleetlyBackend.Services.FileService
                 Directory.CreateDirectory(_imageFolder);
         }
 
-        public async Task<string> SaveImageAsync(IFormFile file)
+        public async Task<string> SaveFileAsync(IFormFile file)
         {
             ValidateSize(file);
             ValidateExtension(file);
@@ -57,7 +57,7 @@ namespace FleetlyBackend.Services.FileService
             return fileName;
         }
 
-        public Task DeleteImageAsync(string fileName)
+        public Task DeleteFileAsync(string fileName)
         {
             var fullPath = Path.Combine(_imageFolder, fileName);
 

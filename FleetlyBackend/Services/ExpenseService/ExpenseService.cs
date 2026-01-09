@@ -20,7 +20,7 @@ namespace FleetlyBackend.Services.ExpenseService
             string? fileName = null;
             try
             {
-                fileName = await _fileService.SaveImageAsync(dto.CostPhoto);
+                fileName = await _fileService.SaveFileAsync(dto.CostPhoto);
                 var exp = new Expense
                 {
                     OrderId = orderId,
@@ -37,7 +37,7 @@ namespace FleetlyBackend.Services.ExpenseService
                 }
                 catch
                 {
-                    try { if (fileName is not null) await _fileService.DeleteImageAsync(fileName); }
+                    try { if (fileName is not null) await _fileService.DeleteFileAsync(fileName); }
                     catch (InvalidOperationException ex) { throw new InvalidOperationException("Błąd podczas usuwania zdjęcia kosztu: " + ex.Message); }
                     throw;
                 }
@@ -68,7 +68,7 @@ namespace FleetlyBackend.Services.ExpenseService
             {
                 try
                 {
-                    newFile = await _fileService.SaveImageAsync(dto.CostPhoto);
+                    newFile = await _fileService.SaveFileAsync(dto.CostPhoto);
                     exp.CostPhotoUrl = newFile;
                 }
                 catch (InvalidOperationException ex)
@@ -87,7 +87,7 @@ namespace FleetlyBackend.Services.ExpenseService
             {
                 if (newFile is not null)
                 {
-                    try { await _fileService.DeleteImageAsync(newFile); }
+                    try { await _fileService.DeleteFileAsync(newFile); }
                     catch (InvalidOperationException ex)
                     {
                         exp.CostPhotoUrl = oldFile;
@@ -98,7 +98,7 @@ namespace FleetlyBackend.Services.ExpenseService
             }
             if (newFile is not null && !string.IsNullOrEmpty(oldFile) && oldFile != newFile)
             {
-                try { await _fileService.DeleteImageAsync(oldFile); }
+                try { await _fileService.DeleteFileAsync(oldFile); }
                 catch (InvalidOperationException ex)
                 {
                     throw new InvalidOperationException("Błąd podczas usuwania starego zdjęcia kosztu: " + ex.Message);
@@ -121,7 +121,7 @@ namespace FleetlyBackend.Services.ExpenseService
 
             if (!string.IsNullOrEmpty(fileToDelete))
             {
-                try { await _fileService.DeleteImageAsync(fileToDelete); }
+                try { await _fileService.DeleteFileAsync(fileToDelete); }
                 catch (InvalidOperationException ex)
                 {
                     throw new InvalidOperationException("Błąd podczas usuwania zdjęcia kosztu." + ex.Message);
