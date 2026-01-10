@@ -15,5 +15,6 @@ namespace FleetlyMobile.Services.Orders
         public Task<ApiResponse<OrderResponseDto?>> GetOrderByIdAsync(int orderId);
         public Task<ApiResponse<bool>> AcceptOrderAsync(int orderId);
         public Task<ApiResponse<bool>> ResignOrderAsync(int orderId);
+        public Task<ApiResponse<OrderResponseDto?>> AddCostAsync(int orderId, MultipartFormDataContent content);
     }
 }

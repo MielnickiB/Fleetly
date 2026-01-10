@@ -43,5 +43,10 @@ namespace FleetlyMobile.Services.Orders
         {
             return await _api.PostNoResultAsync<object>($"{BaseUrl}/{orderId}/resign", null!);
         }
+
+        public async Task<ApiResponse<OrderResponseDto?>> AddCostAsync(int orderId, MultipartFormDataContent content)
+        {
+            return await _api.PostMultipartAsync<OrderResponseDto>($"{BaseUrl}/{orderId}/costs", content);
+        }
     }
 }
