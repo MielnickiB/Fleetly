@@ -21,7 +21,11 @@ namespace FleetlyBackend.Services.FileService
             ValidateExtension(file);
             await ValidateMagicNumbers(file);
 
-            var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName).ToLower()}";
+            var ext = Path.GetExtension(file.FileName).ToLower();
+
+            var finalExtension = (ext == ".pdf") ? ".pdf" : ".jpg";
+
+            var uniqueFileName = $"{Guid.NewGuid()}{finalExtension}";
             var folderPath = Path.Combine(_rootPath, pathPrefix);
 
             var fullFilePath = Path.Combine(folderPath, uniqueFileName);
@@ -30,8 +34,6 @@ namespace FleetlyBackend.Services.FileService
             {
                 Directory.CreateDirectory(folderPath);
             }
-
-            var ext = Path.GetExtension(file.FileName).ToLower();
 
             if (ext == ".pdf")
             {

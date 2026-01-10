@@ -1,0 +1,212 @@
+﻿@page "/orders/{OrderId:int}/addCost"
+@using System.Net.Http.Headers
+@using FleetlyMobile.Base
+
+@inherits BasePage
+@inject IOrderService OrderService
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexStart" Class="mb-4 pt-2">
+    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Nav.NavigateTo($"/orders/{OrderId}"))" />
+    <MudText Typo="Typo.h6">Dodaj Koszt</MudText>
+</MudStack>
+
+<MudPaper Class="pa-4 mud-theme-surface" Elevation="2">
+    <EditForm Model="@_model" OnValidSubmit="SubmitCost">
+        <DataAnnotationsValidator />
+        
+        <MudStack Spacing="4">
+            
+            <MudSelect T="bool" Label="Rodzaj kosztu" @bind-Value="_model.IsFuelExpense" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                <MudSelectItem Value="true">Paliwo</MudSelectItem>
+                <MudSelectItem Value="false">Bilet</MudSelectItem>
+            </MudSelect>
+
+            <MudNumericField @bind-Value="_model.Cost" 
+                             Label="Kwota (zł)" 
+                             Variant="Variant.Outlined" 
+                             Format="N2" 
+                             Min="0.01m" 
+                             Adornment="Adornment.Start"
+                             AdornmentIcon="@Icons.Material.Filled.AttachMoney"
+                             For="@(() => _model.Cost)" />
+
+            <MudText Typo="Typo.subtitle2" Class="mt-2">Dowód zakupu (Paragon / Faktura)</MudText>
+            
+            @if (_selectedFileResult != null)
+            {
+                <MudPaper Class="pa-3 d-flex align-center gap-3 border-dashed" Elevation="0" Outlined="true">
+                    @if (_selectedFileResult.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Size="Size.Large"/>
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Image" Color="Color.Success" Size="Size.Large"/>
+                    }
+                    
+                    <MudStack Spacing="0" Style="overflow: hidden; width: 100%;">
+                        <MudText Typo="Typo.subtitle2" Style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            @_selectedFileResult.FileName
+                        </MudText>
+                        <MudText Typo="Typo.caption">Gotowy do wysłania</MudText>
+                    </MudStack>
+
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="ClearFile" />
+                </MudPaper>
+            }
+            else
+            {
+                <MudGrid Spacing="2">
+                    <MudItem xs="6">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CameraAlt" 
+                                   FullWidth="true" Class="py-4" OnClick="TakePhotoAsync">
+                            <MudText Typo="Typo.button">Aparat</MudText>
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.AttachFile" 
+                                   FullWidth="true" Class="py-4" OnClick="PickFileAsync">
+                             <MudText Typo="Typo.button">Plik / PDF</MudText>
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+                @if (showFileError)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Error">Musisz dodać zdjęcie lub plik!</MudText>
+                }
+            }
+
+            <MudDivider Class="my-2"/>
+
+            <MudButton ButtonType="ButtonType.Submit" 
+                       Variant="Variant.Filled" 
+                       Color="Color.Success" 
+                       Size="Size.Large" 
+                       FullWidth="true"
+                       OnClick="SubmitCost"
+                       Disabled="@IsLoading">
+                @if (IsLoading)
+                {
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/>
+                }
+                else
+                {
+                    <MudText Typo="Typo.button">Zapisz koszt</MudText>
+                }
+            </MudButton>
+
+        </MudStack>
+    </EditForm>
+</MudPaper>
+
+@code {
+    [Parameter] public int OrderId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "isFuel")] 
+    public bool? IsFuelQuery { get; set; }
+
+    private ExpenseCreateDto _model = new();
+    private FileResult? _selectedFileResult;
+    private bool showFileError = false;
+
+    protected override void OnInitialized()
+    {
+        if (IsFuelQuery.HasValue)
+        {
+            _model.IsFuelExpense = IsFuelQuery.Value;
+        }
+    }
+
+    private async Task TakePhotoAsync()
+    {
+        try
+        {
+            if (MediaPicker.Default.IsCaptureSupported)
+            {
+                var photo = await MediaPicker.Default.CapturePhotoAsync();
+                if (photo != null)
+                {
+                    _selectedFileResult = photo;
+                    showFileError = false;
+                }
+            }
+            else
+            {
+                Snackbar.Add("Brak dostępu do aparatu.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd aparatu: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task PickFileAsync()
+    {
+        try
+        {
+            var customFileType = new FilePickerFileType(
+                new Dictionary<DevicePlatform, IEnumerable<string>>
+                {
+                    { DevicePlatform.iOS, new[] { "public.image", "com.adobe.pdf" } },
+                    { DevicePlatform.Android, new[] { "image/*", "application/pdf" } }
+                });
+
+            var options = new PickOptions
+            {
+                PickerTitle = "Wybierz dowód zakupu",
+                FileTypes = customFileType
+            };
+
+            var file = await FilePicker.Default.PickAsync(options);
+            if (file != null)
+            {
+                _selectedFileResult = file;
+                showFileError = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd wyboru pliku: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void ClearFile() => _selectedFileResult = null;
+
+    private async Task SubmitCost()
+    {
+        if (_selectedFileResult == null)
+        {
+            showFileError = true;
+            return;
+        }
+
+        await ExecuteSafeAsync(async () =>
+        {
+            using var content = new MultipartFormDataContent();
+
+            content.Add(new StringContent(_model.Cost.ToString(System.Globalization.CultureInfo.InvariantCulture)), "Cost");
+            content.Add(new StringContent(_model.IsFuelExpense.ToString()), "IsFuelExpense");
+
+            using var stream = await _selectedFileResult.OpenReadAsync();
+            var fileContent = new StreamContent(stream);
+            
+            var mimeType = _selectedFileResult.FileName.EndsWith(".pdf") ? "application/pdf" : "image/jpeg";
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
+
+            content.Add(fileContent, "CostPhoto", _selectedFileResult.FileName);
+
+            var result = await OrderService.AddCostAsync(OrderId, content);
+
+            if (result.Success)
+            {
+                Snackbar.Add("Koszt dodany pomyślnie!", Severity.Success);
+                Nav.NavigateTo($"/orders/{OrderId}");
+            }
+            else
+            {
+                throw new Exception(result.Error ?? "Błąd zapisu kosztu.");
+            }
+        });
+    }
+}

@@ -402,9 +402,9 @@ namespace FleetlyBackend.Services.OrderService
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
-            if (order.Status >= OrderStatus.Assigned && order.Status < OrderStatus.WaitingForCostApproval)
+            if (order.Status < OrderStatus.Assigned && order.Status > OrderStatus.WaitingForCostApproval)
             {
-                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych do pracownika.");
+                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończomych przez pracownika.");
             }
 
             if (!dto.IsFuelExpense && order.AdditionalCosts + dto.Cost > order.CostLimit.MaxCosts)
@@ -440,9 +440,9 @@ namespace FleetlyBackend.Services.OrderService
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
-            if (order.Status >= OrderStatus.Assigned && order.Status < OrderStatus.WaitingForCostApproval)
+            if (order.Status < OrderStatus.Assigned && order.Status > OrderStatus.WaitingForCostApproval)
             {
-                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych do pracownika.");
+                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończomych przez pracownika.");
             }
 
             var oldExpense = await _context.Expenses.AsNoTracking()
@@ -494,9 +494,9 @@ namespace FleetlyBackend.Services.OrderService
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
-            if (order.Status >= OrderStatus.Assigned && order.Status < OrderStatus.WaitingForCostApproval)
+            if (order.Status < OrderStatus.Assigned && order.Status > OrderStatus.WaitingForCostApproval)
             {
-                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych do pracownika.");
+                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończomych przez pracownika.");
             }
 
             var expenseToDelete = await _context.Expenses
@@ -646,7 +646,9 @@ namespace FleetlyBackend.Services.OrderService
 
             var workerId = user.GetUserId();
 
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId)
+            var order = await _context.Orders
+                .IncludeAllLiteOrderRelations()
+                .FirstOrDefaultAsync(o => o.Id == orderId)
                 ?? throw new ArgumentException("Zlecenie nie istnieje.");
 
             if (order.WorkerId != workerId)
