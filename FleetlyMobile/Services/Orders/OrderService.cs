@@ -48,5 +48,10 @@ namespace FleetlyMobile.Services.Orders
         {
             return await _api.PostMultipartAsync<OrderResponseDto>($"{BaseUrl}/{orderId}/costs", content);
         }
+
+        public async Task<ApiResponse<OrderResponseDto?>> UpdateCostAsync(int orderId, int expenseId, MultipartFormDataContent content)
+        {
+            return await _api.PutMultipartAsync<OrderResponseDto>($"{BaseUrl}/{orderId}/costs/{expenseId}", content);
+        }
     }
 }
