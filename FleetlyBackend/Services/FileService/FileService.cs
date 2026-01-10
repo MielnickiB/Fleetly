@@ -112,7 +112,7 @@ namespace FleetlyBackend.Services.FileService
             // PDF header: %PDF (25 50 44 46)
             if (bytesRead >= 4 && new ReadOnlySpan<byte>(buffer, 0, 4).SequenceEqual("%PDF"u8)) return;
 
-            throw new InvalidOperationException("Plik nie jest prawidłowym obrazem.");
+            throw new InvalidOperationException("Plik nie jest prawidłowym obrazem lub PDF.");
         }
     }
 }

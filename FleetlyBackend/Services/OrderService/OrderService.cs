@@ -402,9 +402,9 @@ namespace FleetlyBackend.Services.OrderService
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
-            if (order.Status < OrderStatus.Assigned && order.Status > OrderStatus.WaitingForCostApproval)
+            if (order.Status < OrderStatus.Assigned || order.Status > OrderStatus.WaitingForCostApproval)
             {
-                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończomych przez pracownika.");
+                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończonych przez pracownika.");
             }
 
             if (!dto.IsFuelExpense && order.AdditionalCosts + dto.Cost > order.CostLimit.MaxCosts)
@@ -440,9 +440,9 @@ namespace FleetlyBackend.Services.OrderService
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
-            if (order.Status < OrderStatus.Assigned && order.Status > OrderStatus.WaitingForCostApproval)
+            if (order.Status < OrderStatus.Assigned || order.Status > OrderStatus.WaitingForCostApproval)
             {
-                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończomych przez pracownika.");
+                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończonych przez pracownika.");
             }
 
             var oldExpense = await _context.Expenses.AsNoTracking()
@@ -494,9 +494,9 @@ namespace FleetlyBackend.Services.OrderService
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
-            if (order.Status < OrderStatus.Assigned && order.Status > OrderStatus.WaitingForCostApproval)
+            if (order.Status < OrderStatus.Assigned || order.Status > OrderStatus.WaitingForCostApproval)
             {
-                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończomych przez pracownika.");
+                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończonych przez pracownika.");
             }
 
             var expenseToDelete = await _context.Expenses

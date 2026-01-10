@@ -44,7 +44,7 @@ namespace FleetlyBackend.Services.DamageService
             string? fileName = null;
             try
             {
-                fileName = await _fileService.SaveFileAsync(dto.Photo, "Vehilce");
+                fileName = await _fileService.SaveFileAsync(dto.Photo, "Vehicle");
 
                 var damage = new Damage
                 {
@@ -105,7 +105,7 @@ namespace FleetlyBackend.Services.DamageService
             {
                 try
                 {
-                    newFile = await _fileService.SaveFileAsync(dto.Photo, "Vehilce");
+                    newFile = await _fileService.SaveFileAsync(dto.Photo, "Vehicle");
                     damage.PhotoUrl = newFile;
                 }
                 catch (InvalidOperationException ex)

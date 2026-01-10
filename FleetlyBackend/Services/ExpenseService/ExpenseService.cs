@@ -23,7 +23,7 @@ namespace FleetlyBackend.Services.ExpenseService
 
             try
             {
-                savedFilePath = await fileService.SaveFileAsync(dto.CostPhoto, folderStructure);
+                savedFilePath = await _fileService.SaveFileAsync(dto.CostPhoto, folderStructure);
 
                 var exp = new Expense
                 {
@@ -101,7 +101,7 @@ namespace FleetlyBackend.Services.ExpenseService
                 }
                 catch
                 {
-                    // Orphaned file, Ignoruję ponieważ koszt został zaktualizowany w bazie danych i to jest najważniejsze.
+                    // Orphaned file, Ignoruje ponieważ koszt został zaktualizowany w bazie danych i to jest najważniejsze.
                 }
             }
 
@@ -124,7 +124,7 @@ namespace FleetlyBackend.Services.ExpenseService
                 try { await _fileService.DeleteFileAsync(fileToDelete); }
                 catch
                 {
-                    // Orphaned file, Ignoruję ponieważ koszt został usunięty z bazy danych i to jest najważniejsze.
+                    // Orphaned file, Ignoruje ponieważ koszt został usunięty z bazy danych i to jest najważniejsze.
                 }
             }
             return true;
