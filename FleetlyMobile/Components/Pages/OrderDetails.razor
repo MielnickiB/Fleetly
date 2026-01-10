@@ -36,7 +36,7 @@ else
                 <MudItem xs="6">
                     <MudButton Variant="Variant.Filled" Color="Color.Warning" FullWidth="true"
                                StartIcon="@Icons.Material.Filled.LocalGasStation"
-                               OnClick="AddCost"
+                               OnClick="@(() => AddCost("Paliwo"))"
                                Disabled="@_isNotToday">
                         <MudText Typo="Typo.button">Paliwo</MudText>
                     </MudButton>
@@ -44,7 +44,7 @@ else
                 <MudItem xs="6">
                     <MudButton Variant="Variant.Filled" Color="Color.Secondary" FullWidth="true"
                                StartIcon="@Icons.Material.Filled.ConfirmationNumber"
-                               OnClick="AddCost">
+                               OnClick="@(() => AddCost("Bilet"))">
                         <MudText Typo="Typo.button">Bilet</MudText>
                     </MudButton>
                 </MudItem>
@@ -205,9 +205,9 @@ else
                             {
                                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                                     <MudText Typo="Typo.body2">@cost.Cost zł</MudText>
-                                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary"
+                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Photo" Color="Color.Primary"
                                                OnClick="@(() => OpenImagePreviewAsync(cost.CostPhotoUrl))">
-                                        ZDJĘCIE
+                                        <MudText Typo="Typo.button">Zdjęcie</MudText>
                                     </MudButton>
                                 </MudStack>
                             }
@@ -293,9 +293,16 @@ else
         });
     }
 
-    private void AddCost()
+    private void AddCost(string actionName)
     {
-        Nav.NavigateTo($"/orders/{OrderId}/addCost");
+        if (actionName == "Paliwo")
+        {
+            Nav.NavigateTo($"/orders/{OrderId}/addCost?isFuel=true");
+        }
+        else if (actionName == "Bilet")
+        {
+            Nav.NavigateTo($"/orders/{OrderId}/addCost?isFuel=false");
+        }
     }
 
     private void StartOrderProtocol()
@@ -329,6 +336,17 @@ else
         }
     }
 
+    private string BuildImageUrl(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return string.Empty;
+
+        var baseUrl = AppConstants.ApiUrl;
+        var safePath = fileName.Replace("\\", "/");
+
+        return $"{baseUrl}/Uploads/{safePath}";
+    }
+
     private async Task OpenImagePreviewAsync(string? fileName)
     {
         if (string.IsNullOrWhiteSpace(fileName))
@@ -337,16 +355,14 @@ else
             return;
         }
 
-        var baseUrl = AppConstants.ApiUrl;
-        var fullUrl = $"{baseUrl}Uploads/Images/{fileName}";
+        string fullUrl = BuildImageUrl(fileName);
 
         var parameters = new DialogParameters
         {
             ["ImageUrl"] = fullUrl
         };
 
-        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        await DialogService.ShowAsync<ImagePreviewDialog>("Podgląd", parameters, options);
+        await DialogService.ShowAsync<ImagePreviewDialog>("Podgląd", parameters, DialogHelper.GetImagePreviewOptions());
     }
 
     private async Task OpenRoutePreviewAsync()

@@ -175,7 +175,9 @@ namespace FleetlyBackend.Services.NotificationService
             foreach (var admin in admins)
             {
                 await CreateInternal(admin.Id, NotificationType.WorkerTookTheOrder,
-                    $"Zlecenie #{order.Id} przyjęte", $"Pracownik rozpoczął proces realizacji zlecenia.", order.Id);
+                    $"Zlecenie #{order.Id} przyjęte",
+                    $"Pracownik przyjął zlecenie i przygotowuje się do realizacji.",
+                    order.Id);
             }
         }
 
