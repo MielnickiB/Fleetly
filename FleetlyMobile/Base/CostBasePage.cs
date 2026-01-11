@@ -18,7 +18,6 @@ namespace FleetlyMobile.Base
                     var photo = await MediaPicker.Default.CapturePhotoAsync();
                     if (photo != null)
                     {
-                        CleanUpOldFile();
                         await CacheFileAsync(photo);
                     }
                 }
@@ -54,7 +53,6 @@ namespace FleetlyMobile.Base
 
                 if (file != null)
                 {
-                    CleanUpOldFile();
                     await CacheFileAsync(file);
                 }
             }
@@ -66,10 +64,11 @@ namespace FleetlyMobile.Base
 
         private async Task CacheFileAsync(FileResult fileResult)
         {
-            var newFile = Path.Combine(FileSystem.CacheDirectory, fileResult.FileName);
+            var uniqueName = $"{Guid.NewGuid()}{Path.GetExtension(fileResult.FileName)}";
+            var newFile = Path.Combine(FileSystem.CacheDirectory, uniqueName);
 
             using var stream = await fileResult.OpenReadAsync();
-            using var newStream = File.OpenWrite(newFile);
+            using var newStream = File.Create(newFile);
 
             await stream.CopyToAsync(newStream);
 
@@ -81,15 +80,7 @@ namespace FleetlyMobile.Base
 
         protected void ClearFile()
         {
-            if (LocalFilePath != null && File.Exists(LocalFilePath))
-            {
-                try 
-                { 
-                    File.Delete(LocalFilePath); 
-                } 
-                catch { }
-            }
-
+            CleanUpOldFile();
             LocalFilePath = null;
             OriginalFileName = null;
             StateHasChanged();

@@ -134,7 +134,7 @@
 
             if (!string.IsNullOrEmpty(LocalFilePath) && !string.IsNullOrEmpty(OriginalFileName))
             {
-                using var fileContent = new StreamContent(File.OpenRead(LocalFilePath));
+                var fileContent = new StreamContent(File.OpenRead(LocalFilePath));
 
                 var mimeType = OriginalFileName.EndsWith(".pdf") ? "application/pdf" : "image/jpeg";
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
