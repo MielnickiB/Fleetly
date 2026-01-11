@@ -209,6 +209,11 @@ else
                                                OnClick="@(() => OpenImagePreviewAsync(cost.CostPhotoUrl))">
                                         <MudText Typo="Typo.button">Zdjęcie</MudText>
                                     </MudButton>
+
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   Color="Color.Warning"
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => Nav.NavigateTo($"/orders/{OrderId}/costs/{cost.Id}/edit"))" />
                                 </MudStack>
                             }
                         }
@@ -297,11 +302,11 @@ else
     {
         if (actionName == "Paliwo")
         {
-            Nav.NavigateTo($"/orders/{OrderId}/addCost?isFuel=true");
+            Nav.NavigateTo($"/orders/{OrderId}/costs/add?isFuel=true");
         }
         else if (actionName == "Bilet")
         {
-            Nav.NavigateTo($"/orders/{OrderId}/addCost?isFuel=false");
+            Nav.NavigateTo($"/orders/{OrderId}/costs/add?isFuel=false");
         }
     }
 

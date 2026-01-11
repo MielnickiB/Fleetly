@@ -5,12 +5,12 @@ namespace Fleetly.Shared.Dto.ExpenseDtos
 {
     public class ExpenseCreateDto
     {
-        [Required]
+        [Required(ErrorMessage = "Wartość kosztu jest wymagana!")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Koszt musi być większy od zera")]
         public decimal Cost { get; set; }
-        [Required]
+        [Required(ErrorMessage = "Typ kosztu jest wymagany!")]
         public bool IsFuelExpense { get; set; }
-        [Required]
+        [Required(ErrorMessage = "Zdjęcie kosztu jest wymagane!")]
         public IFormFile CostPhoto { get; set; } = null!;
     }
 }
