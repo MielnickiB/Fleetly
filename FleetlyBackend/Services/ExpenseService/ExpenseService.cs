@@ -24,10 +24,7 @@ namespace FleetlyBackend.Services.ExpenseService
                 .Include(e => e.Order)
                 .AsQueryable();
 
-            if (user.IsAdmin())
-            {
-            }
-            else if (user.IsWorker())
+            if (user.IsWorker())
             {
                 query = query.Where(e => e.Order.WorkerId == userId);
             }
@@ -35,7 +32,7 @@ namespace FleetlyBackend.Services.ExpenseService
             {
                 query = query.Where(e => e.Order.ClientId == userId);
             }
-            else
+            else if (!user.IsAdmin())
             {
                 throw new UnauthorizedAccessException("Brak uprawnień.");
             }

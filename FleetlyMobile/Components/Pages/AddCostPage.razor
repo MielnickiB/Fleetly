@@ -13,30 +13,31 @@
 <MudPaper Class="pa-4 mud-theme-surface" Elevation="2">
     <EditForm Model="@_model" OnValidSubmit="SubmitCost">
         <DataAnnotationsValidator />
-        
+
         <MudStack Spacing="4">
-            
+
             <MudSelect T="bool" Label="Rodzaj kosztu" Required="true" @bind-Value="_model.IsFuelExpense" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
                 <MudSelectItem Value="true">Paliwo</MudSelectItem>
                 <MudSelectItem Value="false">Bilet</MudSelectItem>
             </MudSelect>
 
-            <MudNumericField @bind-Value="_model.Cost" 
-                             Label="Kwota (zł)" 
-                             Variant="Variant.Outlined" 
-                             Format="N2" 
-                             Min="0.01m" 
+            <MudNumericField @bind-Value="_model.Cost"
+                             Label="Kwota (zł)"
+                             Variant="Variant.Outlined"
+                             Format="N2"
+                             Min="0.01m"
                              Adornment="Adornment.Start"
                              Required="true"
                              AdornmentIcon="@Icons.Material.Filled.AttachMoney"
                              For="@(() => _model.Cost)" />
 
             <MudText Typo="Typo.subtitle2" Class="mt-2">Dowód zakupu</MudText>
-            
+
             @if (!string.IsNullOrEmpty(LocalFilePath))
             {
                 <MudPaper Class="pa-3 d-flex align-center gap-3 border-dashed" Elevation="0" Outlined="true">
-                    @if (OriginalFileName!.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    @if (!string.IsNullOrEmpty(OriginalFileName) &&
+                                    OriginalFileName!.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                     {
                         <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Size="Size.Large" />
                     }
@@ -44,7 +45,7 @@
                     {
                         <MudIcon Icon="@Icons.Material.Filled.Image" Color="Color.Success" Size="Size.Large" />
                     }
-                    
+
                     <MudStack Spacing="0" Style="overflow: hidden; width: 100%;">
                         <MudText Typo="Typo.subtitle2" Style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             @OriginalFileName
@@ -59,15 +60,15 @@
             {
                 <MudGrid Spacing="2">
                     <MudItem xs="6">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CameraAlt" 
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CameraAlt"
                                    FullWidth="true" Class="py-4" OnClick="TakePhotoAsync">
                             <MudText Typo="Typo.button">Aparat</MudText>
                         </MudButton>
                     </MudItem>
                     <MudItem xs="6">
-                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.AttachFile" 
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.AttachFile"
                                    FullWidth="true" Class="py-4" OnClick="PickFileAsync">
-                             <MudText Typo="Typo.button">Plik / PDF</MudText>
+                            <MudText Typo="Typo.button">Plik / PDF</MudText>
                         </MudButton>
                     </MudItem>
                 </MudGrid>
@@ -77,17 +78,17 @@
                 }
             }
 
-            <MudDivider Class="my-2"/>
+            <MudDivider Class="my-2" />
 
-            <MudButton ButtonType="ButtonType.Submit" 
-                       Variant="Variant.Filled" 
-                       Color="Color.Success" 
-                       Size="Size.Large" 
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Success"
+                       Size="Size.Large"
                        FullWidth="true"
                        Disabled="@IsLoading">
                 @if (IsLoading)
                 {
-                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/>
+                    <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
                 }
                 else
                 {
@@ -102,7 +103,7 @@
 @code {
     [Parameter] public int OrderId { get; set; }
 
-    [SupplyParameterFromQuery(Name = "isFuel")] 
+    [SupplyParameterFromQuery(Name = "isFuel")]
     public bool? IsFuelQuery { get; set; }
 
     private readonly ExpenseCreateDto _model = new();
@@ -130,13 +131,14 @@
             content.Add(new StringContent(_model.Cost.ToString(System.Globalization.CultureInfo.InvariantCulture)), "Cost");
             content.Add(new StringContent(_model.IsFuelExpense.ToString()), "IsFuelExpense");
 
-            using var stream = File.OpenRead(LocalFilePath);
-            var fileContent = new StreamContent(stream);
-            
-            var mimeType = OriginalFileName!.EndsWith(".pdf") ? "application/pdf" : "image/jpeg";
-            fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
+            using var fileContent = new StreamContent(File.OpenRead(LocalFilePath));
 
-            content.Add(fileContent, "CostPhoto", OriginalFileName);
+            if (!string.IsNullOrEmpty(OriginalFileName))
+            {
+                var mimeType = OriginalFileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? "application/pdf" : "image/jpeg";
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
+                content.Add(fileContent, "CostPhoto", OriginalFileName);
+            }
 
             var result = await OrderService.AddCostAsync(OrderId, content);
 

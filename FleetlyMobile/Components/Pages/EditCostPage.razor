@@ -36,7 +36,8 @@
             @if (!string.IsNullOrEmpty(LocalFilePath))
             {
                 <MudPaper Class="pa-3 d-flex align-center gap-3 border-dashed" Elevation="0" Outlined="true">
-                    @if (OriginalFileName!.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    @if (!string.IsNullOrEmpty(OriginalFileName) && 
+                        OriginalFileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                     {
                         <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Size="Size.Large" />
                     }
@@ -58,7 +59,7 @@
             else
             {
                 <MudPaper Class="pa-3 d-flex align-center gap-3" Elevation="0" Outlined="true">
-                    <MudIcon Icon="@Icons.Material.Filled.Image" Color="Color.Primary"/>
+                    <MudIcon Icon="@Icons.Material.Filled.Image" Color="Color.Primary" />
                     <MudText Typo="Typo.subtitle2">Obecny plik zachowany</MudText>
                 </MudPaper>
 
@@ -109,13 +110,14 @@
     protected override async Task OnInitializedAsync()
     {
         await ExecuteSafeAsync(async () =>
-                {
-                    var response = await ExpenseService.GetById(ExpenseId);
-                    if (!response.Success || response.Data == null) throw new Exception("Błąd pobierania danych.");
+        {
+            var response = await ExpenseService.GetById(ExpenseId);
+            if (!response.Success || response.Data == null)
+                throw new Exception("Błąd pobierania danych.");
 
-                    _model.Cost = response.Data.Cost;
-                    _model.IsFuelExpense = response.Data.IsFuelExpense;
-                });
+            _model.Cost = response.Data.Cost;
+            _model.IsFuelExpense = response.Data.IsFuelExpense;
+        });
     }
 
     private async Task SubmitForm()
@@ -130,11 +132,11 @@
             if (_model.IsFuelExpense.HasValue)
                 content.Add(new StringContent(_model.IsFuelExpense.Value.ToString()), "IsFuelExpense");
 
-            if (!string.IsNullOrEmpty(LocalFilePath))
+            if (!string.IsNullOrEmpty(LocalFilePath) && !string.IsNullOrEmpty(OriginalFileName))
             {
-                var fileContent = new StreamContent(File.OpenRead(LocalFilePath));
+                using var fileContent = new StreamContent(File.OpenRead(LocalFilePath));
 
-                var mimeType = OriginalFileName!.EndsWith(".pdf") ? "application/pdf" : "image/jpeg";
+                var mimeType = OriginalFileName.EndsWith(".pdf") ? "application/pdf" : "image/jpeg";
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
 
                 content.Add(fileContent, "CostPhoto", OriginalFileName);
