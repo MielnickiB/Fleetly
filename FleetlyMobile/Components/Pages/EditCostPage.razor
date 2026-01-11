@@ -1,24 +1,25 @@
-﻿@page "/orders/{OrderId:int}/costs/add"
+﻿@page "/orders/{OrderId:int}/costs/{ExpenseId:int}/edit"
 @using System.Net.Http.Headers
 @using FleetlyMobile.Base
 
 @inherits CostBasePage
 @inject IOrderService OrderService
+@inject IExpenseService ExpenseService
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexStart" Class="mb-4 pt-2">
     <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Nav.NavigateTo($"/orders/{OrderId}"))" />
-    <MudText Typo="Typo.h6">Dodaj Koszt</MudText>
+    <MudText Typo="Typo.h6">Edytuj Koszt</MudText>
 </MudStack>
 
 <MudPaper Class="pa-4 mud-theme-surface" Elevation="2">
-    <EditForm Model="@_model" OnValidSubmit="SubmitCost">
+    <EditForm Model="@_model" OnValidSubmit="SubmitForm">
         <DataAnnotationsValidator />
 
         <MudStack Spacing="4">
 
-            <MudSelect T="bool" Label="Rodzaj kosztu" Required="true" @bind-Value="_model.IsFuelExpense" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
-                <MudSelectItem Value="true">Paliwo</MudSelectItem>
-                <MudSelectItem Value="false">Bilet</MudSelectItem>
+            <MudSelect T="bool?" Label="Rodzaj kosztu" @bind-Value="_model.IsFuelExpense" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                <MudSelectItem T="bool?" Value="true">Paliwo</MudSelectItem>
+                <MudSelectItem T="bool?" Value="false">Bilet</MudSelectItem>
             </MudSelect>
 
             <MudNumericField @bind-Value="_model.Cost"
@@ -27,7 +28,6 @@
                              Format="N2"
                              Min="0.01m"
                              Adornment="Adornment.Start"
-                             Required="true"
                              AdornmentIcon="@Icons.Material.Filled.AttachMoney"
                              For="@(() => _model.Cost)" />
 
@@ -36,8 +36,8 @@
             @if (!string.IsNullOrEmpty(LocalFilePath))
             {
                 <MudPaper Class="pa-3 d-flex align-center gap-3 border-dashed" Elevation="0" Outlined="true">
-                    @if (!string.IsNullOrEmpty(OriginalFileName) &&
-                                    OriginalFileName!.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    @if (!string.IsNullOrEmpty(OriginalFileName) && 
+                        OriginalFileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                     {
                         <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Size="Size.Large" />
                     }
@@ -50,7 +50,7 @@
                         <MudText Typo="Typo.subtitle2" Style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             @OriginalFileName
                         </MudText>
-                        <MudText Typo="Typo.caption">Gotowy do wysłania</MudText>
+                        <MudText Typo="Typo.caption">Zastąpi stare zdjęcie.</MudText>
                     </MudStack>
 
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="ClearFile" />
@@ -58,6 +58,11 @@
             }
             else
             {
+                <MudPaper Class="pa-3 d-flex align-center gap-3" Elevation="0" Outlined="true">
+                    <MudIcon Icon="@Icons.Material.Filled.Image" Color="Color.Primary" />
+                    <MudText Typo="Typo.subtitle2">Obecny plik zachowany</MudText>
+                </MudPaper>
+
                 <MudGrid Spacing="2">
                     <MudItem xs="6">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.CameraAlt"
@@ -72,10 +77,6 @@
                         </MudButton>
                     </MudItem>
                 </MudGrid>
-                @if (ShowFileError)
-                {
-                    <MudText Typo="Typo.caption" Color="Color.Error">Musisz dodać zdjęcie lub plik!</MudText>
-                }
             }
 
             <MudDivider Class="my-2" />
@@ -92,7 +93,7 @@
                 }
                 else
                 {
-                    <MudText Typo="Typo.button">Dodaj koszt</MudText>
+                    <MudText Typo="Typo.button">Zapisz zmiany</MudText>
                 }
             </MudButton>
 
@@ -102,54 +103,55 @@
 
 @code {
     [Parameter] public int OrderId { get; set; }
+    [Parameter] public int ExpenseId { get; set; }
 
-    [SupplyParameterFromQuery(Name = "isFuel")]
-    public bool? IsFuelQuery { get; set; }
+    private readonly ExpenseUpdateDto _model = new();
 
-    private readonly ExpenseCreateDto _model = new();
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        if (IsFuelQuery.HasValue)
+        await ExecuteSafeAsync(async () =>
         {
-            _model.IsFuelExpense = IsFuelQuery.Value;
-        }
+            var response = await ExpenseService.GetById(ExpenseId);
+            if (!response.Success || response.Data == null)
+                throw new Exception("Błąd pobierania danych.");
+
+            _model.Cost = response.Data.Cost;
+            _model.IsFuelExpense = response.Data.IsFuelExpense;
+        });
     }
 
-    private async Task SubmitCost()
+    private async Task SubmitForm()
     {
-        if (string.IsNullOrEmpty(LocalFilePath))
-        {
-            ShowFileError = true;
-            return;
-        }
-
         await ExecuteSafeAsync(async () =>
         {
             using var content = new MultipartFormDataContent();
 
-            content.Add(new StringContent(_model.Cost.ToString(System.Globalization.CultureInfo.InvariantCulture)), "Cost");
-            content.Add(new StringContent(_model.IsFuelExpense.ToString()), "IsFuelExpense");
+            if (_model.Cost.HasValue)
+                content.Add(new StringContent(_model.Cost.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)), "Cost");
 
-            using var fileContent = new StreamContent(File.OpenRead(LocalFilePath));
+            if (_model.IsFuelExpense.HasValue)
+                content.Add(new StringContent(_model.IsFuelExpense.Value.ToString()), "IsFuelExpense");
 
-            if (!string.IsNullOrEmpty(OriginalFileName))
+            if (!string.IsNullOrEmpty(LocalFilePath) && !string.IsNullOrEmpty(OriginalFileName))
             {
-                var mimeType = OriginalFileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? "application/pdf" : "image/jpeg";
+                var fileContent = new StreamContent(File.OpenRead(LocalFilePath));
+
+                var mimeType = OriginalFileName.EndsWith(".pdf") ? "application/pdf" : "image/jpeg";
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
+
                 content.Add(fileContent, "CostPhoto", OriginalFileName);
             }
 
-            var result = await OrderService.AddCostAsync(OrderId, content);
+            var result = await OrderService.UpdateCostAsync(OrderId, ExpenseId, content);
 
             if (result.Success)
             {
-                Snackbar.Add("Koszt dodany pomyślnie!", Severity.Success);
+                Snackbar.Add("Zaktualizowano!", Severity.Success);
                 Nav.NavigateTo($"/orders/{OrderId}");
             }
             else
             {
-                throw new Exception(result.Error ?? "Błąd zapisu kosztu.");
+                throw new Exception(result.Error ?? "Błąd aktualizacji kosztu.");
             }
         });
     }

@@ -101,6 +101,19 @@ public class ApiClient(HttpClient http)
         return ApiResponse<TResponse?>.ErrorResult(error, status);
     }
 
+    public async Task<ApiResponse<TResponse?>> PutMultipartAsync<TResponse>(string url, MultipartFormDataContent content)
+    {
+        using var res = await _http.PutAsync(url, content);
+        var status = (int)res.StatusCode;
+        if (res.IsSuccessStatusCode)
+        {
+            var dto = await res.Content.ReadFromJsonAsync<TResponse?>();
+            return ApiResponse<TResponse?>.SuccessResult(dto, status);
+        }
+        var error = await SafeReadStringAsync(res);
+        return ApiResponse<TResponse?>.ErrorResult(error, status);
+    }
+
     private static async Task<string?> SafeReadStringAsync(HttpResponseMessage res)
     {
         try

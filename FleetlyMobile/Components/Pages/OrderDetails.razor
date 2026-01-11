@@ -195,21 +195,32 @@ else
                         {
                             @InfoRow("Paliwo", $"{_order.FuelCosts} zł")
                             @InfoRow("Inne koszty", $"{_order.AdditionalCosts} zł")
-                        }
 
-                        @if (_order.Expenses.Any())
-                        {
-                            <MudDivider Class="my-2" />
-                            <MudText Typo="Typo.caption">ZAŁĄCZONE KOSZTY</MudText>
-                            @foreach (var cost in _order.Expenses)
+                            @if (_order.Expenses.Any())
                             {
-                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                                    <MudText Typo="Typo.body2">@cost.Cost zł</MudText>
-                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Photo" Color="Color.Primary"
-                                               OnClick="@(() => OpenImagePreviewAsync(cost.CostPhotoUrl))">
-                                        <MudText Typo="Typo.button">Zdjęcie</MudText>
-                                    </MudButton>
-                                </MudStack>
+                                <MudDivider Class="my-2" />
+                                <MudText Typo="Typo.caption">ZAŁĄCZONE KOSZTY</MudText>
+                                @foreach (var cost in _order.Expenses)
+                                {
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.body2">@cost.Cost zł</MudText>
+                                        <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
+
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Size="Size.Small"
+                                                           Color="Color.Error"
+                                                           OnClick="@(() => DeleteCost(cost.Id))" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                           Size="Size.Small"
+                                                           Color="Color.Warning"
+                                                           OnClick="@(() => Nav.NavigateTo($"/orders/{OrderId}/costs/{cost.Id}/edit"))" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                                           Size="Size.Small"
+                                                           Color="Color.Primary"
+                                                           OnClick="@(() => OpenImagePreviewAsync(cost.CostPhotoUrl))" />
+                                        </MudStack>
+                                    </MudStack>
+                                }
                             }
                         }
                     </MudStack>
@@ -297,11 +308,37 @@ else
     {
         if (actionName == "Paliwo")
         {
-            Nav.NavigateTo($"/orders/{OrderId}/addCost?isFuel=true");
+            Nav.NavigateTo($"/orders/{OrderId}/costs/add?isFuel=true");
         }
         else if (actionName == "Bilet")
         {
-            Nav.NavigateTo($"/orders/{OrderId}/addCost?isFuel=false");
+            Nav.NavigateTo($"/orders/{OrderId}/costs/add?isFuel=false");
+        }
+    }
+
+    private async Task DeleteCost(int expenseId)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Usuń koszt",
+            "Czy na pewno chcesz usunąć ten koszt? Tej operacji nie można cofnąć.",
+            "Usuń", "Anuluj");
+
+        if (result == true)
+        {
+            await ExecuteSafeAsync(async () =>
+            {
+                var response = await OrderService.DeleteCostAsync(OrderId, expenseId);
+
+                if (response.Success)
+                {
+                    _order = response.Data; // Update local state with fresh data from server
+                    Snackbar.Add("Koszt został usunięty.", Severity.Success);
+                }
+                else
+                {
+                    throw new Exception(response.Error ?? "Nie udało się usunąć kosztu.");
+                }
+            });
         }
     }
 
@@ -320,7 +357,7 @@ else
         bool? result = await DialogService.ShowMessageBox(
             "Zatwierdzenie kosztów",
             "Czy na pewno dodałeś wszystkie bilety i koszty paliwowe? \n\nPo zatwierdzeniu nie będziesz mógł już edytować tego zlecenia.",
-            yesText: "Tak, zatwierdź", cancelText: "Anuluj");
+            "Tak, zatwierdź", "Anuluj");
 
         if (result == true)
         {

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using FleetlyMobile.Services.Orders;
+using FleetlyMobile.Services.Expense;
 
 namespace FleetlyMobile
 {
@@ -48,6 +49,7 @@ namespace FleetlyMobile
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IDashboardService, DashboardService>();
             builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IExpenseService, ExpenseService>();
 
             return builder.Build();
         }
