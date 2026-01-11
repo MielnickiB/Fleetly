@@ -205,15 +205,17 @@ else
                             {
                                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                                     <MudText Typo="Typo.body2">@cost.Cost zł</MudText>
-                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Photo" Color="Color.Primary"
-                                               OnClick="@(() => OpenImagePreviewAsync(cost.CostPhotoUrl))">
-                                        <MudText Typo="Typo.button">Zdjęcie</MudText>
-                                    </MudButton>
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
 
-                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                   Color="Color.Warning"
-                                                   Size="Size.Small"
-                                                   OnClick="@(() => Nav.NavigateTo($"/orders/{OrderId}/costs/{cost.Id}/edit"))" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                       Size="Size.Small"
+                                                       Color="Color.Warning"
+                                                       OnClick="@(() => Nav.NavigateTo($"/orders/{OrderId}/costs/{cost.Id}/edit"))" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                                       Size="Size.Small"
+                                                       Color="Color.Primary"
+                                                       OnClick="@(() => OpenImagePreviewAsync(cost.CostPhotoUrl))" />
+                                    </MudStack>
                                 </MudStack>
                             }
                         }

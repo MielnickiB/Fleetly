@@ -1,8 +1,8 @@
-﻿@page "/orders/{OrderId:int}/addCost"
+﻿@page "/orders/{OrderId:int}/costs/add"
 @using System.Net.Http.Headers
 @using FleetlyMobile.Base
 
-@inherits BasePage
+@inherits CostBasePage
 @inject IOrderService OrderService
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexStart" Class="mb-4 pt-2">
@@ -11,12 +11,12 @@
 </MudStack>
 
 <MudPaper Class="pa-4 mud-theme-surface" Elevation="2">
-    <EditForm Model="@_model" OnValidSubmit="SubmitCost">
+    <EditForm Model="@_model">
         <DataAnnotationsValidator />
         
         <MudStack Spacing="4">
             
-            <MudSelect T="bool" Label="Rodzaj kosztu" @bind-Value="_model.IsFuelExpense" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+            <MudSelect T="bool" Label="Rodzaj kosztu" Required="true" @bind-Value="_model.IsFuelExpense" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
                 <MudSelectItem Value="true">Paliwo</MudSelectItem>
                 <MudSelectItem Value="false">Bilet</MudSelectItem>
             </MudSelect>
@@ -27,26 +27,27 @@
                              Format="N2" 
                              Min="0.01m" 
                              Adornment="Adornment.Start"
+                             Required="true"
                              AdornmentIcon="@Icons.Material.Filled.AttachMoney"
                              For="@(() => _model.Cost)" />
 
-            <MudText Typo="Typo.subtitle2" Class="mt-2">Dowód zakupu (Paragon / Faktura)</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mt-2">Dowód zakupu</MudText>
             
-            @if (_selectedFileResult != null)
+            @if (!string.IsNullOrEmpty(LocalFilePath))
             {
                 <MudPaper Class="pa-3 d-flex align-center gap-3 border-dashed" Elevation="0" Outlined="true">
-                    @if (_selectedFileResult.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    @if (OriginalFileName!.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                     {
-                        <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Size="Size.Large"/>
+                        <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Size="Size.Large" />
                     }
                     else
                     {
-                        <MudIcon Icon="@Icons.Material.Filled.Image" Color="Color.Success" Size="Size.Large"/>
+                        <MudIcon Icon="@Icons.Material.Filled.Image" Color="Color.Success" Size="Size.Large" />
                     }
                     
                     <MudStack Spacing="0" Style="overflow: hidden; width: 100%;">
                         <MudText Typo="Typo.subtitle2" Style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            @_selectedFileResult.FileName
+                            @OriginalFileName
                         </MudText>
                         <MudText Typo="Typo.caption">Gotowy do wysłania</MudText>
                     </MudStack>
@@ -70,7 +71,7 @@
                         </MudButton>
                     </MudItem>
                 </MudGrid>
-                @if (showFileError)
+                @if (ShowFileError)
                 {
                     <MudText Typo="Typo.caption" Color="Color.Error">Musisz dodać zdjęcie lub plik!</MudText>
                 }
@@ -91,7 +92,7 @@
                 }
                 else
                 {
-                    <MudText Typo="Typo.button">Zapisz koszt</MudText>
+                    <MudText Typo="Typo.button">Dodaj koszt</MudText>
                 }
             </MudButton>
 
@@ -106,8 +107,6 @@
     public bool? IsFuelQuery { get; set; }
 
     private readonly ExpenseCreateDto _model = new();
-    private FileResult? _selectedFileResult;
-    private bool showFileError = false;
 
     protected override void OnInitialized()
     {
@@ -117,67 +116,11 @@
         }
     }
 
-    private async Task TakePhotoAsync()
-    {
-        try
-        {
-            if (MediaPicker.Default.IsCaptureSupported)
-            {
-                var photo = await MediaPicker.Default.CapturePhotoAsync();
-                if (photo != null)
-                {
-                    _selectedFileResult = photo;
-                    showFileError = false;
-                }
-            }
-            else
-            {
-                Snackbar.Add("Brak dostępu do aparatu.", Severity.Warning);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Błąd aparatu: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private async Task PickFileAsync()
-    {
-        try
-        {
-            var customFileType = new FilePickerFileType(
-                new Dictionary<DevicePlatform, IEnumerable<string>>
-                {
-                    { DevicePlatform.iOS, new[] { "public.image", "com.adobe.pdf" } },
-                    { DevicePlatform.Android, new[] { "image/*", "application/pdf" } }
-                });
-
-            var options = new PickOptions
-            {
-                PickerTitle = "Wybierz dowód zakupu",
-                FileTypes = customFileType
-            };
-
-            var file = await FilePicker.Default.PickAsync(options);
-            if (file != null)
-            {
-                _selectedFileResult = file;
-                showFileError = false;
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Błąd wyboru pliku: {ex.Message}", Severity.Error);
-        }
-    }
-
-    private void ClearFile() => _selectedFileResult = null;
-
     private async Task SubmitCost()
     {
-        if (_selectedFileResult == null)
+        if (string.IsNullOrEmpty(LocalFilePath))
         {
-            showFileError = true;
+            ShowFileError = true;
             return;
         }
 
@@ -188,13 +131,13 @@
             content.Add(new StringContent(_model.Cost.ToString(System.Globalization.CultureInfo.InvariantCulture)), "Cost");
             content.Add(new StringContent(_model.IsFuelExpense.ToString()), "IsFuelExpense");
 
-            using var stream = await _selectedFileResult.OpenReadAsync();
+            using var stream = File.OpenRead(LocalFilePath);
             var fileContent = new StreamContent(stream);
             
-            var mimeType = _selectedFileResult.FileName.EndsWith(".pdf") ? "application/pdf" : "image/jpeg";
+            var mimeType = OriginalFileName!.EndsWith(".pdf") ? "application/pdf" : "image/jpeg";
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
 
-            content.Add(fileContent, "CostPhoto", _selectedFileResult.FileName);
+            content.Add(fileContent, "CostPhoto", OriginalFileName);
 
             var result = await OrderService.AddCostAsync(OrderId, content);
 

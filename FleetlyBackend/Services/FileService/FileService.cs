@@ -50,11 +50,16 @@ namespace FleetlyBackend.Services.FileService
 
         public Task DeleteFileAsync(string filePath)
         {
-            var fullPath = Path.Combine(_rootPath, filePath);
+            var normalizedPath = filePath
+                .Replace("/", Path.DirectorySeparatorChar.ToString())
+                .Replace("\\", Path.DirectorySeparatorChar.ToString());
+
+            var fullPath = Path.Combine(_rootPath, normalizedPath);
 
             var safePath = Path.GetFullPath(fullPath);
             if (!safePath.StartsWith(Path.GetFullPath(_rootPath)))
                 throw new InvalidOperationException("Niepoprawna ścieżka pliku.");
+
             if (File.Exists(safePath))
                 File.Delete(safePath);
 
