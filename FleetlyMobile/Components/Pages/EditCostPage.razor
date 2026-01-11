@@ -8,7 +8,7 @@
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexStart" Class="mb-4 pt-2">
     <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Nav.NavigateTo($"/orders/{OrderId}"))" />
-    <MudText Typo="Typo.h6">Dodaj Koszt</MudText>
+    <MudText Typo="Typo.h6">Edytuj Koszt</MudText>
 </MudStack>
 
 <MudPaper Class="pa-4 mud-theme-surface" Elevation="2">
@@ -132,8 +132,7 @@
 
             if (!string.IsNullOrEmpty(LocalFilePath))
             {
-                var fileStream = File.OpenRead(LocalFilePath);
-                var fileContent = new StreamContent(fileStream);
+                var fileContent = new StreamContent(File.OpenRead(LocalFilePath));
 
                 var mimeType = OriginalFileName!.EndsWith(".pdf") ? "application/pdf" : "image/jpeg";
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue(mimeType);

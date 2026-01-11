@@ -10,7 +10,6 @@ namespace Fleetly.Shared.Dto.ExpenseDtos
         public decimal Cost { get; set; }
         [Required(ErrorMessage = "Typ kosztu jest wymagany!")]
         public bool IsFuelExpense { get; set; }
-        [Required(ErrorMessage = "Zdjęcie kosztu jest wymagane!")]
         public IFormFile CostPhoto { get; set; } = null!;
     }
 }

@@ -11,7 +11,7 @@
 </MudStack>
 
 <MudPaper Class="pa-4 mud-theme-surface" Elevation="2">
-    <EditForm Model="@_model">
+    <EditForm Model="@_model" OnValidSubmit="SubmitCost">
         <DataAnnotationsValidator />
         
         <MudStack Spacing="4">
@@ -84,7 +84,6 @@
                        Color="Color.Success" 
                        Size="Size.Large" 
                        FullWidth="true"
-                       OnClick="SubmitCost"
                        Disabled="@IsLoading">
                 @if (IsLoading)
                 {

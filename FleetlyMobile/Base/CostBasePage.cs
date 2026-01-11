@@ -2,7 +2,7 @@
 
 namespace FleetlyMobile.Base
 {
-    public class CostBasePage : BasePage
+    public class CostBasePage : BasePage, IDisposable
     {
         protected string? LocalFilePath;
         protected string? OriginalFileName;
@@ -18,6 +18,7 @@ namespace FleetlyMobile.Base
                     var photo = await MediaPicker.Default.CapturePhotoAsync();
                     if (photo != null)
                     {
+                        CleanUpOldFile();
                         await CacheFileAsync(photo);
                     }
                 }
@@ -53,6 +54,7 @@ namespace FleetlyMobile.Base
 
                 if (file != null)
                 {
+                    CleanUpOldFile();
                     await CacheFileAsync(file);
                 }
             }
@@ -81,12 +83,34 @@ namespace FleetlyMobile.Base
         {
             if (LocalFilePath != null && File.Exists(LocalFilePath))
             {
-                try { File.Delete(LocalFilePath); } catch { }
+                try 
+                { 
+                    File.Delete(LocalFilePath); 
+                } 
+                catch { }
             }
 
             LocalFilePath = null;
             OriginalFileName = null;
             StateHasChanged();
+        }
+
+        private void CleanUpOldFile()
+        {
+            if (!string.IsNullOrEmpty(LocalFilePath) && File.Exists(LocalFilePath))
+            {
+                try
+                {
+                    File.Delete(LocalFilePath);
+                }
+                catch { }
+            }
+        }
+
+        public void Dispose()
+        {
+            CleanUpOldFile();
+            GC.SuppressFinalize(this);
         }
     }
 }

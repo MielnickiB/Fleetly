@@ -5,7 +5,6 @@ using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using FleetlyBackend.Services.FileService;
 using Microsoft.EntityFrameworkCore;
-using System.Xml;
 
 namespace FleetlyBackend.Services.ExpenseService
 {
@@ -91,10 +90,10 @@ namespace FleetlyBackend.Services.ExpenseService
             var oldFilePath = exp.CostPhotoUrl;
             bool fileChanged = false;
 
-            if (dto.Cost.HasValue && dto.Cost != exp.Cost)
+            if (dto.Cost.HasValue)
                 exp.Cost = dto.Cost.Value;
 
-            if (dto.IsFuelExpense.HasValue && dto.IsFuelExpense != exp.IsFuelExpense)
+            if (dto.IsFuelExpense.HasValue)
                 exp.IsFuelExpense = dto.IsFuelExpense.Value;
 
             if (dto.CostPhoto is not null)
