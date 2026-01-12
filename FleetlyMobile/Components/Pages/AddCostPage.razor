@@ -131,7 +131,7 @@
             content.Add(new StringContent(_model.Cost.ToString(System.Globalization.CultureInfo.InvariantCulture)), "Cost");
             content.Add(new StringContent(_model.IsFuelExpense.ToString()), "IsFuelExpense");
 
-            using var fileContent = new StreamContent(File.OpenRead(LocalFilePath));
+            var fileContent = new StreamContent(File.OpenRead(LocalFilePath));
 
             if (!string.IsNullOrEmpty(OriginalFileName))
             {

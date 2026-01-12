@@ -222,7 +222,7 @@ else
                                                                OnClick="@(() => OpenPdfAsync(cost.CostPhotoUrl))" />
                                             }
                                             else
-                                            { 
+                                            {
                                             <MudIconButton Icon="@Icons.Material.Filled.Visibility"
                                                            Size="Size.Small"
                                                            Color="Color.Primary"
@@ -258,7 +258,7 @@ else
     private OrderResponseDto? _order;
     private int _currentUserId;
     private bool _isMyOrder => _order?.Worker?.Id == _currentUserId;
-    private bool _isNotToday => _order?.StartTime.Date.Day != DateTime.UtcNow.Date.Day;
+    private bool _isNotToday => _order?.StartTime.Date != DateTime.UtcNow.Date;
 
     private bool isPdf(string fileName)
     {
@@ -429,7 +429,7 @@ else
             var origin = Uri.EscapeDataString(startAddr);
             var destination = Uri.EscapeDataString(endAddr);
 
-            var url = $"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=driving&avoid=tools";
+            var url = $"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=driving&avoid=tolls";
 
             await Launcher.Default.OpenAsync(url);
         }
