@@ -23,18 +23,6 @@ namespace FleetlyBackend.Data
                 await context.SaveChangesAsync();
             }
 
-            if (!await context.ProtocolTypes.AnyAsync())
-            {
-                var protocolTypes = new List<ProtocolType>
-                {
-                    new() { TypeName = "Pickup" },
-                    new() { TypeName = "Return" }
-                };
-
-                await context.ProtocolTypes.AddRangeAsync(protocolTypes);
-                await context.SaveChangesAsync();
-            }
-
             if (!await context.Users.AnyAsync(u => u.Email == "user@example.com"))
             {
                 var adminRole = await context.UserRoles.FirstAsync(r => r.RoleName == "Admin");

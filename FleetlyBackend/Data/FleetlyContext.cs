@@ -22,7 +22,6 @@ namespace FleetlyBackend.Data
         public DbSet<Order> Orders { get; set; } = null!;
         public DbSet<Protocol> Protocols { get; set; } = null!;
         public DbSet<ProtocolPhoto> ProtocolPhotos { get; set; } = null!;
-        public DbSet<ProtocolType> ProtocolTypes { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -141,14 +140,6 @@ namespace FleetlyBackend.Data
                 .HasOne(p => p.Client)
                 .WithMany()
                 .HasForeignKey(p => p.ClientId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // ProtocolType 1:N Protocol
-            modelBuilder.Entity<Protocol>()
-                .HasOne(p => p.ProtocolType)
-                .WithMany(pt => pt.Protocols)
-                .HasForeignKey(p => p.ProtocolTypeId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
 
