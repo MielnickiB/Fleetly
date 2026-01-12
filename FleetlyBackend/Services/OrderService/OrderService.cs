@@ -496,7 +496,7 @@ namespace FleetlyBackend.Services.OrderService
 
             if (order.Status < OrderStatus.Assigned || order.Status > OrderStatus.WaitingForCostApproval)
             {
-                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończonych przez pracownika.");
+                throw new InvalidOperationException("Nie można usuwać kosztów w tym stanie zlecenia.");
             }
 
             var expenseToDelete = await _context.Expenses
