@@ -185,9 +185,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-var supportedCultures = new[] { "en-US" };
+var supportedCultures = new[] { "en-US", "pl-PL" };
 var localizationOptions = new RequestLocalizationOptions()
-    .SetDefaultCulture(supportedCultures[0])
+    .SetDefaultCulture(supportedCultures[1])
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
 
