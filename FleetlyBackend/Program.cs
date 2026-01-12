@@ -132,18 +132,24 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddHostedService<UrgentOrderWorker>();
 
+builder.Services.Configure<FileUploadOptions>(builder.Configuration.GetSection("FileUpload"));
+
 var app = builder.Build();
 
-var imagesPath = Path.Combine(app.Environment.ContentRootPath, "Uploads", "Images");
-if (!Directory.Exists(imagesPath))
+var uploadSettings = builder.Configuration.GetSection("FileUpload").Get<FileUploadOptions>()
+                     ?? new FileUploadOptions();
+
+var uploadsPath = Path.Combine(app.Environment.ContentRootPath, uploadSettings.RootPath);
+
+if (!Directory.Exists(uploadsPath))
 {
-    Directory.CreateDirectory(imagesPath);
+    Directory.CreateDirectory(uploadsPath);
 }
 
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(imagesPath),
-    RequestPath = "/Uploads/Images"
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/" + uploadSettings.RootPath
 });
 
 using (var scope = app.Services.CreateScope())
@@ -178,5 +184,13 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+var supportedCultures = new[] { "en-US", "pl-PL" };
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture(supportedCultures[1])
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
+app.UseRequestLocalization(localizationOptions);
 
 app.Run();

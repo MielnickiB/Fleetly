@@ -5,43 +5,73 @@ using SixLabors.ImageSharp.Processing;
 
 namespace FleetlyBackend.Services.FileService
 {
-    public class FileService : IFileService
+    public class FileService(IOptions<FileUploadOptions> options) : IFileService
     {
-        private readonly string _root;
-        private readonly string _imageFolder;
-        private readonly long _maxSize;
-        private readonly string[] _allowedExtensions;
+        private readonly string _rootPath = options.Value.RootPath;
+        private readonly long _maxSize = options.Value.MaxFileSize;
+        private readonly string[] _allowedExtensions = options.Value.AllowedExtensions;
 
         private const int MaxImageWidth = 2000;
         private const int JpegQuality = 85;
         private const int MagicNumberBufferSize = 12;
 
-        public FileService(IOptions<FileUploadOptions> options)
-        {
-            var opt = options.Value;
-
-            _root = opt.RootPath;
-            _imageFolder = Path.Combine(_root, opt.ImageFolder);
-            _maxSize = opt.MaxFileSize;
-            _allowedExtensions = opt.AllowedExtensions;
-
-            if (!Directory.Exists(_imageFolder))
-                Directory.CreateDirectory(_imageFolder);
-        }
-
-        public async Task<string> SaveImageAsync(IFormFile file)
+        public async Task<string> SaveFileAsync(IFormFile file, string pathPrefix)
         {
             ValidateSize(file);
             ValidateExtension(file);
             await ValidateMagicNumbers(file);
 
-            var fileName = $"{Guid.NewGuid()}.jpg";
-            var filePath = Path.Combine(_imageFolder, fileName);
+            var ext = Path.GetExtension(file.FileName).ToLower();
 
+            var finalExtension = (ext == ".pdf") ? ".pdf" : ".jpg";
+
+            var uniqueFileName = $"{Guid.NewGuid()}{finalExtension}";
+            var folderPath = Path.Combine(_rootPath, pathPrefix);
+
+            var fullFilePath = Path.Combine(folderPath, uniqueFileName);
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            if (ext == ".pdf")
+            {
+                await using var stream = new FileStream(fullFilePath, FileMode.Create);
+                await file.CopyToAsync(stream);
+            }
+            else
+            {
+                await SaveImageWithCompression(file, fullFilePath);
+            }
+
+            return Path.Combine(pathPrefix, uniqueFileName).Replace("\\", "/");
+        }
+
+        public Task DeleteFileAsync(string filePath)
+        {
+            var normalizedPath = filePath
+                .Replace("/", Path.DirectorySeparatorChar.ToString())
+                .Replace("\\", Path.DirectorySeparatorChar.ToString());
+
+            var fullPath = Path.Combine(_rootPath, normalizedPath);
+
+            var safePath = Path.GetFullPath(fullPath);
+            if (!safePath.StartsWith(Path.GetFullPath(_rootPath)))
+                throw new InvalidOperationException("Niepoprawna ścieżka pliku.");
+
+            if (File.Exists(safePath))
+                File.Delete(safePath);
+
+            return Task.CompletedTask;
+        }
+
+        private static async Task SaveImageWithCompression(IFormFile file, string filePath)
+        {
             await using var stream = file.OpenReadStream();
+
             using var img = await Image.LoadAsync(stream);
 
-            // EXIF cleanup + resize
             img.Metadata.ExifProfile = null;
 
             if (img.Width > MaxImageWidth)
@@ -53,21 +83,6 @@ namespace FleetlyBackend.Services.FileService
             {
                 Quality = JpegQuality
             });
-
-            return fileName;
-        }
-
-        public Task DeleteImageAsync(string fileName)
-        {
-            var fullPath = Path.Combine(_imageFolder, fileName);
-
-            var safePath = Path.GetFullPath(fullPath);
-            if (!safePath.StartsWith(Path.GetFullPath(_imageFolder)))
-                throw new InvalidOperationException("Niepoprawna ścieżka pliku.");
-            if (File.Exists(safePath))
-                File.Delete(safePath);
-
-            return Task.CompletedTask;
         }
 
         private void ValidateSize(IFormFile file)
@@ -99,7 +114,10 @@ namespace FleetlyBackend.Services.FileService
             // WebP RIFF....WEBP
             if (bytesRead >= 12 && new ReadOnlySpan<byte>(buffer, 0, 4).SequenceEqual("RIFF"u8) && new ReadOnlySpan<byte>(buffer, 8, 4).SequenceEqual("WEBP"u8)) return;
 
-            throw new InvalidOperationException("Plik nie jest prawidłowym obrazem.");
+            // PDF header: %PDF (25 50 44 46)
+            if (bytesRead >= 4 && new ReadOnlySpan<byte>(buffer, 0, 4).SequenceEqual("%PDF"u8)) return;
+
+            throw new InvalidOperationException("Plik nie jest prawidłowym obrazem lub PDF.");
         }
     }
 }

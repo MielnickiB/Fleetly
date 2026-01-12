@@ -1,0 +1,460 @@
+﻿@page "/orders/{OrderId:int}"
+@inherits BasePage
+@attribute [Authorize(Roles = "Worker")]
+
+@inject IOrderService OrderService
+@inject IDialogService DialogService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4 pt-2">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.caption">SZCZEGÓŁY ZLECENIA</MudText>
+        <MudText Typo="Typo.h5" Style="font-weight: 800;">#@OrderId</MudText>
+    </MudStack>
+    @if (_order != null)
+    {
+        <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">
+            @_order.Status.ToPolishName().ToUpper()
+        </MudChip>
+    }
+</MudStack>
+
+@if (IsLoading)
+{
+    <Loading />
+}
+else if (_order == null)
+{
+    <EmptyView OnRetry="LoadDataAsync" Message="Nie znaleziono zlecenia." />
+}
+else
+{
+    <MudStack Spacing="4" Class="pb-8">
+        <MudGrid Spacing="3">
+            @if (_isMyOrder && _order.Status < OrderStatus.WaitingForCostApproval)
+            {
+                <MudItem xs="6">
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning" FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.LocalGasStation"
+                               OnClick="@(() => AddCost("Paliwo"))"
+                               Disabled="@_isNotToday">
+                        <MudText Typo="Typo.button">Paliwo</MudText>
+                    </MudButton>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.ConfirmationNumber"
+                               OnClick="@(() => AddCost("Bilet"))">
+                        <MudText Typo="Typo.button">Bilet</MudText>
+                    </MudButton>
+                </MudItem>
+            }
+            <MudItem xs="12">
+                @if (!_isMyOrder && _order?.Worker?.Id == null)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+                               OnClick="AcceptOrder">
+                        <MudText Typo="Typo.button">Przyjmuję</MudText>
+                    </MudButton>
+                }
+                else if (_isMyOrder)
+                {
+                    @switch (_order.Status)
+                    {
+                        case OrderStatus.Assigned:
+                            <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.PlayArrow"
+                                       OnClick="StartOrderProtocol"
+                                       Disabled="@_isNotToday">
+                                <MudText Typo="Typo.button">Rozpocznij zlecenie</MudText>
+                            </MudButton>
+                            @if (_isNotToday)
+                            {
+                                <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary" Class="pt-2">
+                                    Reszta akcji będzie dostępna w dniu rozpoczęcia zlecenia.
+                                </MudText>
+                            }
+                            break;
+
+                        case OrderStatus.OrderStarted:
+                            <MudButton Variant="Variant.Filled" Color="Color.Error" FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.Stop"
+                                       OnClick="FinishOrderProtocol"
+                                       Disabled="@_isNotToday">
+                                <MudText Typo="Typo.button">Zakończ zlecenie</MudText>
+                            </MudButton>
+                            break;
+
+                        case OrderStatus.OrderFinishedByWorker:
+                            <MudButton Variant="Variant.Filled" Color="Color.Info" FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.CheckCircle"
+                                       OnClick="ConfirmCosts"
+                                       Disabled="@_isNotToday">
+                                <MudText Typo="Typo.button">Zatwierdź koszty</MudText>
+                            </MudButton>
+                            <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary" Class="pt-2">
+                                Upewnij się, że dodałeś wszystkie bilety i paliwo.
+                            </MudText>
+                            break;
+
+                        default:
+                            <MudAlert Severity="Severity.Success" Variant="Variant.Outlined">
+                                Zlecenie rozliczone i zamknięte.
+                            </MudAlert>
+                            break;
+                    }
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Warning">To zlecenie jest realizowane przez innego kierowcę.</MudAlert>
+                }
+            </MudItem>
+        </MudGrid>
+
+        <MudPaper Class="pa-4 rounded-lg" Elevation="2">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Trasa przejazdu</MudText>
+
+                <MudButton StartIcon="@Icons.Material.Filled.Map"
+                           Color="Color.Info"
+                           Variant="Variant.Text"
+                           Size="Size.Small"
+                           OnClick="OpenRoutePreviewAsync">
+                    <MudText Typo="Typo.button">Pokaż na mapie</MudText>
+                </MudButton>
+            </MudStack>
+            <MudTimeline TimelinePosition="TimelinePosition.Start">
+                <MudTimelineItem Color="Color.Success" Variant="Variant.Filled">
+                    <ItemOpposite>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@_order.StartTime.ToString("HH:mm")</MudText>
+                    </ItemOpposite>
+                    <ItemContent>
+                        <MudText Typo="Typo.subtitle2" Style="font-weight:bold">@_order.StartLocation.City</MudText>
+                        <MudText Typo="Typo.caption">@_order.StartLocation.Street @_order.StartLocation.BuildingNumber</MudText>
+                    </ItemContent>
+                </MudTimelineItem>
+
+                <MudTimelineItem Color="Color.Error" Variant="Variant.Outlined">
+                    <ItemOpposite>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@_order.Deadline.ToString("dd.MM")</MudText>
+                    </ItemOpposite>
+                    <ItemContent>
+                        <MudText Typo="Typo.subtitle2" Style="font-weight:bold">@_order.EndLocation.City</MudText>
+                        <MudText Typo="Typo.caption">@_order.EndLocation.Street @_order.EndLocation.BuildingNumber</MudText>
+                    </ItemContent>
+                </MudTimelineItem>
+            </MudTimeline>
+        </MudPaper>
+
+        <MudExpansionPanels MultiExpansion="true">
+            <MudExpansionPanel Text="Dane Pojazdu" Expanded="true">
+                <TitleContent>
+                    @TitleRow(Icons.Material.Filled.DirectionsCar, Color.Primary, $"{@_order.Vehicle.BrandModel.CarBrandName} {@_order.Vehicle.BrandModel.ModelName}")
+                </TitleContent>
+                <ChildContent>
+                    <MudStack Spacing="2">
+                        @InfoRow("Rejestracja", _order.Vehicle.RegistrationNumber)
+                        @InfoRow("VIN", _order.Vehicle.VIN ?? "-")
+                        @InfoRow("Rok produkcji", _order.Vehicle.Year?.ToString() ?? "-")
+                        @InfoRow("Przebieg", $"{_order.Vehicle.Mileage} km")
+                    </MudStack>
+                </ChildContent>
+            </MudExpansionPanel>
+
+            <MudExpansionPanel Text="Kontakt" Expanded="true">
+                <TitleContent>
+                    @TitleRow(Icons.Material.Filled.Person, Color.Info, "Klient / Odbiór")
+                </TitleContent>
+                <ChildContent>
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.caption" Color="Color.Primary">ZLECENIODAWCA</MudText>
+                        @InfoRow("Imię", $"{_order.Client.Details.Name} {_order.Client.Details.Surname}")
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Color="Color.Secondary" Typo="Typo.body2">Telefon</MudText>
+                            <MudLink Href="@($"tel:{_order.Client.Details.PhoneNumber}")" Typo="Typo.body2">@_order.Client.Details.PhoneNumber</MudLink>
+                        </MudStack>
+                        <MudDivider />
+                        <MudText Typo="Typo.caption" Color="Color.Primary">ODBIORCA (NA MIEJSCU)</MudText>
+                        @InfoRow("Osoba", _order.EndContactName)
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                            <MudText Color="Color.Secondary" Typo="Typo.body2">Telefon</MudText>
+                            <MudLink Href="@($"tel:{_order.EndContactPhone}")" Typo="Typo.body2">@_order.EndContactPhone</MudLink>
+                        </MudStack>
+                    </MudStack>
+                </ChildContent>
+            </MudExpansionPanel>
+
+            <MudExpansionPanel Text="Rozliczenie i Koszty" Expanded="true">
+                <TitleContent>
+                    @TitleRow(Icons.Material.Filled.AttachMoney, Color.Success, "Finanse")
+                </TitleContent>
+                <ChildContent>
+                    <MudStack Spacing="2">
+                        @InfoRow("Wynagrodzenie", $"{_order.Salary} zł", true)
+                        @if (_isMyOrder)
+                        {
+                            @InfoRow("Paliwo", $"{_order.FuelCosts} zł")
+                            @InfoRow("Inne koszty", $"{_order.AdditionalCosts} zł")
+
+                            @if (_order.Expenses.Any())
+                            {
+                                <MudDivider Class="my-2" />
+                                <MudText Typo="Typo.caption">ZAŁĄCZONE KOSZTY</MudText>
+                                @foreach (var cost in _order.Expenses)
+                                {
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.body2">@cost.Cost zł</MudText>
+                                        <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
+
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Size="Size.Small"
+                                                           Color="Color.Error"
+                                                           OnClick="@(() => DeleteCost(cost.Id))" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                           Size="Size.Small"
+                                                           Color="Color.Warning"
+                                                           OnClick="@(() => Nav.NavigateTo($"/orders/{OrderId}/costs/{cost.Id}/edit"))" />
+                                            @if (isPdf(cost.CostPhotoUrl))
+                                            {
+                                                <MudIconButton Icon="@Icons.Material.Filled.PictureAsPdf"
+                                                               Size="Size.Small"
+                                                               Color="Color.Primary"
+                                                               OnClick="@(() => OpenPdfAsync(cost.CostPhotoUrl))" />
+                                            }
+                                            else
+                                            {
+                                            <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                                           Size="Size.Small"
+                                                           Color="Color.Primary"
+                                                           OnClick="@(() => OpenImagePreviewAsync(cost.CostPhotoUrl))" />
+                                            }
+                                        </MudStack>
+                                    </MudStack>
+                                }
+                            }
+                        }
+                    </MudStack>
+                </ChildContent>
+            </MudExpansionPanel>
+
+            <MudExpansionPanel Text="Uwagi do zlecenia" Expanded="true">
+                <TitleContent>
+                    @TitleRow(Icons.Material.Filled.Notes, Color.Info, "Uwagi do zlecenia")
+                </TitleContent>
+                <ChildContent>
+                    <MudText Typo="Typo.body2">
+                        @(string.IsNullOrWhiteSpace(_order.Details) ? "Brak dodatkowych uwag." : _order.Details)
+                    </MudText>
+                </ChildContent>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+
+    </MudStack>
+}
+
+@code {
+    [Parameter] public int OrderId { get; set; }
+
+    private OrderResponseDto? _order;
+    private int _currentUserId;
+    private bool _isMyOrder => _order?.Worker?.Id == _currentUserId;
+    private bool _isNotToday => _order?.StartTime.Date != DateTime.UtcNow.Date;
+
+    private bool isPdf(string fileName)
+    {
+        return !string.IsNullOrWhiteSpace(fileName) && fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private RenderFragment InfoRow(string label, string value, bool bold = false) => __builder =>
+    {
+        <MudStack Row="true" Justify="Justify.SpaceBetween">
+            <MudText Color="Color.Secondary" Typo="Typo.body2">@label</MudText>
+            <MudText Typo="Typo.body2" Style="@(bold ? "font-weight:700" : "")">@value</MudText>
+        </MudStack>
+    };
+
+    private RenderFragment TitleRow(string icon, Color color, string title) => __builder =>
+    {
+        <MudStack Row="true" Justify="Justify.FlexStart" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon=@icon Color=@color />
+            <MudText Style="font-weight:bold">@title</MudText>
+        </MudStack>
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserData();
+        await ExecuteSafeAsync(LoadDataAsync);
+    }
+
+    private async Task LoadDataAsync()
+    {
+        var response = await OrderService.GetOrderByIdAsync(OrderId);
+
+        if (response.Success)
+        {
+            _order = response.Data;
+        }
+        else
+        {
+            throw new Exception(response.Error ?? "Nie znaleziono zlecenia.");
+        }
+    }
+
+    private async Task LoadUserData()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.GetUserId();
+    }
+
+    private async Task AcceptOrder()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await OrderService.AcceptOrderAsync(OrderId);
+            if (!result.Success) throw new Exception(result.Error);
+
+            Snackbar.Add("Zlecenie przyjęte!", Severity.Success);
+            await LoadDataAsync();
+        });
+    }
+
+    private void AddCost(string actionName)
+    {
+        if (actionName == "Paliwo")
+        {
+            Nav.NavigateTo($"/orders/{OrderId}/costs/add?isFuel=true");
+        }
+        else if (actionName == "Bilet")
+        {
+            Nav.NavigateTo($"/orders/{OrderId}/costs/add?isFuel=false");
+        }
+    }
+
+    private async Task DeleteCost(int expenseId)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Usuń koszt",
+            "Czy na pewno chcesz usunąć ten koszt? Tej operacji nie można cofnąć.",
+            "Usuń", "Anuluj");
+
+        if (result == true)
+        {
+            await ExecuteSafeAsync(async () =>
+            {
+                var response = await OrderService.DeleteCostAsync(OrderId, expenseId);
+
+                if (response.Success)
+                {
+                    _order = response.Data; // Update local state with fresh data from server
+                    Snackbar.Add("Koszt został usunięty.", Severity.Success);
+                }
+                else
+                {
+                    throw new Exception(response.Error ?? "Nie udało się usunąć kosztu.");
+                }
+            });
+        }
+    }
+
+    private void StartOrderProtocol()
+    {
+        Nav.NavigateTo($"/orders/{OrderId}/protocol/pickup");
+    }
+
+    private void FinishOrderProtocol()
+    {
+        Nav.NavigateTo($"/orders/{OrderId}/protocol/return");
+    }
+
+    private async Task ConfirmCosts()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Zatwierdzenie kosztów",
+            "Czy na pewno dodałeś wszystkie bilety i koszty paliwowe? \n\nPo zatwierdzeniu nie będziesz mógł już edytować tego zlecenia.",
+            "Tak, zatwierdź", "Anuluj");
+
+        if (result == true)
+        {
+            await ExecuteSafeAsync(async () =>
+            {
+                // var apiResult = await OrderService.ConfirmCostsAsync(OrderId);
+
+                // if (!apiResult.Success) throw new Exception(apiResult.Error);
+
+                Snackbar.Add("Koszty zatwierdzone. Oczekiwanie na akceptację admina.", Severity.Success);
+                await LoadDataAsync();
+            });
+        }
+    }
+
+    private string BuildImageUrl(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return string.Empty;
+
+        var baseUrl = AppConstants.ApiUrl;
+        var safePath = fileName.Replace("\\", "/");
+
+        return $"{baseUrl}/Uploads/{safePath}";
+    }
+
+    private async Task OpenImagePreviewAsync(string? fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            Snackbar.Add("Brak zdjęcia.", Severity.Warning);
+            return;
+        }
+
+        string fullUrl = BuildImageUrl(fileName);
+
+        var parameters = new DialogParameters
+        {
+            ["ImageUrl"] = fullUrl
+        };
+
+        await DialogService.ShowAsync<ImagePreviewDialog>("Podgląd", parameters, DialogHelper.GetImagePreviewOptions());
+    }
+
+    private async Task OpenRoutePreviewAsync()
+    {
+        if (_order == null) return;
+
+        try
+        {
+            var startAddr = $"{_order.StartLocation.City}, {_order.StartLocation.Street} {_order.StartLocation.BuildingNumber}, {_order.StartLocation.PostalCode}";
+            var endAddr = $"{_order.EndLocation.City}, {_order.EndLocation.Street} {_order.EndLocation.BuildingNumber}, {_order.EndLocation.PostalCode}";
+
+            var origin = Uri.EscapeDataString(startAddr);
+            var destination = Uri.EscapeDataString(endAddr);
+
+            var url = $"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=driving&avoid=tolls";
+
+            await Launcher.Default.OpenAsync(url);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Nie udało się otworzyć mapy: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OpenPdfAsync(string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName))
+        {
+            Snackbar.Add("Brak pliku PDF.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var fullUrl = BuildImageUrl(fileName);
+            await Browser.Default.OpenAsync(fullUrl, BrowserLaunchMode.SystemPreferred);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Nie udało się otworzyć pliku PDF: {ex.Message}", Severity.Error);
+        }
+    }
+}

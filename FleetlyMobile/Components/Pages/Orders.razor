@@ -55,7 +55,7 @@
     {
         @foreach (var order in Items)
         {
-            <OrderCard Order="order" IsProcessing="IsProcessing" OnAction="AcceptOrder" CardType="OrderCardType.Marketplace" />
+            <OrderCard Order="order" IsProcessing="IsLoading" OnAction="AcceptOrder" CardType="OrderCardType.Marketplace" />
         }
     }
 </MudStack>

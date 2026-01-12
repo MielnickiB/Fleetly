@@ -359,7 +359,16 @@
 
         var baseURL = Config["BaseURL"] ?? "http://localhost:5225/";
 
-        return $"{baseURL}Uploads/Images/{fileName}";
+        var safePath = fileName.Replace("\\", "/");
+
+        if (safePath.Contains("/"))
+        {
+            return $"{baseURL}Uploads/{safePath}";
+        }
+        else
+        {
+            return $"{baseURL}Uploads/Images/{safePath}";
+        }
     }
 
     private async Task OpenImagePreviewAsync(string fileName)

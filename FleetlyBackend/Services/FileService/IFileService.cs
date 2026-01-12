@@ -2,7 +2,7 @@
 {
     public interface IFileService
     {
-        Task<string> SaveImageAsync(IFormFile file);
-        Task DeleteImageAsync(string filePath);
+        Task<string> SaveFileAsync(IFormFile file, string pathPrefix);
+        Task DeleteFileAsync(string filePath);
     }
 }

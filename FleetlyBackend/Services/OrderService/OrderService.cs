@@ -402,50 +402,55 @@ namespace FleetlyBackend.Services.OrderService
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
-            if (order.Status != OrderStatus.OrderFinishedByWorker)
-                throw new InvalidOperationException("Koszty można dodawać tylko po zakończeniu zlecenia.");
+            if (order.Status < OrderStatus.Assigned || order.Status > OrderStatus.WaitingForCostApproval)
+            {
+                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończonych przez pracownika.");
+            }
 
-            var costLimit = await _costLimitService.GetByRangeOfKm(order.RangeOfKm)
-                ?? throw new InvalidOperationException("Brak limitu kosztów.");
-
-            if (!dto.IsFuelExpense && order.AdditionalCosts + dto.Cost > costLimit.MaxCosts)
-                throw new InvalidOperationException($"Przekroczono limit kosztów dodatkowych ({costLimit.MaxCosts} PLN).");
+            if (!dto.IsFuelExpense && order.AdditionalCosts + dto.Cost > order.CostLimit.MaxCosts)
+                throw new InvalidOperationException($"Przekroczono limit kosztów dodatkowych ({order.CostLimit.MaxCosts} PLN).");
 
             using var tx = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var expense = await _expenseService.Create(orderId, dto);
 
-            var expense = await _expenseService.Create(orderId, dto);
+                if (expense.IsFuelExpense)
+                    order.FuelCosts += expense.Cost;
+                else
+                    order.AdditionalCosts += expense.Cost;
 
-            if (expense.IsFuelExpense)
-                order.FuelCosts += expense.Cost;
-            else
-                order.AdditionalCosts += expense.Cost;
+                order.UpdatedAt = DateTime.UtcNow;
 
-            order.UpdatedAt = DateTime.UtcNow;
 
-            _context.Orders.Update(order);
+                await _context.SaveChangesAsync();
 
-            await _context.SaveChangesAsync();
-            await tx.CommitAsync();
+                await tx.CommitAsync();
 
-            return await GetFresh(orderId);
+                return await GetFresh(orderId);
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<OrderResponseDto> UpdateCost(int orderId, int expenseId, ExpenseUpdateDto dto)
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
-            if (order.Status != OrderStatus.OrderFinishedByWorker)
+            if (order.Status < OrderStatus.Assigned || order.Status > OrderStatus.WaitingForCostApproval)
+            {
                 throw new InvalidOperationException("Nie można modyfikować kosztów w tym stanie.");
+            }
 
-            var expenseEntity = await _context.Expenses
+            var oldExpense = await _context.Expenses.AsNoTracking()
                 .FirstOrDefaultAsync(e => e.Id == expenseId && e.OrderId == orderId)
                 ?? throw new ArgumentException("Koszt nie istnieje.");
 
-            var oldCost = expenseEntity.Cost;
-            var oldIsFuel = expenseEntity.IsFuelExpense;
-
-            var costLimit = await _costLimitService.GetByRangeOfKm(order.RangeOfKm)
-                ?? throw new InvalidOperationException("Brak limitu kosztów.");
+            var oldCost = oldExpense.Cost;
+            var oldIsFuel = oldExpense.IsFuelExpense;
 
             var newCostValue = dto.Cost ?? oldCost;
             var newIsFuel = dto.IsFuelExpense ?? oldIsFuel;
@@ -454,60 +459,77 @@ namespace FleetlyBackend.Services.OrderService
             {
                 var currentAdditionalTotal = order.AdditionalCosts - (oldIsFuel ? 0 : oldCost);
 
-                if (currentAdditionalTotal + newCostValue > costLimit.MaxCosts)
+                if (currentAdditionalTotal + newCostValue > order.CostLimit.MaxCosts)
                     throw new InvalidOperationException($"Aktualizacja spowoduje przekroczenie limitu kosztów dodatkowych.");
             }
 
             using var tx = await _context.Database.BeginTransactionAsync();
 
-            var updatedExpense = await _expenseService.Update(expenseId, dto);
+            try
+            {
+                var updatedExpense = await _expenseService.Update(expenseId, dto);
 
-            if (oldIsFuel) order.FuelCosts -= oldCost;
-            else order.AdditionalCosts -= oldCost;
+                if (oldIsFuel) order.FuelCosts -= oldCost;
+                else order.AdditionalCosts -= oldCost;
 
-            if (updatedExpense.IsFuelExpense) order.FuelCosts += updatedExpense.Cost;
-            else order.AdditionalCosts += updatedExpense.Cost;
+                if (updatedExpense.IsFuelExpense) order.FuelCosts += updatedExpense.Cost;
+                else order.AdditionalCosts += updatedExpense.Cost;
 
-            order.UpdatedAt = DateTime.UtcNow;
+                order.UpdatedAt = DateTime.UtcNow;
 
-            _context.Orders.Update(order);
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
-            await tx.CommitAsync();
+                await tx.CommitAsync();
 
-            return await GetFresh(orderId);
+                return await GetFresh(orderId);
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<OrderResponseDto> DeleteCost(int orderId, int expenseId)
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
-            if (order.Status != OrderStatus.OrderFinishedByWorker)
-                throw new InvalidOperationException("Nie można usuwać kosztów w tym stanie.");
+            if (order.Status < OrderStatus.Assigned || order.Status > OrderStatus.WaitingForCostApproval)
+            {
+                throw new InvalidOperationException("Nie można usuwać kosztów w tym stanie zlecenia.");
+            }
 
-            var expenseEntity = await _context.Expenses
+            var expenseToDelete = await _context.Expenses
                 .FirstOrDefaultAsync(e => e.Id == expenseId && e.OrderId == orderId)
                 ?? throw new ArgumentException("Koszt nie istnieje.");
 
             using var tx = await _context.Database.BeginTransactionAsync();
 
-            if (expenseEntity.IsFuelExpense)
-                order.FuelCosts -= expenseEntity.Cost;
-            else
-                order.AdditionalCosts -= expenseEntity.Cost;
+            try
+            {
+                if (expenseToDelete.IsFuelExpense)
+                    order.FuelCosts -= expenseToDelete.Cost;
+                else
+                    order.AdditionalCosts -= expenseToDelete.Cost;
 
-            var deleted = await _expenseService.Delete(expenseId);
-            if (!deleted)
-                throw new InvalidOperationException("Nie udało się usunąć kosztu.");
+                var deleted = await _expenseService.Delete(expenseId);
+                if (!deleted)
+                    throw new InvalidOperationException("Nie udało się usunąć kosztu.");
 
-            order.UpdatedAt = DateTime.UtcNow;
+                order.UpdatedAt = DateTime.UtcNow;
 
-            _context.Orders.Update(order);
-            await _context.SaveChangesAsync();
+                _context.Orders.Update(order);
+                await _context.SaveChangesAsync();
 
-            await tx.CommitAsync();
+                await tx.CommitAsync();
 
-            return await GetFresh(orderId);
+                return await GetFresh(orderId);
+            }
+            catch
+            {
+                await tx.RollbackAsync(); 
+                throw;
+            }
         }
 
         public async Task<OrderResponseDto> SubmitAllOrderCosts(int orderId)
@@ -624,7 +646,9 @@ namespace FleetlyBackend.Services.OrderService
 
             var workerId = user.GetUserId();
 
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId)
+            var order = await _context.Orders
+                .IncludeAllLiteOrderRelations()
+                .FirstOrDefaultAsync(o => o.Id == orderId)
                 ?? throw new ArgumentException("Zlecenie nie istnieje.");
 
             if (order.WorkerId != workerId)

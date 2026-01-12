@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto.ExpenseDtos;
 using FleetlyBackend.Data;
+using FleetlyBackend.Extensions;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using FleetlyBackend.Services.FileService;
@@ -7,46 +8,73 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FleetlyBackend.Services.ExpenseService
 {
-    public class ExpenseService(FleetlyContext context, IFileService fileService) : IExpenseService
+    public class ExpenseService(FleetlyContext context, IFileService fileService, IHttpContextAccessor http) : IExpenseService
     {
         private readonly FleetlyContext _context = context;
         private readonly IFileService _fileService = fileService;
+        private readonly IHttpContextAccessor _http = http;
+
+        public async Task<ExpenseResponseDto?> GetById(int id)
+        {
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
+            var query = _context.Expenses
+                .AsNoTracking()
+                .Include(e => e.Order)
+                .AsQueryable();
+
+            if (user.IsWorker())
+            {
+                query = query.Where(e => e.Order.WorkerId == userId);
+            }
+            else if (user.IsClient())
+            {
+                query = query.Where(e => e.Order.ClientId == userId);
+            }
+            else if (!user.IsAdmin())
+            {
+                throw new UnauthorizedAccessException("Brak uprawnień.");
+            }
+
+            var expense = await query.FirstOrDefaultAsync(e => e.Id == id);
+
+            return expense?.ToResponseDto();
+        }
 
         public async Task<ExpenseResponseDto> Create(int orderId, ExpenseCreateDto dto)
         {
             if (!await _context.Orders.AnyAsync(o => o.Id == orderId))
                 throw new ArgumentException("Podane zlecenie nie istnieje.");
 
-            string? fileName = null;
+            string? savedFilePath = null;
+
+            string folderStructure = Path.Combine("Orders", orderId.ToString(), "Costs");
+
             try
             {
-                fileName = await _fileService.SaveImageAsync(dto.CostPhoto);
+                savedFilePath = await _fileService.SaveFileAsync(dto.CostPhoto, folderStructure);
+
                 var exp = new Expense
                 {
                     OrderId = orderId,
                     Cost = dto.Cost,
                     IsFuelExpense = dto.IsFuelExpense,
-                    CostPhotoUrl = fileName
+                    CostPhotoUrl = savedFilePath
                 };
 
                 _context.Expenses.Add(exp);
 
-                try
-                {
-                    await _context.SaveChangesAsync();
-                }
-                catch
-                {
-                    try { if (fileName is not null) await _fileService.DeleteImageAsync(fileName); }
-                    catch (InvalidOperationException ex) { throw new InvalidOperationException("Błąd podczas usuwania zdjęcia kosztu: " + ex.Message); }
-                    throw;
-                }
-
+                await _context.SaveChangesAsync();
                 return exp.ToResponseDto();
             }
-            catch (InvalidOperationException ex)
+            catch
             {
-                throw new InvalidOperationException("Błąd podczas zapisywania zdjęcia kosztu: " + ex.Message);
+                if (savedFilePath is not null)
+                {
+                    await _fileService.DeleteFileAsync(savedFilePath);
+                }
+                throw;
             }
         }
 
@@ -55,8 +83,9 @@ namespace FleetlyBackend.Services.ExpenseService
             var exp = await _context.Expenses.FindAsync(id)
                 ?? throw new ArgumentException("Nie znaleziono kosztu.");
 
-            string? newFile = null;
-            var oldFile = exp.CostPhotoUrl;
+            string? newFilePath = null;
+            var oldFilePath = exp.CostPhotoUrl;
+            bool fileChanged = false;
 
             if (dto.Cost.HasValue)
                 exp.Cost = dto.Cost.Value;
@@ -66,10 +95,12 @@ namespace FleetlyBackend.Services.ExpenseService
 
             if (dto.CostPhoto is not null)
             {
+                string folderStructure = Path.Combine("Orders", exp.OrderId.ToString(), "Costs");
                 try
                 {
-                    newFile = await _fileService.SaveImageAsync(dto.CostPhoto);
-                    exp.CostPhotoUrl = newFile;
+                    newFilePath = await _fileService.SaveFileAsync(dto.CostPhoto, folderStructure);
+                    exp.CostPhotoUrl = newFilePath;
+                    fileChanged = true;
                 }
                 catch (InvalidOperationException ex)
                 {
@@ -85,23 +116,22 @@ namespace FleetlyBackend.Services.ExpenseService
             }
             catch
             {
-                if (newFile is not null)
+                if (newFilePath is not null)
                 {
-                    try { await _fileService.DeleteImageAsync(newFile); }
-                    catch (InvalidOperationException ex)
-                    {
-                        exp.CostPhotoUrl = oldFile;
-                        throw new InvalidOperationException("Błąd podczas aktualizacji zdjęcia kosztu: " + ex.Message);
-                    }
+                    await _fileService.DeleteFileAsync(newFilePath);
                 }
                 throw;
             }
-            if (newFile is not null && !string.IsNullOrEmpty(oldFile) && oldFile != newFile)
+
+            if (fileChanged && !string.IsNullOrEmpty(oldFilePath) && oldFilePath != newFilePath)
             {
-                try { await _fileService.DeleteImageAsync(oldFile); }
-                catch (InvalidOperationException ex)
+                try
                 {
-                    throw new InvalidOperationException("Błąd podczas usuwania starego zdjęcia kosztu: " + ex.Message);
+                    await _fileService.DeleteFileAsync(oldFilePath);
+                }
+                catch
+                {
+                    // Orphaned file, Ignoruje ponieważ koszt został zaktualizowany w bazie danych i to jest najważniejsze.
                 }
             }
 
@@ -121,13 +151,12 @@ namespace FleetlyBackend.Services.ExpenseService
 
             if (!string.IsNullOrEmpty(fileToDelete))
             {
-                try { await _fileService.DeleteImageAsync(fileToDelete); }
-                catch (InvalidOperationException ex)
+                try { await _fileService.DeleteFileAsync(fileToDelete); }
+                catch
                 {
-                    throw new InvalidOperationException("Błąd podczas usuwania zdjęcia kosztu." + ex.Message);
+                    // Orphaned file, Ignoruje ponieważ koszt został usunięty z bazy danych i to jest najważniejsze.
                 }
             }
-
             return true;
         }
     }
