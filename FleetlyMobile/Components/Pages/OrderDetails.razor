@@ -429,7 +429,7 @@ else
             var origin = Uri.EscapeDataString(startAddr);
             var destination = Uri.EscapeDataString(endAddr);
 
-            var url = $"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=driving&avoid=tools";
+            var url = $"https://www.google.com/maps/dir/?api=1&origin={origin}&destination={destination}&travelmode=driving&avoid=tolls";
 
             await Launcher.Default.OpenAsync(url);
         }
