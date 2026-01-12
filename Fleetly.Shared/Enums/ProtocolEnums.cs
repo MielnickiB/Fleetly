@@ -3,7 +3,7 @@
     public enum ProtocolType
     {
         Pickup = 0, // Wydanie (Odbiór od klienta)
-        Return = 1  // Zwrot (Odbiór przez klienta)
+        Delivery = 1  // Zwrot (Przyjazd do odbiorcy)
     }
 
     public enum VehicleSide

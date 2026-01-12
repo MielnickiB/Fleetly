@@ -1,0 +1,158 @@
+﻿using Fleetly.Shared.Dto.ProtocolDtos;
+using Fleetly.Shared.Enums;
+using FleetlyBackend.Data;
+using FleetlyBackend.Extensions;
+using FleetlyBackend.Models;
+using FleetlyBackend.Services.FileService;
+using Microsoft.EntityFrameworkCore;
+
+namespace FleetlyBackend.Services.ProtocolService
+{
+    public class ProtcolService(FleetlyContext context, IFileService fileService, IHttpContextAccessor http) : IProtocolService
+    {
+
+        private readonly FleetlyContext _context = context;
+        private readonly IFileService _fileService = fileService;
+        private readonly IHttpContextAccessor _http = http;
+
+        public async Task<int> StartProtocolAsync(ProtocolInitDto dto)
+        {
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
+            var order = await _context.Orders
+                .Include(o => o.Vehicle)
+                .FirstOrDefaultAsync(o => o.Id == dto.OrderId)
+                ?? throw new KeyNotFoundException("Nie znaleziono zlecenia.");
+
+            if (order.WorkerId != userId && !user.IsAdmin())
+                throw new UnauthorizedAccessException("Nie jesteś przypisany do tego zlecenia.");
+
+            if (order.Status != OrderStatus.Assigned && order.Status != OrderStatus.OrderStarted && order.StartTime != DateTime.UtcNow.Date)
+                throw new InvalidOperationException("Nie można rozpocząć protokołu dla tego zlecenia w tym momencie.");
+
+            var type = order.Status == OrderStatus.Assigned ? ProtocolType.Pickup : ProtocolType.Delivery;
+
+            var protocol = new Protocol
+            {
+                OrderId = order.Id,
+                VehicleId = order.VehicleId,
+                WorkerId = userId,
+                ClientId = order.ClientId,
+                Type = type,
+                LocationLatitude = dto.Latitude,
+                LocationLongitude = dto.Longitude
+            };
+
+            _context.Protocols.Add(protocol);
+            await _context.SaveChangesAsync();
+
+            return protocol.Id;
+        }
+
+        public async Task AddProtocolPhotoAsync(ProtocolPhotoDto dto)
+        {
+            var protocol = await GetProtocolWithAccessCheck(dto.ProtocolId);
+
+            string folderStructure = Path.Combine("Orders", protocol.OrderId.ToString(), "Protocols", protocol.Id.ToString(), "Photos");
+
+            string fileName = await _fileService.SaveFileAsync(dto.Photo, folderStructure);
+
+            var protocolPhoto = new ProtocolPhoto
+            {
+                ProtocolId = protocol.Id,
+                Side = dto.Side,
+                PhotoUrl = fileName
+            };
+
+            _context.ProtocolPhotos.Add(protocolPhoto);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task AddDamageAsync(DamageCreateDto dto)
+        {
+            var protocol = await GetProtocolWithAccessCheck(dto.ProtocolId);
+
+            string folderStructure = Path.Combine("Vehicles", protocol.Vehicle.RegistrationNumber, "Damages");
+
+            string fileName = await _fileService.SaveFileAsync(dto.Photo, folderStructure);
+
+            var damage = new Damage
+            {
+                ProtocolId = protocol.Id,
+                VehicleId = protocol.VehicleId,
+                Side = dto.DamageSide,
+                Part = dto.DamagePart,
+                Type = dto.DamageType,
+                Description = dto.Description,
+                PhotoUrl = fileName
+            };
+
+            _context.Damages.Add(damage);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task FinishProtocolAsync(ProtocolFinishDto dto)
+        {
+            var protocol = await _context.Protocols
+                .Include(p => p.Order)
+                .Include(p => p.Vehicle)
+                .FirstOrDefaultAsync(p => p.Id == dto.ProtocolId)
+                ?? throw new ArgumentException("Protokół nie istnieje.");
+
+            var user = _http.CurrentUser();
+            if (protocol.WorkerId != user.GetUserId() && !user.IsAdmin())
+                throw new UnauthorizedAccessException("Brak dostępu do protokołu.");
+
+            string folderStructure = Path.Combine("Orders", protocol.OrderId.ToString(), "Protocols", protocol.Id.ToString(), "Signatures");
+            string signaturePath = await _fileService.SaveFileAsync(dto.SignaturePhoto, folderStructure);
+
+            protocol.Mileage = dto.Mileage;
+            protocol.FuelLevel = dto.FuelLevel;
+            protocol.Notes = dto.Notes;
+            protocol.HasRegistrationDocument = dto.HasRegistrationDocument;
+            protocol.HasServiceBook = dto.HasServiceBook;
+            protocol.HasInsurancePolicy = dto.HasInsurancePolicy;
+            protocol.NumberOfKeys = dto.NumberOfKeys;
+            protocol.SignatureUrl = signaturePath;
+            protocol.UpdatedAt = DateTime.UtcNow;
+
+            if (protocol.Type == ProtocolType.Pickup)
+            {
+                protocol.Order.Status = OrderStatus.OrderStarted;
+                protocol.Order.ActualStartTime = DateTime.UtcNow;
+
+                if (dto.Mileage > protocol.Vehicle.Mileage)
+                    protocol.Vehicle.Mileage = (int)dto.Mileage;
+            }
+            else
+            {
+                protocol.Order.Status = OrderStatus.OrderFinishedByWorker;
+                protocol.Order.ActualEndTime = DateTime.UtcNow;
+
+                if (dto.Mileage > protocol.Vehicle.Mileage)
+                    protocol.Vehicle.Mileage = (int)dto.Mileage;
+
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task<Protocol> GetProtocolWithAccessCheck(int protocolId)
+        {
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
+            var protocol = await _context.Protocols
+                .Include(p => p.Order)
+                .Include(p => p.Vehicle)
+                .FirstOrDefaultAsync(p => p.Id == protocolId)
+                ?? throw new ArgumentException("Protokół nie istnieje.");
+
+            if (protocol.WorkerId != userId && !user.IsAdmin())
+                throw new UnauthorizedAccessException("Nie masz uprawnień do edycji tego protokołu.");
+
+            return protocol;
+        }
+    }
+}

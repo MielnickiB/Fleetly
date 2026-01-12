@@ -347,38 +347,6 @@ namespace FleetlyBackend.Services.OrderService
             await _notificationService.NotifyWorkerResigned(order);
         }
 
-        public async Task<OrderResponseDto> StartOrder(int orderId)
-        {
-            var order = await GetOrderWithWorkerCheck(orderId);
-
-            if (order.Status != OrderStatus.Assigned)
-                throw new InvalidOperationException("Zlecenie nie jest gotowe do rozpoczęcia.");
-
-            order.Status = OrderStatus.OrderStarted;
-            order.ActualStartTime = DateTime.UtcNow;
-            order.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return await GetFresh(orderId);
-        }
-
-        public async Task<OrderResponseDto> ArrivedToClient(int orderId)
-        {
-            var order = await GetOrderWithWorkerCheck(orderId);
-
-            if (order.Status != OrderStatus.OrderStarted)
-                throw new InvalidOperationException("Musisz wpierw wyjechać od klienta.");
-
-            order.Status = OrderStatus.ArrivedToClient;
-            order.ActualEndTime = DateTime.UtcNow;
-            order.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return await GetFresh(orderId);
-        }
-
         public async Task<OrderResponseDto> FinishOrderByWorker(int orderId)
         {
             var order = await GetOrderWithWorkerCheck(orderId);
