@@ -442,7 +442,7 @@ namespace FleetlyBackend.Services.OrderService
 
             if (order.Status < OrderStatus.Assigned || order.Status > OrderStatus.WaitingForCostApproval)
             {
-                throw new InvalidOperationException("Koszty można dodawać tylko do zleceń przypisanych i nie zakończonych przez pracownika.");
+                throw new InvalidOperationException("Nie można modyfikować kosztów w tym stanie.");
             }
 
             var oldExpense = await _context.Expenses.AsNoTracking()
