@@ -258,7 +258,7 @@ else
     private OrderResponseDto? _order;
     private int _currentUserId;
     private bool _isMyOrder => _order?.Worker?.Id == _currentUserId;
-    private bool _isNotToday => _order?.StartTime.Date.Day != DateTime.UtcNow.Date.Day;
+    private bool _isNotToday => _order?.StartTime.Date != DateTime.UtcNow.Date;
 
     private bool isPdf(string fileName)
     {
