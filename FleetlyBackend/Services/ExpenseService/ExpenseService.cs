@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto.ExpenseDtos;
 using FleetlyBackend.Data;
+using FleetlyBackend.Extensions;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using FleetlyBackend.Services.FileService;
@@ -7,10 +8,39 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FleetlyBackend.Services.ExpenseService
 {
-    public class ExpenseService(FleetlyContext context, IFileService fileService) : IExpenseService
+    public class ExpenseService(FleetlyContext context, IFileService fileService, IHttpContextAccessor http) : IExpenseService
     {
         private readonly FleetlyContext _context = context;
         private readonly IFileService _fileService = fileService;
+        private readonly IHttpContextAccessor _http = http;
+
+        public async Task<ExpenseResponseDto?> GetById(int id)
+        {
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
+            var query = _context.Expenses
+                .AsNoTracking()
+                .Include(e => e.Order)
+                .AsQueryable();
+
+            if (user.IsWorker())
+            {
+                query = query.Where(e => e.Order.WorkerId == userId);
+            }
+            else if (user.IsClient())
+            {
+                query = query.Where(e => e.Order.ClientId == userId);
+            }
+            else if (!user.IsAdmin())
+            {
+                throw new UnauthorizedAccessException("Brak uprawnień.");
+            }
+
+            var expense = await query.FirstOrDefaultAsync(e => e.Id == id);
+
+            return expense?.ToResponseDto();
+        }
 
         public async Task<ExpenseResponseDto> Create(int orderId, ExpenseCreateDto dto)
         {
