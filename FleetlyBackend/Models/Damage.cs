@@ -20,5 +20,9 @@ namespace FleetlyBackend.Models
 
         [StringLength(200)]
         public string PhotoUrl { get; set; } = null!;
+
+        public bool IsFixed { get; set; } = false;
+        public DateTime? FixedAt { get; set; }
+        public int? FixedByProtocolId { get; set; }
     }
 }

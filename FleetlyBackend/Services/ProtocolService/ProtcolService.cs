@@ -1,7 +1,9 @@
-﻿using Fleetly.Shared.Dto.ProtocolDtos;
+﻿using Fleetly.Shared.Dto.DamageDtos;
+using Fleetly.Shared.Dto.ProtocolDtos;
 using Fleetly.Shared.Enums;
 using FleetlyBackend.Data;
 using FleetlyBackend.Extensions;
+using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using FleetlyBackend.Services.FileService;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +17,26 @@ namespace FleetlyBackend.Services.ProtocolService
         private readonly IFileService _fileService = fileService;
         private readonly IHttpContextAccessor _http = http;
 
-        public async Task<int> StartProtocolAsync(ProtocolInitDto dto)
+        public async Task<ProtocolResponseDto> GetProtocolByOrderIdAsync(int orderId)
+        {
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+            var protocol = await _context.Protocols
+                .AsNoTracking()
+                .Include(p => p.Order)
+                .Include(p => p.Vehicle)
+                .Include(p => p.Photos)
+                .Include(p => p.Damages)
+                .FirstOrDefaultAsync(p => p.OrderId == orderId)
+                ?? throw new KeyNotFoundException("Nie znaleziono protokołu dla podanego zlecenia.");
+
+            if ((protocol.WorkerId != userId || protocol.ClientId != userId) && !user.IsAdmin())
+                throw new UnauthorizedAccessException("Nie masz dostępu do tego protokołu.");
+
+            return protocol.ToResponseDto();
+        }
+
+        public async Task<ProtocolResponseDto> StartProtocolAsync(ProtocolInitDto dto)
         {
             var user = _http.CurrentUser();
             var userId = user.GetUserId();
@@ -47,10 +68,10 @@ namespace FleetlyBackend.Services.ProtocolService
             _context.Protocols.Add(protocol);
             await _context.SaveChangesAsync();
 
-            return protocol.Id;
+            return protocol.ToResponseDto();
         }
 
-        public async Task AddProtocolPhotoAsync(ProtocolPhotoDto dto)
+        public async Task<ProtocolResponseDto> AddProtocolPhotoAsync(ProtocolPhotoDto dto)
         {
             var protocol = await GetProtocolWithAccessCheck(dto.ProtocolId);
 
@@ -67,9 +88,11 @@ namespace FleetlyBackend.Services.ProtocolService
 
             _context.ProtocolPhotos.Add(protocolPhoto);
             await _context.SaveChangesAsync();
+
+            return await GetProtocolDtoInternal(dto.ProtocolId);
         }
 
-        public async Task AddDamageAsync(DamageCreateDto dto)
+        public async Task<ProtocolResponseDto> AddDamageAsync(DamageCreateDto dto)
         {
             var protocol = await GetProtocolWithAccessCheck(dto.ProtocolId);
 
@@ -90,15 +113,70 @@ namespace FleetlyBackend.Services.ProtocolService
 
             _context.Damages.Add(damage);
             await _context.SaveChangesAsync();
+
+            return await GetProtocolDtoInternal(dto.ProtocolId);
         }
 
-        public async Task FinishProtocolAsync(ProtocolFinishDto dto)
+        public async Task<ProtocolResponseDto> DeleteDamageAsync(int damageId)
+        {
+            var damage = await _context.Damages
+                .Include(d => d.Protocol)
+                .FirstOrDefaultAsync(d => d.Id == damageId)
+                ?? throw new ArgumentException("Uszkodzenie nie istnieje.");
+
+            if (damage.Protocol == null || damage.ProtocolId == null)
+                throw new InvalidOperationException("Uszkodzenie nie jest powiązane z żadnym protokołem.");
+
+            var protocolId = damage.ProtocolId;
+
+            var protocol = await GetProtocolWithAccessCheck((int)protocolId);
+
+            if (protocol.Id != damage.ProtocolId)
+                throw new InvalidOperationException("To uszkodzenie nie należy do obecnego protokołu.");
+
+            var user = _http.CurrentUser();
+
+            if (damage.Protocol.WorkerId != user.GetUserId() && !user.IsAdmin())
+                throw new UnauthorizedAccessException("Brak dostępu do usunięcia tego uszkodzenia.");
+
+            var fileToDelete = damage.PhotoUrl;
+            _context.Damages.Remove(damage);
+
+            await _context.SaveChangesAsync();
+
+            if (!string.IsNullOrEmpty(fileToDelete))
+                await _fileService.DeleteFileAsync(fileToDelete);
+
+            return await GetProtocolDtoInternal(protocolId.Value);
+        }
+
+        public async Task<ProtocolResponseDto> MarkDamageAsFixedAsync(int damageId, int currentProtocolId)
+        {
+            var currentProtocol = await GetProtocolWithAccessCheck(currentProtocolId);
+
+            var damage = await _context.Damages
+                .FirstOrDefaultAsync(d => d.Id == damageId)
+                ?? throw new KeyNotFoundException("Uszkodzenie nie istnieje.");
+
+            if (damage.VehicleId != currentProtocol.VehicleId)
+                throw new InvalidOperationException("To uszkodzenie nie dotyczy pojazdu z obecnego protokołu.");
+
+            damage.IsFixed = true;
+            damage.FixedAt = DateTime.UtcNow;
+            damage.FixedByProtocolId = currentProtocolId;
+
+            await _context.SaveChangesAsync();
+
+            return await GetProtocolDtoInternal(currentProtocolId);
+        }
+
+        public async Task<ProtocolResponseDto> FinishProtocolAsync(ProtocolFinishDto dto)
         {
             var protocol = await _context.Protocols
                 .Include(p => p.Order)
                 .Include(p => p.Vehicle)
                 .FirstOrDefaultAsync(p => p.Id == dto.ProtocolId)
-                ?? throw new ArgumentException("Protokół nie istnieje.");
+                ?? throw new KeyNotFoundException("Protokół nie istnieje.");
 
             var user = _http.CurrentUser();
             if (protocol.WorkerId != user.GetUserId() && !user.IsAdmin())
@@ -136,6 +214,8 @@ namespace FleetlyBackend.Services.ProtocolService
             }
 
             await _context.SaveChangesAsync();
+
+            return await GetProtocolDtoInternal(dto.ProtocolId);
         }
 
         private async Task<Protocol> GetProtocolWithAccessCheck(int protocolId)
@@ -144,15 +224,47 @@ namespace FleetlyBackend.Services.ProtocolService
             var userId = user.GetUserId();
 
             var protocol = await _context.Protocols
+                .AsNoTracking()
                 .Include(p => p.Order)
                 .Include(p => p.Vehicle)
+                .Include(p => p.Photos)
+                .Include(p => p.Damages)
                 .FirstOrDefaultAsync(p => p.Id == protocolId)
-                ?? throw new ArgumentException("Protokół nie istnieje.");
+                ?? throw new KeyNotFoundException("Protokół nie istnieje.");
 
             if (protocol.WorkerId != userId && !user.IsAdmin())
                 throw new UnauthorizedAccessException("Nie masz uprawnień do edycji tego protokołu.");
 
             return protocol;
+        }
+
+        private async Task<ProtocolResponseDto> GetProtocolDtoInternal(int protocolId)
+        {
+            var protocol = await _context.Protocols
+                .AsNoTracking()
+                .Include(p => p.Order)
+                .Include(p => p.Vehicle)
+                .Include(p => p.Photos)
+                .FirstOrDefaultAsync(p => p.Id == protocolId)
+                ?? throw new KeyNotFoundException("Protokół nie istnieje.");
+
+            var allVehicleDamages = await _context.Damages
+                .AsNoTracking()
+                .Where(d => d.VehicleId == protocol.VehicleId && !d.IsFixed)
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
+
+            var responseDto = protocol.ToResponseDto();
+
+            responseDto.Damages = allVehicleDamages.Select(d =>
+            {
+                var damageDto = d.ToResponseDto();
+                damageDto.IsNew = (d.ProtocolId == protocolId);
+                damageDto.CreatedAt = d.CreatedAt;
+                return damageDto;
+            }).ToList();
+
+            return responseDto;
         }
     }
 }

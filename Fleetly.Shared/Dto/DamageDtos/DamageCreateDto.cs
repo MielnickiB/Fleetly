@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
-namespace Fleetly.Shared.Dto.ProtocolDtos
+namespace Fleetly.Shared.Dto.DamageDtos
 {
     public class DamageCreateDto
     {
