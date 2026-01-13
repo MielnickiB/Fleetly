@@ -1,5 +1,4 @@
-﻿using FleetlyBackend.Mappings;
-using Fleetly.Shared.Dto.ProtocolDtos;
+﻿using Fleetly.Shared.Dto.ProtocolDtos;
 using FleetlyBackend.Models;
 
 namespace FleetlyBackend.Mappings
@@ -13,9 +12,13 @@ namespace FleetlyBackend.Mappings
                 OrderId = p.OrderId,
                 Type = p.Type,
                 CreatedAt = p.CreatedAt,
+                CurrentStep = p.CurrentStep,
                 Mileage = p.Mileage,
                 FuelLevel = p.FuelLevel,
                 SignatureUrl = p.SignatureUrl,
+                HasRegistrationDocument = p.HasRegistrationDocument,
+                HasInsurancePolicy = p.HasInsurancePolicy,
+                NumberOfKeys = p.NumberOfKeys,
                 Photos = p.Photos.Select(pp => pp.ToResponseDto()).ToList(),
                 Damages = p.Damages.Select(d => d.ToResponseDto()).ToList()
             };

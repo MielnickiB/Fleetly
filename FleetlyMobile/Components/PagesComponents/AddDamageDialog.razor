@@ -1,0 +1,78 @@
+﻿@using Fleetly.Shared.Dto.DamageDtos
+@using Fleetly.Shared.Enums
+@using FleetlyMobile.Base
+@inherits CostBasePage
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudSelect T="DamagePart" Label="Element" @bind-Value="_model.DamagePart" Variant="Variant.Outlined">
+                @foreach (DamagePart part in Enum.GetValues(typeof(DamagePart)))
+                {
+                    <MudSelectItem Value="@part">@part.ToString()</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="DamageType" Label="Rodzaj" @bind-Value="_model.DamageType" Variant="Variant.Outlined">
+                @foreach (DamageType type in Enum.GetValues(typeof(DamageType)))
+                {
+                    <MudSelectItem Value="@type">@type.ToString()</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField @bind-Value="_model.Description" Label="Opis (opcjonalne)" Variant="Variant.Outlined" Lines="2" />
+
+            <MudText Typo="Typo.subtitle2">Zdjęcie uszkodzenia</MudText>
+            @if (LocalFilePath != null)
+            {
+                <MudPaper Class="pa-2 border-dashed d-flex align-center gap-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Image" Color="Color.Success" />
+                    <MudText Typo="Typo.caption">Zdjęcie dodane</MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="ClearFile" />
+                </MudPaper>
+            }
+            else
+            {
+                <MudButton StartIcon="@Icons.Material.Filled.CameraAlt" Variant="Variant.Filled" Color="Color.Primary" OnClick="TakePhotoAsync">
+                    Aparat
+                </MudButton>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Submit">Zgłoś</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int ProtocolId { get; set; }
+    [Parameter] public VehicleSide Side { get; set; }
+
+    private DamageCreateDto _model = new();
+
+    protected override void OnInitialized()
+    {
+        _model.ProtocolId = ProtocolId;
+        _model.DamageSide = Side;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        if (string.IsNullOrEmpty(LocalFilePath))
+        {
+            Snackbar.Add("Zdjęcie uszkodzenia jest wymagane!", Severity.Warning);
+            return;
+        }
+
+        // Zwracamy DTO i ścieżkę do pliku do rodzica
+        MudDialog.Close(DialogResult.Ok(new DamageDialogResult(_model, LocalFilePath)));
+    }
+
+    // Helper class do przekazania wyniku
+    public record DamageDialogResult(DamageCreateDto Dto, string FilePath);
+}

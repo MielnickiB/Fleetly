@@ -1,42 +1,92 @@
-﻿namespace Fleetly.Shared.Enums
+﻿using System.ComponentModel;
+
+namespace Fleetly.Shared.Enums
 {
     public enum ProtocolType
     {
-        Pickup = 0, // Wydanie (Odbiór od klienta)
-        Delivery = 1  // Zwrot (Przyjazd do odbiorcy)
+        [Description("Odbiór")]
+        Pickup = 0,
+        [Description("Przyjazd")]
+        Delivery = 1
     }
 
     public enum VehicleSide
     {
+        [Description("Przód")]
         Front = 0,
+        [Description("Tył")]
         Back = 1,
+        [Description("Lewa strona")]
         Left = 2,
+        [Description("Prawa strona")]
         Right = 3,
+        [Description("Wnętrze")]
         Interior = 4
     }
 
     public enum DamageType
     {
-        Scratch, // Rysa
-        Dent, // Wgniecenie
-        Crack, // Pęknięcie
-        Abrasion, // Otarcie
-        MissingPart, // Brak elementu
-        Dirty, // Zabrudzenie
-        Other // Inne
+        [Description("Rysa")]
+        Scratch,
+        [Description("Wgniecenie")]
+        Dent,
+        [Description("Pęknięcie")]
+        Crack,
+        [Description("Przetarcie")]
+        Abrasion,
+        [Description("Brak elementu")]
+        MissingPart,
+        [Description("Zabrudzenie")]
+        Dirty,
+        [Description("Inne")]
+        Other
     }
 
     public enum DamagePart
     {
-        BumperFront, BumperBack, // Zderzak Przedni, Zderzak Tylny
-        LampLeft, LampRight, // Lampa Lewa, Lampa Prawa
-        DoorFront, DoorBack, // Drzwi Przednie, Drzwi Tylne
-        FenderFront, FenderBack, // Błotnik Przedni, Błotnik Tylny
-        Hood, Roof, Trunk, Windshield, // Maska, Dach, Bagażnik, Szyba Przednia
-        MirrorLeft, MirrorRight, // Lusterko Lewe, Lusterko Prawe
-        WheelFront, WheelBack, // Koło Przednie, Koło Tylne
-        TireFront, TireBack, // Opona Przednia, Opona Tylna
-        Upholstery, Dashboard, SteeringWheel, // Tapicerka, Deska Rozdzielcza, Kierownica
-        Other // Inne
+        [Description("Zderzak Przedni")]
+        BumperFront,
+        [Description("Zderzak Tylny")]
+        BumperBack,
+        [Description("Lampa Lewa")]
+        LampLeft,
+        [Description("Lampa Prawa")]
+        LampRight,
+        [Description("Drzwi Przednie")]
+        DoorFront,
+        [Description("Drzwi Tylne")]
+        DoorBack,
+        [Description("Błotnik Przedni")]
+        FenderFront,
+        [Description("Błotnik Tylny")]
+        FenderBack,
+        [Description("Maska")]
+        Hood,
+        [Description("Dach")]
+        Roof,
+        [Description("Klapa Bagażnik")]
+        Trunk,
+        [Description("Szyba Przednia")]
+        Windshield,
+        [Description("Lusterko Lewe")]
+        MirrorLeft,
+        [Description("Lusterko Prawe")]
+        MirrorRight,
+        [Description("Koło Przednie")]
+        WheelFront, 
+        [Description("Koło Tylne")]
+        WheelBack,
+        [Description("Opona Przednia")]
+        TireFront,
+        [Description("Opona Tylna")]
+        TireBack,
+        [Description("Tapicerka")]
+        Upholstery,
+        [Description("Deska Rozdzielcza")]
+        Dashboard,
+        [Description("Kierownica")]
+        SteeringWheel,
+        [Description("Inne")]
+        Other
     }
 }

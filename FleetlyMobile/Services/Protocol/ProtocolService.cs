@@ -36,11 +36,13 @@ namespace FleetlyMobile.Services.Protocol
 
         public async Task<ApiResponse<ProtocolResponseDto?>> AddDamageAsync(DamageCreateDto dto, string filePath)
         {
-            using var content = new MultipartFormDataContent();
-            content.Add(new StringContent(dto.ProtocolId.ToString()), nameof(dto.ProtocolId));
-            content.Add(new StringContent(((int)dto.DamageSide).ToString()), nameof(dto.DamageSide));
-            content.Add(new StringContent(((int)dto.DamagePart).ToString()), nameof(dto.DamagePart));
-            content.Add(new StringContent(((int)dto.DamageType).ToString()), nameof(dto.DamageType));
+            using var content = new MultipartFormDataContent
+            {
+                { new StringContent(dto.ProtocolId.ToString()), nameof(dto.ProtocolId) },
+                { new StringContent(((int)dto.DamageSide).ToString()), nameof(dto.DamageSide) },
+                { new StringContent(((int)dto.DamagePart).ToString()), nameof(dto.DamagePart) },
+                { new StringContent(((int)dto.DamageType).ToString()), nameof(dto.DamageType) }
+            };
 
             if (!string.IsNullOrEmpty(dto.Description))
             {
@@ -80,11 +82,15 @@ namespace FleetlyMobile.Services.Protocol
 
             AddFileToContent(content, signaturePath, "SignaturePhoto", "image/png");
 
-            // Używamy PostMultipartAsync
             return await _api.PostMultipartAsync<ProtocolResponseDto>($"{BaseUrl}/{dto.ProtocolId}/finish", content);
         }
 
-        private void AddFileToContent(MultipartFormDataContent content, string filePath, string formKey, string contentType = "image/jpeg")
+        public async Task UpdateStepAsync(int protocolId, int step)
+        {
+            await _api.PatchAsync<bool>($"{BaseUrl}/{protocolId}/step", step);
+        }
+
+        private static void AddFileToContent(MultipartFormDataContent content, string filePath, string formKey, string contentType = "image/jpeg")
         {
             if (File.Exists(filePath))
             {

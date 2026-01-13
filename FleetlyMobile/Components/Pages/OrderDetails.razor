@@ -359,12 +359,12 @@ else
 
     private void StartOrderProtocol()
     {
-        Nav.NavigateTo($"/orders/{OrderId}/protocol/pickup");
+        Nav.NavigateTo($"/orders/{OrderId}/protocol");
     }
 
     private void FinishOrderProtocol()
     {
-        Nav.NavigateTo($"/orders/{OrderId}/protocol/return");
+        Nav.NavigateTo($"/orders/{OrderId}/protocol");
     }
 
     private async Task ConfirmCosts()

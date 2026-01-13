@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FleetlyBackend.Services.ProtocolService
 {
-    public class ProtcolService(FleetlyContext context, IFileService fileService, IHttpContextAccessor http) : IProtocolService
+    public class ProtocolService(FleetlyContext context, IFileService fileService, IHttpContextAccessor http) : IProtocolService
     {
 
         private readonly FleetlyContext _context = context;
@@ -54,6 +54,14 @@ namespace FleetlyBackend.Services.ProtocolService
 
             var type = order.Status == OrderStatus.Assigned ? ProtocolType.Pickup : ProtocolType.Delivery;
 
+            var existingProtocol = await _context.Protocols
+                .AsNoTracking()
+                .Include(p => p.Order)
+                .FirstOrDefaultAsync(p => p.OrderId == order.Id && p.Type == type && p.SignatureUrl == null);
+
+            if (existingProtocol != null)
+                return await GetProtocolDtoInternal(existingProtocol.Id);
+
             var protocol = new Protocol
             {
                 OrderId = order.Id,
@@ -75,7 +83,7 @@ namespace FleetlyBackend.Services.ProtocolService
         {
             var protocol = await GetProtocolWithAccessCheck(dto.ProtocolId);
 
-            string folderStructure = Path.Combine("Orders", protocol.OrderId.ToString(), "Protocols", protocol.Id.ToString(), "Photos");
+            string folderStructure = Path.Combine("Orders", protocol.OrderId.ToString(), "Protocols", protocol.Type.ToString(), "Photos");
 
             string fileName = await _fileService.SaveFileAsync(dto.Photo, folderStructure);
 
@@ -216,6 +224,15 @@ namespace FleetlyBackend.Services.ProtocolService
             await _context.SaveChangesAsync();
 
             return await GetProtocolDtoInternal(dto.ProtocolId);
+        }
+        public async Task UpdateStepAsync(int protocolId, int step)
+        {
+            var protocol = await GetProtocolWithAccessCheck(protocolId);
+
+            protocol.CurrentStep = step;
+            protocol.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
         }
 
         private async Task<Protocol> GetProtocolWithAccessCheck(int protocolId)

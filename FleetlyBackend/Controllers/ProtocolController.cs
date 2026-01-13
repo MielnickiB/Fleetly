@@ -109,5 +109,17 @@ namespace FleetlyBackend.Controllers
             catch (ArgumentException ex) { return NotFound(ex.Message); }
             catch (UnauthorizedAccessException) { return Forbid(); }
         }
+
+        [HttpPatch("{id:int}/step")]
+        public async Task<ActionResult> UpdateStep(int id, [FromBody] int step)
+        {
+            try
+            {
+                await _service.UpdateStepAsync(id, step);
+                return Ok(true);
+            }
+            catch (ArgumentException ex) { return NotFound(ex.Message); }
+            catch (UnauthorizedAccessException) { return Forbid(); }
+        }
     }
 }

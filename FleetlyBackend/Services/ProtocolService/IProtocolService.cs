@@ -12,5 +12,6 @@ namespace FleetlyBackend.Services.ProtocolService
         public Task<ProtocolResponseDto> DeleteDamageAsync(int damageId);
         public Task<ProtocolResponseDto> MarkDamageAsFixedAsync(int damageId, int currentProtocolId);
         public Task<ProtocolResponseDto> FinishProtocolAsync(ProtocolFinishDto dto);
+        public Task UpdateStepAsync(int protocolId, int step);
     }
 }

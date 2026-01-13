@@ -19,6 +19,7 @@ namespace FleetlyBackend.Models
         public User Client { get; set; } = null!;
 
         public ProtocolType Type { get; set; }
+        public int CurrentStep { get; set; } = 1;
 
         public double LocationLatitude { get; set; }
         public double LocationLongitude { get; set; }
@@ -33,7 +34,7 @@ namespace FleetlyBackend.Models
         [StringLength(200)]
         public string? SignatureUrl { get; set; }
         [StringLength(200)]
-        public string PdfUrl { get; set; } = null!;
+        public string? PdfUrl { get; set; }
 
         public bool HasRegistrationDocument { get; set; }
         public bool HasServiceBook { get; set; }

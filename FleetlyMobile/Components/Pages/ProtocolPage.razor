@@ -1,0 +1,372 @@
+﻿@page "/orders/{OrderId:int}/protocol"
+@inherits CostBasePage
+
+@using Fleetly.Shared.Dto.ProtocolDtos
+@using Fleetly.Shared.Dto.DamageDtos
+@using Fleetly.Shared.Enums
+@using FleetlyMobile.Services.Protocol
+@using FleetlyMobile.Services.Orders
+
+@inject IProtocolService ProtocolService
+@inject IOrderService OrderService
+@inject IGeolocation Geolocation
+@inject IDialogService DialogService
+
+<MudStack Class="pa-4 pb-16" Spacing="4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudText Typo="Typo.h6">@GetStepTitle()</MudText>
+        <MudChip T="string" Color="@(_isPickup ? Color.Info : Color.Warning)" Size="Size.Small">
+            @(_isPickup ? "WYDANIE" : "ZWROT")
+        </MudChip>
+    </MudStack>
+    <MudProgressLinear Value="@GetProgress()" Color="Color.Primary" Class="mb-4" />
+
+    @if (IsLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Class="align-self-center" />
+    }
+    else
+    {
+        @if (_currentStep == 1)
+        {
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+                Potwierdź swoją obecność przy pojeździe, aby rozpocząć protokół.
+            </MudAlert>
+            
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true" OnClick="StartProtocol" Class="mt-4">
+                POTWIERDZAM LOKALIZACJĘ
+            </MudButton>
+        }
+        
+        else if (_currentStep >= 2 && _currentStep <= 5)
+        {
+            <MudText Typo="Typo.body1">Sprawdź stronę: <b>@_currentSide.ToString().ToUpper()</b></MudText>
+
+            @if (_isPickup)
+            {
+                <MudPaper Class="pa-4 my-2 mud-theme-surface" Elevation="2">
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">1. Zdjęcie ogólne strony (Wymagane)</MudText>
+                    
+                    @if (LocalFilePath == null)
+                    {
+                        <MudButton StartIcon="@Icons.Material.Filled.CameraAlt" Variant="Variant.Outlined" Color="Color.Primary" FullWidth="true" OnClick="TakePhotoAsync">
+                            Zrób zdjęcie @_currentSide
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudPaper Class="pa-2 border-dashed d-flex align-center gap-2">
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success"/>
+                            <MudText>Zdjęcie gotowe</MudText>
+                            <MudSpacer/>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="ClearFile"/>
+                        </MudPaper>
+                        
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true" OnClick="UploadSidePhoto" Class="mt-2">
+                            Zapisz zdjęcie
+                        </MudButton>
+                    }
+                </MudPaper>
+            }
+
+            <MudText Typo="Typo.subtitle2" Class="mt-4">2. Uszkodzenia na tej stronie</MudText>
+            
+            @if (_protocol != null)
+            {
+                var sideDamages = _protocol.Damages.Where(d => d.Side == _currentSide).ToList();
+                
+                if (!sideDamages.Any())
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Brak zgłoszonych uszkodzeń.</MudText>
+                }
+                else
+                {
+                    @foreach (var damage in sideDamages)
+                    {
+                        <MudPaper Class="pa-3 my-2" Outlined="true" Style="@GetDamageStyle(damage.IsNew)">
+                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                <MudIcon Icon="@(damage.IsNew ? Icons.Material.Filled.AddCircle : Icons.Material.Filled.History)" 
+                                         Color="@(damage.IsNew ? Color.Success : Color.Warning)" />
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.body2"><b>@damage.Part</b> - @damage.Type</MudText>
+                                    <MudText Typo="Typo.caption">@(damage.IsNew ? "Nowe" : "Z historii")</MudText>
+                                </MudStack>
+                                <MudSpacer />
+                                
+                                @if(damage.IsNew)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteDamage(damage.Id))"/>
+                                }
+                                else
+                                {
+                                    <MudTooltip Text="Oznacz jako naprawione">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Build" Color="Color.Success" OnClick="@(() => MarkAsFixed(damage.Id))"/>
+                                    </MudTooltip>
+                                }
+                            </MudStack>
+                        </MudPaper>
+                    }
+                }
+            }
+
+            <MudStack Row="true" Class="mt-4" Spacing="2">
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="OpenAddDamageDialog" FullWidth="true">
+                    ZGŁOŚ USZKODZENIE
+                </MudButton>
+                
+                @if (_isPickup)
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" 
+                               OnClick="NextStep" 
+                               Disabled="@(!IsCurrentSidePhotoUploaded())">
+                        DALEJ
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="NextStep">
+                        DALEJ
+                    </MudButton>
+                }
+            </MudStack>
+        }
+
+        else if (_currentStep == 6)
+        {
+            <MudStack Spacing="3">
+                <MudNumericField @bind-Value="_finishDto.Mileage" Label="Przebieg (km)" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="km" />
+                
+                <MudText>Poziom paliwa: @_finishDto.FuelLevel %</MudText>
+                <MudSlider @bind-Value="_finishDto.FuelLevel" Min="0" Max="100" Step="5" Color="Color.Info" />
+
+                <MudGrid>
+                    <MudItem xs="6"><MudSwitch @bind-Value="_finishDto.HasRegistrationDocument" Color="Color.Primary">Dowód Rej.</MudSwitch></MudItem>
+                    <MudItem xs="6"><MudSwitch @bind-Value="_finishDto.HasInsurancePolicy" Color="Color.Primary">Polisa OC</MudSwitch></MudItem>
+                    <MudItem xs="6"><MudSwitch @bind-Value="_finishDto.HasServiceBook" Color="Color.Primary">Książka Serwisowa</MudSwitch></MudItem>
+                    <MudItem xs="6">
+                        <MudNumericField @bind-Value="_finishDto.NumberOfKeys" Label="Kluczyki" Variant="Variant.Outlined" Min="0" Max="5" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudTextField @bind-Value="_finishDto.Notes" Label="Uwagi do protokołu" Variant="Variant.Outlined" Lines="3" />
+
+                <MudText Typo="Typo.h6" Class="mt-2">Podpis Klienta</MudText>
+                    <SignaturePad @bind-Value="_signatureBytes"
+                                  Options="_signatureOptions"
+                                  ClearButtonText="Wyczyść" ShowClearButton="true" />
+                
+
+                <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" FullWidth="true" OnClick="FinishProtocol">
+                    ZAKOŃCZ PROTOKÓŁ
+                </MudButton>
+            </MudStack>
+        }
+    }
+
+</MudStack>
+
+@code {
+    [Parameter] public int OrderId { get; set; }
+
+    private int _currentStep = 1;
+    private bool _isPickup = true;
+    private ProtocolResponseDto? _protocol;
+    private ProtocolFinishDto _finishDto = new();
+
+    private byte[] _signatureBytes = Array.Empty<byte>();
+
+    private SignaturePadOptions _signatureOptions = new SignaturePadOptions
+    {
+        LineCap = LineCap.Round,
+        LineJoin = LineJoin.Round,
+        LineWidth = 2
+    };
+
+    private VehicleSide _currentSide => (_currentStep - 2) switch {
+        0 => VehicleSide.Left,
+        1 => VehicleSide.Front,
+        2 => VehicleSide.Right,
+        3 => VehicleSide.Back,
+        _ => VehicleSide.Left
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ExecuteSafeAsync(async () => 
+        {
+            var result = await OrderService.GetOrderByIdAsync(OrderId);
+            if(result.Success)
+            {
+                var order = result.Data!;
+                if (order.Status == OrderStatus.Assigned) _isPickup = true;
+                else if (order.Status == OrderStatus.OrderStarted) _isPickup = false;
+
+                var existingProto = await ProtocolService.GetProtocolByOrderIdAsync(OrderId);
+                if (existingProto.Success)
+                {
+                    _protocol = existingProto.Data;
+                    _currentStep = 2; 
+                }
+            }
+        });
+    }
+
+    private async Task StartProtocol()
+    {
+        try 
+        {
+            IsLoading = true;
+            Console.WriteLine($"✅ Geolocation: {Geolocation?.GetType().Name ?? "NULL"}");
+            var location = await Geolocation.GetLastKnownLocationAsync() ?? await Geolocation.GetLocationAsync();
+            var dto = new ProtocolInitDto 
+            { 
+                OrderId = OrderId, 
+                Latitude = location?.Latitude ?? 0, 
+                Longitude = location?.Longitude ?? 0 
+            };
+
+            var result = await ProtocolService.StartProtocolAsync(dto);
+            if(result.Success)
+            {
+                _protocol = result.Data;
+                _currentStep = 2;
+            }
+            else{ 
+                Snackbar.Add(result.Error, Severity.Error);
+                Console.WriteLine($"Błąd: {result.Error}");
+                }
+        }
+        catch(Exception ex) { Snackbar.Add($"Błąd GPS: {ex.Message}", Severity.Error); }
+        finally { IsLoading = false; }
+    }
+
+    private async Task UploadSidePhoto()
+    {
+        if(string.IsNullOrEmpty(LocalFilePath)) return;
+
+        IsLoading = true;
+        var dto = new ProtocolPhotoDto { ProtocolId = _protocol!.Id, Side = _currentSide };
+        var result = await ProtocolService.AddPhotoAsync(dto, LocalFilePath);
+
+        if(result.Success)
+        {
+            _protocol = result.Data;
+            ClearFile();
+            Snackbar.Add("Zdjęcie dodane.", Severity.Success);
+        }
+        else Snackbar.Add(result.Error, Severity.Error);
+        IsLoading = false;
+    }
+
+    private async Task OpenAddDamageDialog()
+    {
+        var parameters = new DialogParameters 
+        { 
+            ["ProtocolId"] = _protocol!.Id,
+            ["Side"] = _currentSide 
+        };
+
+        var dialog = await DialogService.ShowAsync<AddDamageDialog>("Zgłoś uszkodzenie", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            var data = (AddDamageDialog.DamageDialogResult)result.Data;
+            IsLoading = true;
+            var apiResult = await ProtocolService.AddDamageAsync(data.Dto, data.FilePath);
+
+            if(apiResult.Success)
+            {
+                _protocol = apiResult.Data;
+                Snackbar.Add("Dodano uszkodzenie", Severity.Success);
+            }
+            else Snackbar.Add(apiResult.Error, Severity.Error);
+            IsLoading = false;
+        }
+    }
+
+    private async Task DeleteDamage(int damageId)
+    {
+        var result = await ProtocolService.DeleteDamageAsync(damageId);
+        if(result.Success) _protocol = result.Data;
+    }
+
+    private async Task MarkAsFixed(int damageId)
+    {
+        var result = await ProtocolService.MarkDamageFixedAsync(_protocol!.Id, damageId);
+        if(result.Success) _protocol = result.Data;
+    }
+
+    private void NextStep()
+    {
+        _currentStep++;
+        ClearFile();
+    }
+
+    private void ClearSignature()
+    {
+        _signatureBytes = Array.Empty<byte>();
+    }
+
+    private async Task FinishProtocol()
+    {
+        // 1. Validate: Is signature empty?
+        if (_signatureBytes == null || _signatureBytes.Length == 0)
+        {
+            Snackbar.Add("Podpis klienta jest wymagany do zakończenia protokołu.", Severity.Warning);
+            return;
+        }
+
+        IsLoading = true;
+        var sigPath = Path.Combine(FileSystem.CacheDirectory, "signature.png");
+
+        try 
+        {
+            await File.WriteAllBytesAsync(sigPath, _signatureBytes);
+
+            _finishDto.ProtocolId = _protocol!.Id;
+
+            // 4. Send
+            var result = await ProtocolService.FinishProtocolAsync(_finishDto, sigPath);
+
+            if(result.Success)
+            {
+                Snackbar.Add("Protokół zakończony!", Severity.Success);
+                Nav.NavigateTo($"/orders/{OrderId}");
+            }
+            else 
+            {
+                Snackbar.Add(result.Error, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd zapisu podpisu: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            if(File.Exists(sigPath)) File.Delete(sigPath);
+            IsLoading = false;
+        }
+    }
+
+    // Helpers
+    private string GetStepTitle() => _currentStep switch {
+        1 => "Lokalizacja",
+        >= 2 and <= 5 => $"{_currentSide}",
+        6 => "Podsumowanie",
+        _ => ""
+    };
+
+    private double GetProgress() => (_currentStep / 6.0) * 100;
+
+    private bool IsCurrentSidePhotoUploaded()
+    {
+        return _protocol?.Photos.Any(p => p.Side == _currentSide) ?? false;
+    }
+
+    private string GetDamageStyle(bool isNew) => 
+        isNew ? "border-color: var(--mud-palette-success); border-width: 2px;" 
+              : "background-color: var(--mud-palette-background-grey);";
+}

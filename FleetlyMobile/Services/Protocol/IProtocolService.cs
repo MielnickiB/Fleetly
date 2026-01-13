@@ -17,5 +17,7 @@ namespace FleetlyMobile.Services.Protocol
         Task<ApiResponse<ProtocolResponseDto?>> MarkDamageFixedAsync(int protocolId, int damageId);
 
         Task<ApiResponse<ProtocolResponseDto?>> FinishProtocolAsync(ProtocolFinishDto dto, string signaturePath);
+
+        Task UpdateStepAsync(int protocolId, int step);
     }
 }
