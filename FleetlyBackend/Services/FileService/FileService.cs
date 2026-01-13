@@ -23,7 +23,7 @@ namespace FleetlyBackend.Services.FileService
 
             var ext = Path.GetExtension(file.FileName).ToLower();
 
-            var finalExtension = (ext == ".pdf") ? ".pdf" : ".jpg";
+            var finalExtension = (ext == ".pdf") ? ".pdf" : (ext == ".png" ? ".png" : ".jpg");
 
             var uniqueFileName = $"{Guid.NewGuid()}{finalExtension}";
             var folderPath = Path.Combine(_rootPath, pathPrefix);
@@ -79,10 +79,7 @@ namespace FleetlyBackend.Services.FileService
                 img.Mutate(x => x.Resize(MaxImageWidth, 0));
             }
 
-            await img.SaveAsJpegAsync(filePath, new JpegEncoder
-            {
-                Quality = JpegQuality
-            });
+            await img.SaveAsync(filePath);
         }
 
         private void ValidateSize(IFormFile file)
