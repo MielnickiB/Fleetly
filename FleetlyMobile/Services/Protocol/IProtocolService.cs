@@ -18,6 +18,6 @@ namespace FleetlyMobile.Services.Protocol
 
         Task<ApiResponse<ProtocolResponseDto?>> FinishProtocolAsync(ProtocolFinishDto dto, string signaturePath);
 
-        Task UpdateStepAsync(int protocolId, int step);
+        Task<ApiResponse<bool>> UpdateStepAsync(int protocolId, int step);
     }
 }

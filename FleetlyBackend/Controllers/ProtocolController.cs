@@ -110,8 +110,8 @@ namespace FleetlyBackend.Controllers
             catch (UnauthorizedAccessException) { return Forbid(); }
         }
 
-        [HttpPatch("{id:int}/step")]
-        public async Task<ActionResult> UpdateStep(int id, [FromBody] int step)
+        [HttpPatch("{id:int}/step/{step:int}")]
+        public async Task<ActionResult> UpdateStep(int id, int step)
         {
             try
             {

@@ -1,22 +1,20 @@
-﻿@using Fleetly.Shared.Dto.DamageDtos
-@using Fleetly.Shared.Enums
-@using FleetlyMobile.Base
-@inherits CostBasePage
+﻿@inherits CostBasePage
+@inject IProtocolService ProtocolService
 
 <MudDialog>
     <DialogContent>
         <MudStack Spacing="3">
             <MudSelect T="DamagePart" Label="Element" @bind-Value="_model.DamagePart" Variant="Variant.Outlined">
-                @foreach (DamagePart part in Enum.GetValues(typeof(DamagePart)))
+                @foreach (DamagePart part in GetPartsForSide(Side))
                 {
-                    <MudSelectItem Value="@part">@part.ToString()</MudSelectItem>
+                    <MudSelectItem Value="@part">@part.ToDescription()</MudSelectItem>
                 }
             </MudSelect>
 
             <MudSelect T="DamageType" Label="Rodzaj" @bind-Value="_model.DamageType" Variant="Variant.Outlined">
                 @foreach (DamageType type in Enum.GetValues(typeof(DamageType)))
                 {
-                    <MudSelectItem Value="@type">@type.ToString()</MudSelectItem>
+                    <MudSelectItem Value="@type">@type.ToDescription()</MudSelectItem>
                 }
             </MudSelect>
 
@@ -42,7 +40,16 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Anuluj</MudButton>
-        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="Submit">Zgłoś</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Disabled=@(string.IsNullOrEmpty(LocalFilePath)) OnClick="Submit">
+            @if (IsLoading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Inherit" Class="me-2" />
+            }
+            else
+            {
+                <MudText Typo="Typo.button">Zgłoś</MudText>
+            }
+        </MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -61,7 +68,7 @@
 
     private void Cancel() => MudDialog.Cancel();
 
-    private void Submit()
+    private async Task Submit()
     {
         if (string.IsNullOrEmpty(LocalFilePath))
         {
@@ -69,10 +76,27 @@
             return;
         }
 
-        // Zwracamy DTO i ścieżkę do pliku do rodzica
-        MudDialog.Close(DialogResult.Ok(new DamageDialogResult(_model, LocalFilePath)));
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await ProtocolService.AddDamageAsync(_model, LocalFilePath);
+
+            if (result.Success)
+            {
+                MudDialog.Close(DialogResult.Ok(result.Data));
+            }
+            else
+            {
+                Snackbar.Add(result.Error ?? "Błąd zapisu", Severity.Error);
+            }
+        });
     }
 
-    // Helper class do przekazania wyniku
-    public record DamageDialogResult(DamageCreateDto Dto, string FilePath);
+    private List<DamagePart> GetPartsForSide(VehicleSide side) => side switch
+    {
+        VehicleSide.Front => new() { DamagePart.BumperFront, DamagePart.Hood, DamagePart.Windshield, DamagePart.LampLeft, DamagePart.LampRight },
+        VehicleSide.Back => new() { DamagePart.BumperBack, DamagePart.Trunk, DamagePart.LampLeft, DamagePart.LampRight },
+        VehicleSide.Left => new() { DamagePart.DoorFront, DamagePart.FenderFront, DamagePart.FenderBack, DamagePart.MirrorLeft, DamagePart.WheelFront, DamagePart.WheelBack },
+        VehicleSide.Right => new() { DamagePart.DoorFront, DamagePart.DoorBack, DamagePart.FenderFront, DamagePart.FenderBack, DamagePart.MirrorRight, DamagePart.WheelFront, DamagePart.WheelBack },
+        _ => Enum.GetValues(typeof(DamagePart)).Cast<DamagePart>().ToList()
+    };
 }

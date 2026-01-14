@@ -30,7 +30,7 @@ namespace FleetlyBackend.Services.ProtocolService
                 .FirstOrDefaultAsync(p => p.OrderId == orderId)
                 ?? throw new KeyNotFoundException("Nie znaleziono protokołu dla podanego zlecenia.");
 
-            if ((protocol.WorkerId != userId || protocol.ClientId != userId) && !user.IsAdmin())
+            if (!user.IsAdmin() && protocol.WorkerId != userId && protocol.ClientId != userId)
                 throw new UnauthorizedAccessException("Nie masz dostępu do tego protokołu.");
 
             return protocol.ToResponseDto();
@@ -241,7 +241,6 @@ namespace FleetlyBackend.Services.ProtocolService
             var userId = user.GetUserId();
 
             var protocol = await _context.Protocols
-                .AsNoTracking()
                 .Include(p => p.Order)
                 .Include(p => p.Vehicle)
                 .Include(p => p.Photos)
@@ -258,7 +257,6 @@ namespace FleetlyBackend.Services.ProtocolService
         private async Task<ProtocolResponseDto> GetProtocolDtoInternal(int protocolId)
         {
             var protocol = await _context.Protocols
-                .AsNoTracking()
                 .Include(p => p.Order)
                 .Include(p => p.Vehicle)
                 .Include(p => p.Photos)
@@ -266,7 +264,6 @@ namespace FleetlyBackend.Services.ProtocolService
                 ?? throw new KeyNotFoundException("Protokół nie istnieje.");
 
             var allVehicleDamages = await _context.Damages
-                .AsNoTracking()
                 .Where(d => d.VehicleId == protocol.VehicleId && !d.IsFixed)
                 .OrderByDescending(d => d.CreatedAt)
                 .ToListAsync();

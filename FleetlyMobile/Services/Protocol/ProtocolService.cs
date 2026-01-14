@@ -85,9 +85,9 @@ namespace FleetlyMobile.Services.Protocol
             return await _api.PostMultipartAsync<ProtocolResponseDto>($"{BaseUrl}/{dto.ProtocolId}/finish", content);
         }
 
-        public async Task UpdateStepAsync(int protocolId, int step)
+        public async Task<ApiResponse<bool>> UpdateStepAsync(int protocolId, int step)
         {
-            await _api.PatchAsync<bool>($"{BaseUrl}/{protocolId}/step", step);
+            return await _api.PatchAsync<bool>($"{BaseUrl}/{protocolId}/step/{step}", null);
         }
 
         private static void AddFileToContent(MultipartFormDataContent content, string filePath, string formKey, string contentType = "image/jpeg")
