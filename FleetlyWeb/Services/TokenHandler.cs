@@ -1,12 +1,15 @@
-﻿using System.Net.Http.Headers;
-using Blazored.LocalStorage;
+﻿using Blazored.LocalStorage;
 using FleetlyWeb.Constants;
+using System.Net;
+using System.Net.Http.Headers;
+using FleetlyWeb.Services.Authorization;
 
 namespace FleetlyWeb.Services
 {
-    public class TokenHandler(ILocalStorageService localStorage) : DelegatingHandler
+    public class TokenHandler(ILocalStorageService localStorage, IServiceProvider serviceProvider) : DelegatingHandler
     {
         private readonly ILocalStorageService _localStorage = localStorage;
+        private readonly IServiceProvider _serviceProvider = serviceProvider;
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -18,7 +21,16 @@ namespace FleetlyWeb.Services
                     new AuthenticationHeaderValue("Bearer", token);
             }
 
-            return await base.SendAsync(request, cancellationToken);
+            var response = await base.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                var authService = _serviceProvider.GetRequiredService<IAuthService>();
+
+                await authService.Logout();
+            }
+
+            return response;
         }
     }
 
