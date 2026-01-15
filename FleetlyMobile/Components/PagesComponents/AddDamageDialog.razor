@@ -58,7 +58,7 @@
     [Parameter] public int ProtocolId { get; set; }
     [Parameter] public VehicleSide Side { get; set; }
 
-    private DamageCreateDto _model = new();
+    private readonly DamageCreateDto _model = new();
 
     protected override void OnInitialized()
     {

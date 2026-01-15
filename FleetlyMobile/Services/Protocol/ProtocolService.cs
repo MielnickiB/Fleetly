@@ -100,7 +100,7 @@ namespace FleetlyMobile.Services.Protocol
         {
             if (File.Exists(filePath))
             {
-                var fileStream = File.OpenRead(filePath);
+                using var fileStream = File.OpenRead(filePath);
                 var fileContent = new StreamContent(fileStream);
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
                 content.Add(fileContent, formKey, Path.GetFileName(filePath));

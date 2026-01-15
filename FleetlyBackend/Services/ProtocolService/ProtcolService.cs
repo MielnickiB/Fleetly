@@ -58,7 +58,7 @@ namespace FleetlyBackend.Services.ProtocolService
             if (order.WorkerId != userId && !user.IsAdmin())
                 throw new UnauthorizedAccessException("Nie jesteś przypisany do tego zlecenia.");
 
-            if (order.Status != OrderStatus.Assigned && order.Status != OrderStatus.OrderStarted && order.StartTime != DateTime.UtcNow.Date)
+            if (order.Status != OrderStatus.Assigned && order.Status != OrderStatus.OrderStarted && order.StartTime.Date.Equals(DateTime.UtcNow.Date))
                 throw new InvalidOperationException("Nie można rozpocząć protokołu dla tego zlecenia w tym momencie.");
 
             var type = order.Status == OrderStatus.Assigned ? ProtocolType.Pickup : ProtocolType.Delivery;

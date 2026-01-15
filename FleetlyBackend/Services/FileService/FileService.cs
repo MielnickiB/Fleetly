@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Processing;
 
 namespace FleetlyBackend.Services.FileService
@@ -42,7 +43,7 @@ namespace FleetlyBackend.Services.FileService
             }
             else
             {
-                await SaveImageWithCompression(file, fullFilePath);
+                await SaveImageWithCompression(file, fullFilePath, ext);
             }
 
             return Path.Combine(pathPrefix, uniqueFileName).Replace("\\", "/");
@@ -66,7 +67,7 @@ namespace FleetlyBackend.Services.FileService
             return Task.CompletedTask;
         }
 
-        private static async Task SaveImageWithCompression(IFormFile file, string filePath)
+        private static async Task SaveImageWithCompression(IFormFile file, string filePath, string extension)
         {
             await using var stream = file.OpenReadStream();
 
@@ -77,6 +78,19 @@ namespace FleetlyBackend.Services.FileService
             if (img.Width > MaxImageWidth)
             {
                 img.Mutate(x => x.Resize(MaxImageWidth, 0));
+            }
+
+            if (extension == ".jpg" || extension == ".jpeg")
+            {
+                await img.SaveAsJpegAsync(filePath, new JpegEncoder { Quality = JpegQuality });
+            }
+            else if (extension == ".png")
+            {
+                await img.SaveAsPngAsync(filePath, new PngEncoder { CompressionLevel = PngCompressionLevel.BestCompression });
+            }
+            else
+            {
+                await img.SaveAsync(filePath);
             }
 
             await img.SaveAsync(filePath);
@@ -101,8 +115,6 @@ namespace FleetlyBackend.Services.FileService
             byte[] buffer = new byte[MagicNumberBufferSize];
             await using var stream = file.OpenReadStream();
             int bytesRead = await stream.ReadAsync(buffer);
-
-            Console.WriteLine($"[FileService] Otrzymano nagłówek pliku: {BitConverter.ToString(buffer)}");
 
             // JPEG FF D8
             if (bytesRead >= 2 && buffer[0] == 0xFF && buffer[1] == 0xD8) return;

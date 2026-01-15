@@ -171,12 +171,12 @@
     private int _currentStep = 1;
     private bool _isPickup = true;
     private ProtocolResponseDto? _protocol;
-    private ProtocolFinishDto _finishDto = new();
+    private readonly ProtocolFinishDto _finishDto = new();
     private OrderResponseDto _order = new();
 
     private byte[] _Signature = Array.Empty<byte>();
 
-    private SignaturePadOptions _SignatureOptions = new SignaturePadOptions
+    private readonly SignaturePadOptions _SignatureOptions = new SignaturePadOptions
     {
         LineCap = LineCap.Round,
         LineJoin = LineJoin.Round,
@@ -249,8 +249,8 @@
             var dto = new ProtocolInitDto
             {
                 OrderId = OrderId,
-                Latitude = location?.Latitude ?? 0,
-                Longitude = location?.Longitude ?? 0
+                Latitude = location.Latitude,
+                Longitude = location.Longitude
             };
 
             var result = await ProtocolService.StartProtocolAsync(dto);

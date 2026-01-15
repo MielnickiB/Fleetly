@@ -57,8 +57,8 @@ namespace FleetlyBackend.Services.OrderService
                 if (order.WorkerId == userId) 
                     return order.ToResponseDto();
 
-                else if (order.Status == OrderStatus.Created && order.WorkerId == null)
-                         return order.ToResponseDto();
+                if (order.Status == OrderStatus.Created && order.WorkerId == null)
+                    return order.ToResponseDto();
             }
 
             throw new UnauthorizedAccessException("Brak dostępu do tego zlecenia.");
