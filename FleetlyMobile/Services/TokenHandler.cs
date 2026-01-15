@@ -9,7 +9,6 @@ namespace FleetlyMobile.Services
         private readonly IServiceProvider _serviceProvider = serviceProvider;
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var authService = _serviceProvider.GetRequiredService<IAuthService>();
             var token = await SecureStorage.Default.GetAsync(AppConstants.AuthTokenKey);
 
             if (!string.IsNullOrEmpty(token))
@@ -21,6 +20,7 @@ namespace FleetlyMobile.Services
 
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
             {
+                var authService = _serviceProvider.GetRequiredService<IAuthService>();
                 await authService.LogoutAsync();
             }
 
