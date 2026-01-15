@@ -9,7 +9,10 @@
 <MudStack Class="pa-4 pb-16" Spacing="4">
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-        <MudText Typo="Typo.h6">@GetStepTitle()</MudText>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexStart">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Color="Color.Primary" OnClick="HandlePreviousStep" />
+            <MudText Typo="Typo.h6">@GetStepTitle()</MudText>
+        </MudStack>
         <MudChip T="string" Color="@(_isPickup? Color.Info: Color.Error)" Size="Size.Small">
             @(_isPickup ? "ODBIÓR" : "ZDANIE")
         </MudChip>
@@ -42,7 +45,13 @@
                 <MudPaper Class="pa-4 my-2 mud-theme-surface" Elevation="2">
                     <MudText Typo="Typo.subtitle2" Class="mb-2">1. Zdjęcie pojazdu (Wymagane)</MudText>
 
-                    @if (!string.IsNullOrEmpty(LocalFilePath))
+                    @if (IsCurrentSidePhotoUploaded())
+                    {
+                        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined" Class="mb-2">
+                            Zdjęcie dla tej strony zostało dodane.
+                        </MudAlert>
+                    }
+                    else if (!string.IsNullOrEmpty(LocalFilePath))
                     {
                         @* <MudImage Src="@LocalFilePath" Height="150" Class="rounded-lg" /> *@
                         <MudButton StartIcon="@Icons.Material.Filled.Delete" OnClick="ClearFile" Color="Color.Error">Usuń i zrób nowe</MudButton>
@@ -105,8 +114,8 @@
                 {
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Medium" FullWidth="true"
                                OnClick="HandleNextStep"
-                               Disabled="@(string.IsNullOrEmpty(LocalFilePath))">
-                        <MudText Typo="Typo.button">Dalej</MudText>
+                               Disabled="@(string.IsNullOrEmpty(LocalFilePath) && !IsCurrentSidePhotoUploaded())">
+                        <MudText Typo="Typo.button">@(!string.IsNullOrEmpty(LocalFilePath) ? "Zapisz i Dalej" : "Dalej")</MudText>
                     </MudButton>
                 }
                 else
@@ -121,17 +130,17 @@
         else if (_currentStep == 6)
         {
             <MudStack Spacing="3">
-                <MudNumericField @bind-Value="_finishDto.Mileage" Label="Przebieg (km)" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="km" />
+                <MudNumericField @bind-Value="_finishDto.Mileage" Min="_order.Vehicle.Mileage" Required="true" Label="Przebieg (km)" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="km" />
 
                 <MudText>Poziom paliwa: @_finishDto.FuelLevel %</MudText>
                 <MudSlider @bind-Value="_finishDto.FuelLevel" Min="0" Max="100" Step="5" Color="Color.Info" />
 
                 <MudGrid>
-                    <MudItem xs="6"><MudSwitch @bind-Value="_finishDto.HasRegistrationDocument" Color="Color.Primary">Dowód Rej.</MudSwitch></MudItem>
-                    <MudItem xs="6"><MudSwitch @bind-Value="_finishDto.HasInsurancePolicy" Color="Color.Primary">Polisa OC</MudSwitch></MudItem>
-                    <MudItem xs="6"><MudSwitch @bind-Value="_finishDto.HasServiceBook" Color="Color.Primary">Książka Serwisowa</MudSwitch></MudItem>
+                    <MudItem xs="6"><MudSwitch @bind-Value="_finishDto.HasRegistrationDocument" Required="true" Color="Color.Primary">Dowód Rej.</MudSwitch></MudItem>
+                    <MudItem xs="6"><MudSwitch @bind-Value="_finishDto.HasInsurancePolicy" Required="true" Color="Color.Primary">Polisa OC</MudSwitch></MudItem>
+                    <MudItem xs="6"><MudSwitch @bind-Value="_finishDto.HasServiceBook" Required="true" Color="Color.Primary">Książka Serwisowa</MudSwitch></MudItem>
                     <MudItem xs="6">
-                        <MudNumericField @bind-Value="_finishDto.NumberOfKeys" Label="Kluczyki" Variant="Variant.Outlined" Min="0" Max="5" />
+                        <MudNumericField @bind-Value="_finishDto.NumberOfKeys" Required="true" Label="Kluczyki" Variant="Variant.Outlined" Min="1" Max="3" />
                     </MudItem>
                 </MudGrid>
 
@@ -140,11 +149,16 @@
                 <MudText Typo="Typo.h6" Class="mt-2">Podpis Klienta</MudText>
                 <SignaturePad @bind-Value="_Signature"
                               Options="_SignatureOptions"
-                              ClearButtonText="Wyczyść" ShowClearButton="true" />
+                              ClearButtonText="Wyczyść" ClearButtonClass="mb-2" ShowClearButton="true" />
 
+                <MudStack Spacing="3">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="HandlePreviousStep" FullWidth="true">
+                        <MudText Typo="Typo.button">Wróć do oględzin</MudText>
+                    </MudButton>
                 <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" FullWidth="true" OnClick="FinishProtocol">
                     <MudText Typo="Typo.button">Zakończ protokół</MudText>
                 </MudButton>
+                </MudStack>
             </MudStack>
         }
     }
@@ -158,6 +172,7 @@
     private bool _isPickup = true;
     private ProtocolResponseDto? _protocol;
     private ProtocolFinishDto _finishDto = new();
+    private OrderResponseDto _order = new();
 
     private byte[] _Signature = Array.Empty<byte>();
 
@@ -184,9 +199,26 @@
             var orderResult = await OrderService.GetOrderByIdAsync(OrderId);
             if (orderResult.Success)
             {
-                var order = orderResult.Data!;
-                if (order.Status == OrderStatus.Assigned) _isPickup = true;
-                else if (order.Status == OrderStatus.OrderStarted) _isPickup = false;
+                _order = orderResult.Data!;
+                _isPickup = (_order.Status == OrderStatus.Assigned);
+
+                _finishDto.Mileage = _order.Vehicle?.Mileage ?? 0;
+                _finishDto.NumberOfKeys = 1;
+
+                if (!_isPickup)
+                {
+                    var pickupProtoResult = await ProtocolService.GetProtocolByOrderIdAsync(OrderId, ProtocolType.Pickup);
+
+                    if (pickupProtoResult.Success && pickupProtoResult.Data != null)
+                    {
+                        var pickupData = pickupProtoResult.Data;
+                        _finishDto.HasRegistrationDocument = pickupData.HasRegistrationDocument;
+                        _finishDto.HasInsurancePolicy = pickupData.HasInsurancePolicy;
+                        _finishDto.HasServiceBook = pickupData.HasServiceBook;
+                        _finishDto.FuelLevel = pickupData.FuelLevel;
+                        _finishDto.NumberOfKeys = pickupData.NumberOfKeys;
+                    }
+                }
 
                 var existingProto = await ProtocolService.GetProtocolByOrderIdAsync(OrderId);
 
@@ -245,7 +277,7 @@
 
         var options = new DialogOptions
         {
-            MaxWidth = MaxWidth.Medium,
+            MaxWidth = MaxWidth.ExtraSmall,
             CloseButton = true
         };
 
@@ -297,23 +329,26 @@
         {
             if (_isPickup)
             {
-                if (string.IsNullOrEmpty(LocalFilePath))
+                if (string.IsNullOrEmpty(LocalFilePath) && !IsCurrentSidePhotoUploaded())
                 {
                     Snackbar.Add("Proszę zrobić zdjęcie strony pojazdu przed przejściem dalej.", Severity.Warning);
                     return;
                 }
 
-                var dto = new ProtocolPhotoDto { ProtocolId = _protocol!.Id, Side = _currentSide };
-                var uploadResult = await ProtocolService.AddPhotoAsync(dto, LocalFilePath);
-
-                if (!uploadResult.Success)
+                if (!string.IsNullOrEmpty(LocalFilePath))
                 {
-                    Snackbar.Add($"Błąd dodawania zdjęcia: {uploadResult.Error}", Severity.Error);
-                    return;
-                }
+                    var dto = new ProtocolPhotoDto { ProtocolId = _protocol!.Id, Side = _currentSide };
+                    var uploadResult = await ProtocolService.AddPhotoAsync(dto, LocalFilePath);
 
-                _protocol = uploadResult.Data;
-                ClearFile();
+                    if (!uploadResult.Success)
+                    {
+                        Snackbar.Add($"Błąd dodawania zdjęcia: {uploadResult.Error}", Severity.Error);
+                        return;
+                    }
+
+                    _protocol = uploadResult.Data;
+                    ClearFile();
+                }
             }
 
             _currentStep++;
@@ -324,6 +359,30 @@
                 Snackbar.Add("Nie udało się zapisać postępu (błąd sieci)", Severity.Warning);
             }
             IsLoading = false;
+        });
+    }
+
+    private async Task HandlePreviousStep()
+    {
+        await ExecuteSafeAsync(async () =>
+        {
+            if (_currentStep >= 2)
+            {
+                _currentStep--;
+
+                ClearFile();
+
+                var stepResult = await ProtocolService.UpdateStepAsync(_protocol!.Id, _currentStep);
+
+                if (!stepResult.Success)
+                {
+                    Console.WriteLine("Ostrzeżenie: Nie udało się zapisać cofnięcia kroku w bazie.");
+                }
+            }
+            else
+            {
+                Nav.NavigateTo($"/orders/{OrderId}");
+            }
         });
     }
 
@@ -379,5 +438,10 @@
 
     private string GetDamageStyle(bool isNew) =>
         isNew ? "border-color: var(--mud-palette-success); border-width: 2px;"
-              : "background-color: var(--mud-palette-background-warning);";
+              : "border-color: var(--mud-palette-warning);";
+
+    private bool IsCurrentSidePhotoUploaded()
+    {
+        return _protocol?.Photos.Any(p => p.Side == _currentSide) ?? false;
+    }
 }

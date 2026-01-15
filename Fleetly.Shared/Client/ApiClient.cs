@@ -10,6 +10,10 @@ public class ApiClient(HttpClient http)
     {
         using var res = await _http.GetAsync(url);
         var status = (int)res.StatusCode;
+        if (res.StatusCode == System.Net.HttpStatusCode.NoContent)
+        {
+            return ApiResponse<T?>.SuccessResult(default, status);
+        }
         if (res.IsSuccessStatusCode)
         {
             var data = await res.Content.ReadFromJsonAsync<T?>();

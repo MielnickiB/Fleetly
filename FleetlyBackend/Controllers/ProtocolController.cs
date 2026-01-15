@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto.DamageDtos;
 using Fleetly.Shared.Dto.ProtocolDtos;
+using Fleetly.Shared.Enums;
 using FleetlyBackend.Services.ProtocolService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +15,12 @@ namespace FleetlyBackend.Controllers
         private readonly IProtocolService _service = protocolService;
 
         [HttpGet("order/{orderId:int}")]
-        public async Task<ActionResult<ProtocolResponseDto>> GetByOrder(int orderId)
+        public async Task<ActionResult<ProtocolResponseDto?>> GetByOrder(int orderId, [FromQuery] ProtocolType? type)
         {
             try
             {
-                var result = await _service.GetProtocolByOrderIdAsync(orderId);
+                var result = await _service.GetProtocolByOrderIdAsync(orderId, type);
+                if (result == null) return NoContent();
                 return Ok(result);
             }
             catch (KeyNotFoundException ex) { return NotFound(ex.Message); }

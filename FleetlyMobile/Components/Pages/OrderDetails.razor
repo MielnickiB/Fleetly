@@ -66,7 +66,7 @@ else
                                        StartIcon="@Icons.Material.Filled.PlayArrow"
                                        OnClick="StartOrderProtocol"
                                        Disabled="@_isNotToday">
-                                <MudText Typo="Typo.button">Rozpocznij zlecenie</MudText>
+                                <MudText Typo="Typo.button">Rozpocznij odbiór</MudText>
                             </MudButton>
                             @if (_isNotToday)
                             {
@@ -79,9 +79,9 @@ else
                         case OrderStatus.OrderStarted:
                             <MudButton Variant="Variant.Filled" Color="Color.Error" FullWidth="true"
                                        StartIcon="@Icons.Material.Filled.Stop"
-                                       OnClick="FinishOrderProtocol"
+                                       OnClick="StartOrderProtocol"
                                        Disabled="@_isNotToday">
-                                <MudText Typo="Typo.button">Zakończ zlecenie</MudText>
+                                <MudText Typo="Typo.button">Rozpocznij zdanie</MudText>
                             </MudButton>
                             break;
 
@@ -89,11 +89,12 @@ else
                             <MudButton Variant="Variant.Filled" Color="Color.Info" FullWidth="true"
                                        StartIcon="@Icons.Material.Filled.CheckCircle"
                                        OnClick="ConfirmCosts"
-                                       Disabled="@_isNotToday">
-                                <MudText Typo="Typo.button">Zatwierdź koszty</MudText>
+                                       Disabled="@_isNotToday"
+                                       Class="mb-2">
+                                <MudText Typo="Typo.button">Zatwierdź koszty i zakończ</MudText>
                             </MudButton>
-                            <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary" Class="pt-2">
-                                Upewnij się, że dodałeś wszystkie bilety i paliwo.
+                            <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary">
+                                Upewnij się, że dodałeś wszystkie bilety i koszty paliwowe.
                             </MudText>
                             break;
 
@@ -362,11 +363,6 @@ else
         Nav.NavigateTo($"/orders/{OrderId}/protocol");
     }
 
-    private void FinishOrderProtocol()
-    {
-        Nav.NavigateTo($"/orders/{OrderId}/protocol");
-    }
-
     private async Task ConfirmCosts()
     {
         bool? result = await DialogService.ShowMessageBox(
@@ -378,9 +374,9 @@ else
         {
             await ExecuteSafeAsync(async () =>
             {
-                // var apiResult = await OrderService.ConfirmCostsAsync(OrderId);
+                var apiResult = await OrderService.ConfirmCostsAsync(OrderId);
 
-                // if (!apiResult.Success) throw new Exception(apiResult.Error);
+                if (!apiResult.Success) throw new Exception(apiResult.Error);
 
                 Snackbar.Add("Koszty zatwierdzone. Oczekiwanie na akceptację admina.", Severity.Success);
                 await LoadDataAsync();

@@ -18,7 +18,9 @@ namespace FleetlyBackend.Mappings
                 SignatureUrl = p.SignatureUrl,
                 HasRegistrationDocument = p.HasRegistrationDocument,
                 HasInsurancePolicy = p.HasInsurancePolicy,
+                HasServiceBook = p.HasServiceBook,
                 NumberOfKeys = p.NumberOfKeys,
+                Notes = p.Notes,
                 Photos = p.Photos.Select(pp => pp.ToResponseDto()).ToList(),
                 Damages = p.Damages.Select(d => d.ToResponseDto()).ToList()
             };

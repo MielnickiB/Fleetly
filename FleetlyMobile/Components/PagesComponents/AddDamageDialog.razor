@@ -4,14 +4,14 @@
 <MudDialog>
     <DialogContent>
         <MudStack Spacing="3">
-            <MudSelect T="DamagePart" Label="Element" @bind-Value="_model.DamagePart" Variant="Variant.Outlined">
+            <MudSelect T="DamagePart" Label="Element" @bind-Value="_model.DamagePart" Variant="Variant.Outlined" FullWidth="true" Class="w-100">
                 @foreach (DamagePart part in GetPartsForSide(Side))
                 {
                     <MudSelectItem Value="@part">@part.ToDescription()</MudSelectItem>
                 }
             </MudSelect>
 
-            <MudSelect T="DamageType" Label="Rodzaj" @bind-Value="_model.DamageType" Variant="Variant.Outlined">
+            <MudSelect T="DamageType" Label="Rodzaj" @bind-Value="_model.DamageType" Variant="Variant.Outlined" FullWidth="true" Class="w-100">
                 @foreach (DamageType type in Enum.GetValues(typeof(DamageType)))
                 {
                     <MudSelectItem Value="@type">@type.ToDescription()</MudSelectItem>
@@ -39,11 +39,11 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton OnClick="Cancel" Variant="Variant.Outlined" Disabled="@IsLoading" Color="Color.Default">Anuluj</MudButton>
         <MudButton Color="Color.Error" Variant="Variant.Filled" Disabled=@(string.IsNullOrEmpty(LocalFilePath)) OnClick="Submit">
             @if (IsLoading)
             {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Inherit" Class="me-2" />
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Inherit" />
             }
             else
             {

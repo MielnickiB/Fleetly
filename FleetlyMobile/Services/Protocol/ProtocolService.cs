@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using Fleetly.Shared.Client;
 using Fleetly.Shared.Dto.DamageDtos;
 using Fleetly.Shared.Dto.ProtocolDtos;
+using Fleetly.Shared.Enums;
 
 namespace FleetlyMobile.Services.Protocol
 {
@@ -11,9 +12,14 @@ namespace FleetlyMobile.Services.Protocol
         private readonly ApiClient _api = api;
         private const string BaseUrl = "api/Protocol";
 
-        public async Task<ApiResponse<ProtocolResponseDto?>> GetProtocolByOrderIdAsync(int orderId)
+        public async Task<ApiResponse<ProtocolResponseDto?>> GetProtocolByOrderIdAsync(int orderId, ProtocolType? type = null)
         {
-            return await _api.GetAsync<ProtocolResponseDto>($"{BaseUrl}/order/{orderId}");
+            var url = $"{BaseUrl}/order/{orderId}";
+            if (type.HasValue)
+            {
+                url += $"?type={(int)type.Value}";
+            }
+            return await _api.GetAsync<ProtocolResponseDto>(url);
         }
 
         public async Task<ApiResponse<ProtocolResponseDto?>> StartProtocolAsync(ProtocolInitDto dto)

@@ -7,6 +7,7 @@ using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using FleetlyBackend.Services.FileService;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace FleetlyBackend.Services.ProtocolService
 {
@@ -17,23 +18,32 @@ namespace FleetlyBackend.Services.ProtocolService
         private readonly IFileService _fileService = fileService;
         private readonly IHttpContextAccessor _http = http;
 
-        public async Task<ProtocolResponseDto> GetProtocolByOrderIdAsync(int orderId)
+        public async Task<ProtocolResponseDto?> GetProtocolByOrderIdAsync(int orderId, ProtocolType? type = null)
         {
             var user = _http.CurrentUser();
             var userId = user.GetUserId();
+
+            var order = await _context.Orders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.Id == orderId)
+                ?? throw new KeyNotFoundException("Nie znaleziono zlecenia.");
+
+            var targetType = type ?? ((order.Status == OrderStatus.Assigned) ? ProtocolType.Pickup : ProtocolType.Delivery);
+
             var protocol = await _context.Protocols
                 .AsNoTracking()
                 .Include(p => p.Order)
                 .Include(p => p.Vehicle)
                 .Include(p => p.Photos)
                 .Include(p => p.Damages)
-                .FirstOrDefaultAsync(p => p.OrderId == orderId)
-                ?? throw new KeyNotFoundException("Nie znaleziono protokołu dla podanego zlecenia.");
+                .FirstOrDefaultAsync(p => p.OrderId == orderId && p.Type == targetType);
+
+            if (protocol == null) return null;
 
             if (!user.IsAdmin() && protocol.WorkerId != userId && protocol.ClientId != userId)
                 throw new UnauthorizedAccessException("Nie masz dostępu do tego protokołu.");
 
-            return protocol.ToResponseDto();
+            return await GetProtocolDtoInternal(protocol.Id);
         }
 
         public async Task<ProtocolResponseDto> StartProtocolAsync(ProtocolInitDto dto)
@@ -76,7 +86,7 @@ namespace FleetlyBackend.Services.ProtocolService
             _context.Protocols.Add(protocol);
             await _context.SaveChangesAsync();
 
-            return protocol.ToResponseDto();
+            return await GetProtocolDtoInternal(protocol.Id);
         }
 
         public async Task<ProtocolResponseDto> AddProtocolPhotoAsync(ProtocolPhotoDto dto)

@@ -15,7 +15,9 @@ namespace Fleetly.Shared.Dto.ProtocolDtos
         public decimal FuelLevel { get; set; }
         public bool HasRegistrationDocument { get; set; }
         public bool HasInsurancePolicy { get; set; }
+        public bool HasServiceBook { get; set; }
         public int NumberOfKeys { get; set; }
+        public string? Notes { get; set; }
         public string? SignatureUrl { get; set; }
 
         public List<ProtocolPhotoResponseDto> Photos { get; set; } = [];

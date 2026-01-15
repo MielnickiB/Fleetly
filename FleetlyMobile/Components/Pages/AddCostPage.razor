@@ -22,14 +22,14 @@
             </MudSelect>
 
             <MudNumericField @bind-Value="_model.Cost"
-                             Label="Kwota (zł)"
+                             Label="Kwota"
                              Variant="Variant.Outlined"
                              T="decimal"
                              Format="N2"
                              Min="0.01m"
-                             Adornment="Adornment.Start"
+                             Adornment="Adornment.End"
                              Required="true"
-                             AdornmentIcon="@Icons.Material.Filled.AttachMoney"
+                             AdornmentText="zł"
                              For="@(() => _model.Cost)" />
 
             <MudText Typo="Typo.subtitle2" Class="mt-2">Dowód zakupu</MudText>

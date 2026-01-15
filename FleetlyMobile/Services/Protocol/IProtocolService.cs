@@ -1,12 +1,13 @@
 ﻿using Fleetly.Shared.Client;
 using Fleetly.Shared.Dto.DamageDtos;
 using Fleetly.Shared.Dto.ProtocolDtos;
+using Fleetly.Shared.Enums;
 
 namespace FleetlyMobile.Services.Protocol
 {
     public interface IProtocolService
     {
-        Task<ApiResponse<ProtocolResponseDto?>> GetProtocolByOrderIdAsync(int orderId);
+        Task<ApiResponse<ProtocolResponseDto?>> GetProtocolByOrderIdAsync(int orderId, ProtocolType? type = null);
 
         Task<ApiResponse<ProtocolResponseDto?>> StartProtocolAsync(ProtocolInitDto dto);
 
