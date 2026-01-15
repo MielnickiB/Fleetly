@@ -1,7 +1,8 @@
-﻿using System.Text.Json;
-using Fleetly.Shared.Client;
+﻿using Fleetly.Shared.Client;
 using Fleetly.Shared.Dto.AuthDtos;
 using FleetlyMobile.Constants;
+using Microsoft.AspNetCore.Components.Authorization;
+using System.Text.Json;
 
 namespace FleetlyMobile.Services.Auth
 {

@@ -1,10 +1,12 @@
 ﻿using System.Net.Http.Headers;
 using FleetlyMobile.Constants;
+using FleetlyMobile.Services.Auth;
 
 namespace FleetlyMobile.Services
 {
-    public class TokenHandler : DelegatingHandler
+    public class TokenHandler(IServiceProvider serviceProvider) : DelegatingHandler
     {
+        private readonly IServiceProvider _serviceProvider = serviceProvider;
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var token = await SecureStorage.Default.GetAsync(AppConstants.AuthTokenKey);
@@ -14,7 +16,15 @@ namespace FleetlyMobile.Services
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
 
-            return await base.SendAsync(request, cancellationToken);
+            var response = await base.SendAsync(request, cancellationToken);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                var authService = _serviceProvider.GetRequiredService<IAuthService>();
+                await authService.LogoutAsync();
+            }
+
+            return response;
         }
     }
 }
