@@ -12,7 +12,7 @@ namespace Fleetly.Shared.Dto.DamageDtos
         public VehicleSide DamageSide { get; set; }
         [Required(ErrorMessage = "Informacja o cześci jest wymagana!")]
         public DamagePart DamagePart { get; set; }
-        [Required(ErrorMessage = "Rodzaj uszkodzenia jest wyamgany!")]
+        [Required(ErrorMessage = "Rodzaj uszkodzenia jest wymagany!")]
         public DamageType DamageType { get; set; }
 
         public string? Description { get; set; }
