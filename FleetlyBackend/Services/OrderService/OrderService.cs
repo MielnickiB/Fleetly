@@ -501,7 +501,7 @@ namespace FleetlyBackend.Services.OrderService
             }
         }
 
-        public async Task<OrderResponseDto> SubmitAllOrderCosts(int orderId)
+        public async Task SubmitAllOrderCosts(int orderId)
         {
             var order = await GetOrderWithWorkerCheck(orderId);
 
@@ -514,8 +514,6 @@ namespace FleetlyBackend.Services.OrderService
             await _context.SaveChangesAsync();
 
             await _notificationService.NotifyOrderFinishedByWorker(order);
-
-            return await GetFresh(orderId);
         }
 
         #endregion

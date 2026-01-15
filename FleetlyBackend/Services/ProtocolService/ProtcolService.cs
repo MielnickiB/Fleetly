@@ -7,7 +7,6 @@ using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using FleetlyBackend.Services.FileService;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace FleetlyBackend.Services.ProtocolService
 {
@@ -200,7 +199,7 @@ namespace FleetlyBackend.Services.ProtocolService
             if (protocol.WorkerId != user.GetUserId() && !user.IsAdmin())
                 throw new UnauthorizedAccessException("Brak dostępu do protokołu.");
 
-            string folderStructure = Path.Combine("Orders", protocol.OrderId.ToString(), "Protocols", protocol.Id.ToString(), "Signatures");
+            string folderStructure = Path.Combine("Orders", protocol.OrderId.ToString(), "Protocols", protocol.Type.ToString(), "Signatures");
             string signaturePath = await _fileService.SaveFileAsync(dto.SignaturePhoto, folderStructure);
 
             protocol.Mileage = dto.Mileage;
@@ -235,6 +234,7 @@ namespace FleetlyBackend.Services.ProtocolService
 
             return await GetProtocolDtoInternal(dto.ProtocolId);
         }
+
         public async Task UpdateStepAsync(int protocolId, int step)
         {
             var protocol = await GetProtocolWithAccessCheck(protocolId);

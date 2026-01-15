@@ -374,7 +374,7 @@ else
         {
             await ExecuteSafeAsync(async () =>
             {
-                var apiResult = await OrderService.ConfirmCostsAsync(OrderId);
+                var apiResult = await OrderService.SubmitCostsAsync(OrderId);
 
                 if (!apiResult.Success) throw new Exception(apiResult.Error);
 

@@ -58,5 +58,10 @@ namespace FleetlyMobile.Services.Orders
         {
             return await _api.DeleteAsync<OrderResponseDto>($"{BaseUrl}/{orderId}/costs/{expenseId}");
         }
+
+        public async Task<ApiResponse<bool>> SubmitCostsAsync(int orderId)
+        {
+            return await _api.PostNoResultAsync<object>($"{BaseUrl}/{orderId}/costs/submit", null!);
+        }
     }
 }
