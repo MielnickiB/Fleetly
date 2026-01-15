@@ -71,24 +71,6 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
         catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
-    [HttpPost("{orderId:int}/start")]
-    public async Task<ActionResult<OrderResponseDto>> Start(int orderId)
-    {
-        try { return Ok(await _service.StartOrder(orderId)); }
-        catch (ArgumentException ex) { return NotFound(ex.Message); }
-        catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
-    }
-
-    [HttpPost("{orderId:int}/arrive")]
-    public async Task<ActionResult<OrderResponseDto>> ArriveClient(int orderId)
-    {
-        try { return Ok(await _service.ArrivedToClient(orderId)); }
-        catch (ArgumentException ex) { return NotFound(ex.Message); }
-        catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-        catch (UnauthorizedAccessException) { return Forbid(); }
-    }
-
     [HttpPost("{orderId:int}/finish")]
     public async Task<ActionResult<OrderResponseDto>> Finish(int orderId)
     {
@@ -126,10 +108,14 @@ public class WorkerOrderController(IOrderService service) : ControllerBase
     }
 
     [HttpPost("{orderId:int}/costs/submit")]
-    public async Task<ActionResult<OrderResponseDto>> SubmitCosts(int orderId)
+    public async Task<ActionResult> SubmitCosts(int orderId)
     {
 
-        try { return Ok(await _service.SubmitAllOrderCosts(orderId)); }
+        try 
+        { 
+            await _service.SubmitAllOrderCosts(orderId);
+            return Ok(true);
+        }
         catch (ArgumentException ex) { return NotFound(ex.Message); }
         catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
         catch (UnauthorizedAccessException) { return Forbid(); }

@@ -6,18 +6,18 @@ namespace FleetlyBackend.Mappings
     public static class DamageMappings
     {
         public static DamageResponseDto ToResponseDto(this Damage d)
-            => new()
-            {
-                Id = d.Id,
-                VehicleId = d.VehicleId,
-                ProtocolId = d.ProtocolId,
-                DamageSide = d.DamageSide,
-                DamageLocation = d.DamageLocation,
-                DamagePart = d.DamagePart,
-                DamageType = d.DamageType,
-                Description = d.Description,
-                PhotoUrl = d.PhotoUrl,
-                CreatedAt = d.CreatedAt
-            };
+        => new()
+        {
+            Id = d.Id,
+            Side = d.Side,
+            Part = d.Part,
+            Type = d.Type,
+            Description = d.Description ?? string.Empty,
+            PhotoUrl = d.PhotoUrl,
+            CreatedAt = d.CreatedAt,
+            IsFixed = d.IsFixed,
+            FixedAt = d.FixedAt,
+            FixedByProtocolId = d.FixedByProtocolId
+        };
     }
 }

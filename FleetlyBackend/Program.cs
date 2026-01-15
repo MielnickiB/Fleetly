@@ -6,7 +6,6 @@ using FleetlyBackend.Services.AvailabilityService;
 using FleetlyBackend.Services.BrandModelService;
 using FleetlyBackend.Services.CarBrandService;
 using FleetlyBackend.Services.CostLimitService;
-using FleetlyBackend.Services.DamageService;
 using FleetlyBackend.Services.DashboardService;
 using FleetlyBackend.Services.ExpenseService;
 using FleetlyBackend.Services.FileService;
@@ -15,6 +14,7 @@ using FleetlyBackend.Services.LocationService;
 using FleetlyBackend.Services.NotificationService;
 using FleetlyBackend.Services.OrderService;
 using FleetlyBackend.Services.PayrollService;
+using FleetlyBackend.Services.ProtocolService;
 using FleetlyBackend.Services.RouteService;
 using FleetlyBackend.Services.UserDetailsService;
 using FleetlyBackend.Services.UserRoleService;
@@ -77,13 +77,13 @@ builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 builder.Services.AddScoped<ICostLimitService, CostLimitService>();
 builder.Services.AddScoped<IFileService, FileService>();
-builder.Services.AddScoped<IDamageService, DamageService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IPayrollService, PayrollService>();
+builder.Services.AddScoped<IProtocolService, ProtocolService>();
 builder.Services.AddHttpClient<IRouteService, RouteService>(client =>
 {
     client.DefaultRequestHeaders.UserAgent.ParseAdd("FleetlyApp/1.0");
@@ -187,7 +187,7 @@ app.MapControllers();
 
 var supportedCultures = new[] { "en-US", "pl-PL" };
 var localizationOptions = new RequestLocalizationOptions()
-    .SetDefaultCulture(supportedCultures[1])
+    .SetDefaultCulture(supportedCultures[0])
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Processing;
 
 namespace FleetlyBackend.Services.FileService
@@ -23,7 +24,7 @@ namespace FleetlyBackend.Services.FileService
 
             var ext = Path.GetExtension(file.FileName).ToLower();
 
-            var finalExtension = (ext == ".pdf") ? ".pdf" : ".jpg";
+            var finalExtension = (ext == ".pdf") ? ".pdf" : (ext == ".png" ? ".png" : ".jpg");
 
             var uniqueFileName = $"{Guid.NewGuid()}{finalExtension}";
             var folderPath = Path.Combine(_rootPath, pathPrefix);
@@ -42,7 +43,7 @@ namespace FleetlyBackend.Services.FileService
             }
             else
             {
-                await SaveImageWithCompression(file, fullFilePath);
+                await SaveImageWithCompression(file, fullFilePath, ext);
             }
 
             return Path.Combine(pathPrefix, uniqueFileName).Replace("\\", "/");
@@ -66,7 +67,7 @@ namespace FleetlyBackend.Services.FileService
             return Task.CompletedTask;
         }
 
-        private static async Task SaveImageWithCompression(IFormFile file, string filePath)
+        private static async Task SaveImageWithCompression(IFormFile file, string filePath, string extension)
         {
             await using var stream = file.OpenReadStream();
 
@@ -79,10 +80,20 @@ namespace FleetlyBackend.Services.FileService
                 img.Mutate(x => x.Resize(MaxImageWidth, 0));
             }
 
-            await img.SaveAsJpegAsync(filePath, new JpegEncoder
+            if (extension == ".jpg" || extension == ".jpeg")
             {
-                Quality = JpegQuality
-            });
+                await img.SaveAsJpegAsync(filePath, new JpegEncoder { Quality = JpegQuality });
+            }
+            else if (extension == ".png")
+            {
+                await img.SaveAsPngAsync(filePath, new PngEncoder { CompressionLevel = PngCompressionLevel.BestCompression });
+            }
+            else
+            {
+                await img.SaveAsync(filePath);
+            }
+
+            await img.SaveAsync(filePath);
         }
 
         private void ValidateSize(IFormFile file)
@@ -117,7 +128,7 @@ namespace FleetlyBackend.Services.FileService
             // PDF header: %PDF (25 50 44 46)
             if (bytesRead >= 4 && new ReadOnlySpan<byte>(buffer, 0, 4).SequenceEqual("%PDF"u8)) return;
 
-            throw new InvalidOperationException("Plik nie jest prawidłowym obrazem lub PDF.");
+            throw new InvalidOperationException($"Plik nie jest prawidłowym obrazem lub PDF. Wykryto nagłówek: {BitConverter.ToString(buffer)}");
         }
     }
 }

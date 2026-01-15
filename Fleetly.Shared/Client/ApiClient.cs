@@ -10,6 +10,10 @@ public class ApiClient(HttpClient http)
     {
         using var res = await _http.GetAsync(url);
         var status = (int)res.StatusCode;
+        if (res.StatusCode == System.Net.HttpStatusCode.NoContent)
+        {
+            return ApiResponse<T?>.SuccessResult(default, status);
+        }
         if (res.IsSuccessStatusCode)
         {
             var data = await res.Content.ReadFromJsonAsync<T?>();
@@ -23,6 +27,28 @@ public class ApiClient(HttpClient http)
     public async Task<ApiResponse<TResponse?>> PostAsync<TRequest, TResponse>(string url, TRequest data)
     {
         using var res = await _http.PostAsJsonAsync(url, data);
+        var status = (int)res.StatusCode;
+        if (res.IsSuccessStatusCode)
+        {
+            var dto = await res.Content.ReadFromJsonAsync<TResponse?>();
+            return ApiResponse<TResponse?>.SuccessResult(dto, status);
+        }
+
+        var error = await SafeReadStringAsync(res);
+        return ApiResponse<TResponse?>.ErrorResult(error, status);
+    }
+
+
+    public async Task<ApiResponse<TResponse?>> PatchAsync<TResponse>(string url, object? data = null)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Patch, url);
+
+        if (data != null)
+        {
+            request.Content = JsonContent.Create(data);
+        }
+
+        using var res = await _http.SendAsync(request);
         var status = (int)res.StatusCode;
         if (res.IsSuccessStatusCode)
         {

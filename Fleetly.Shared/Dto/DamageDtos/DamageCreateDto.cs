@@ -1,32 +1,22 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Fleetly.Shared.Enums;
 using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 
 namespace Fleetly.Shared.Dto.DamageDtos
 {
     public class DamageCreateDto
     {
-        [Required]
-        public int VehicleId { get; set; }
-        [Required]
         public int ProtocolId { get; set; }
 
-        [Required]
-        [StringLength(50)]
+        [Required(ErrorMessage = "Lokalizacja uszkodzenia jest wymagana!")]
+        public VehicleSide DamageSide { get; set; }
+        [Required(ErrorMessage = "Informacja o cześci jest wymagana!")]
+        public DamagePart DamagePart { get; set; }
+        [Required(ErrorMessage = "Rodzaj uszkodzenia jest wymagany!")]
+        public DamageType DamageType { get; set; }
 
-        public string DamageSide { get; set; } = null!;
-        [Required] 
-        [StringLength(50)]
-        public string DamageLocation { get; set; } = null!;
-        [Required] 
-        [StringLength(100)] 
-        public string DamagePart { get; set; } = null!;
-        [Required] 
-        [StringLength(50)] 
-        public string DamageType { get; set; } = null!;
-        [StringLength(300)]
         public string? Description { get; set; }
 
-        [Required]
         public IFormFile Photo { get; set; } = null!;
     }
 }

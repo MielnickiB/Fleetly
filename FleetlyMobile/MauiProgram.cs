@@ -8,6 +8,8 @@ using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using FleetlyMobile.Services.Orders;
 using FleetlyMobile.Services.Expense;
+using FleetlyMobile.Services.Protocol;
+using Microsoft.Maui.Devices.Sensors;
 
 namespace FleetlyMobile
 {
@@ -32,6 +34,8 @@ namespace FleetlyMobile
 
             builder.Services.AddMudServices();
 
+            builder.Services.AddSingleton<IGeolocation>(Geolocation.Default);
+
             builder.Services.AddAuthorizationCore();
 
             builder.Services.AddScoped<CustomAuthStateProvider>();
@@ -50,6 +54,7 @@ namespace FleetlyMobile
             builder.Services.AddScoped<IDashboardService, DashboardService>();
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IExpenseService, ExpenseService>();
+            builder.Services.AddScoped<IProtocolService, ProtocolService>();
 
             return builder.Build();
         }

@@ -86,7 +86,7 @@ namespace FleetlyBackend.Services.DashboardService
                 .Where(o => o.WorkerId == userId && o.IsActive);
 
             var todayOrders = await ordersQuery
-                .Where(o => o.StartTime.Date == today)
+                .Where(o => o.StartTime.Date == today && o.Status < OrderStatus.WaitingForCostApproval)
                 .OrderBy(o => o.StartTime)
                 .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
                 .Include(o => o.StartLocation)

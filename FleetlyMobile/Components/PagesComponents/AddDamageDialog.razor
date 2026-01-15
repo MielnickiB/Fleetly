@@ -1,0 +1,102 @@
+﻿@inherits CostBasePage
+@inject IProtocolService ProtocolService
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudSelect T="DamagePart" Label="Element" @bind-Value="_model.DamagePart" Variant="Variant.Outlined" FullWidth="true" Class="w-100">
+                @foreach (DamagePart part in GetPartsForSide(Side))
+                {
+                    <MudSelectItem Value="@part">@part.ToDescription()</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="DamageType" Label="Rodzaj" @bind-Value="_model.DamageType" Variant="Variant.Outlined" FullWidth="true" Class="w-100">
+                @foreach (DamageType type in Enum.GetValues(typeof(DamageType)))
+                {
+                    <MudSelectItem Value="@type">@type.ToDescription()</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField @bind-Value="_model.Description" Label="Opis (opcjonalne)" Variant="Variant.Outlined" Lines="2" />
+
+            <MudText Typo="Typo.subtitle2">Zdjęcie uszkodzenia</MudText>
+            @if (LocalFilePath != null)
+            {
+                <MudPaper Class="pa-2 border-dashed d-flex align-center gap-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Image" Color="Color.Success" />
+                    <MudText Typo="Typo.caption">Zdjęcie dodane</MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="ClearFile" />
+                </MudPaper>
+            }
+            else
+            {
+                <MudButton StartIcon="@Icons.Material.Filled.CameraAlt" Variant="Variant.Filled" Color="Color.Primary" OnClick="TakePhotoAsync">
+                    Aparat
+                </MudButton>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Outlined" Disabled="@IsLoading" Color="Color.Default">Anuluj</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" Disabled=@(string.IsNullOrEmpty(LocalFilePath)) OnClick="Submit">
+            @if (IsLoading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Inherit" />
+            }
+            else
+            {
+                <MudText Typo="Typo.button">Zgłoś</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public int ProtocolId { get; set; }
+    [Parameter] public VehicleSide Side { get; set; }
+
+    private readonly DamageCreateDto _model = new();
+
+    protected override void OnInitialized()
+    {
+        _model.ProtocolId = ProtocolId;
+        _model.DamageSide = Side;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrEmpty(LocalFilePath))
+        {
+            Snackbar.Add("Zdjęcie uszkodzenia jest wymagane!", Severity.Warning);
+            return;
+        }
+
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await ProtocolService.AddDamageAsync(_model, LocalFilePath);
+
+            if (result.Success)
+            {
+                MudDialog.Close(DialogResult.Ok(result.Data));
+            }
+            else
+            {
+                Snackbar.Add(result.Error ?? "Błąd zapisu", Severity.Error);
+            }
+        });
+    }
+
+    private List<DamagePart> GetPartsForSide(VehicleSide side) => side switch
+    {
+        VehicleSide.Front => new() { DamagePart.BumperFront, DamagePart.Hood, DamagePart.Windshield, DamagePart.LampLeft, DamagePart.LampRight },
+        VehicleSide.Back => new() { DamagePart.BumperBack, DamagePart.Trunk, DamagePart.LampLeft, DamagePart.LampRight },
+        VehicleSide.Left => new() { DamagePart.DoorFront, DamagePart.FenderFront, DamagePart.FenderBack, DamagePart.MirrorLeft, DamagePart.WheelFront, DamagePart.WheelBack },
+        VehicleSide.Right => new() { DamagePart.DoorFront, DamagePart.DoorBack, DamagePart.FenderFront, DamagePart.FenderBack, DamagePart.MirrorRight, DamagePart.WheelFront, DamagePart.WheelBack },
+        _ => Enum.GetValues(typeof(DamagePart)).Cast<DamagePart>().ToList()
+    };
+}

@@ -19,10 +19,8 @@ namespace FleetlyBackend.Services.OrderService
         public Task<OrderResponseDto> CancelOrder(int orderId);
         public Task AcceptOrder(int orderId);
         public Task ResignOrder(int orderId);
-        public Task<OrderResponseDto> StartOrder(int orderId);
-        public Task<OrderResponseDto> ArrivedToClient(int orderId);
         public Task<OrderResponseDto> FinishOrderByWorker(int orderId);
-        public Task<OrderResponseDto> SubmitAllOrderCosts(int orderId);
+        public Task SubmitAllOrderCosts(int orderId);
         public Task<OrderResponseDto> ApproveCostsAndCompleteOrder(int orderId);
         public Task<OrderResponseDto> ApproveOrder(int orderId);
         public Task<OrderResponseDto> AddCost(int orderId, ExpenseCreateDto dto);
