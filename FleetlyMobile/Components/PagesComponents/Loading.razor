@@ -1,3 +1,8 @@
-﻿<MudContainer MaxWidth="MaxWidth.False" Class="d-flex justify-center align-center" Style="height: 70vh;">
+﻿<MudContainer MaxWidth="MaxWidth.False" Class="d-flex justify-center align-center" Style="@($"height: {Height}")">
     <MudProgressCircular Indeterminate="true" Color="Color.Primary" Class="d-flex mx-auto mt-8" />
 </MudContainer>
+
+@code 
+{
+    [Parameter] public string Height { get; set; } = "70vh";
+}

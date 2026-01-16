@@ -142,6 +142,7 @@ namespace FleetlyBackend.Services.OrderService
 
             var orders = await query
                .IncludeAllLiteOrderRelations()
+               .Where(o => o.StartTime.Date >= DateTime.UtcNow.Date)
                .Skip(skip)
                .Take(safe)
                .Select(o => o.ToLiteDto())

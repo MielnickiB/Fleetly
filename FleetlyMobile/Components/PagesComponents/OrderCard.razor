@@ -1,6 +1,13 @@
 ﻿@inject NavigationManager Nav
 
 <MudPaper Elevation="5" Class="pa-4 mb-4 mud-theme-surface rounded-lg" Style="@GetBorderStyle()" @onclick="OpenOrder">
+    @if (IsImportant)
+    {
+        <MudIcon Icon="@Icons.Material.Filled.PriorityHigh"
+                 Color="Color.Info"
+                 Size="Size.Small"
+                 Style="position: absolute; top: 8px; right: 8px; bottom: 8px; z-index: 10" />
+    }
     <MudStack>
         <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
             <MudStack Spacing="0">
@@ -18,7 +25,7 @@
             }
             else
             {
-                <MudChip T="string" Color="@(IsToday? Color.Info: Color.Default)" Variant="Variant.Filled" Size="Size.Small">
+                <MudChip T="string" Color="@(IsToday || IsImportant? Color.Info: Color.Default)" Variant="Variant.Filled" Size="Size.Small">
                     <MudText Typo="Typo.body2" Style="font-weight:bold">@Order.StartTime.ToString("HH:mm")</MudText>
                 </MudChip>
             }
@@ -40,7 +47,7 @@
             <MudItem xs="5">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Justify="Justify.FlexEnd">
                     <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Small" Color="Color.Primary" />
-                    <MudText Typo="Typo.body2">
+                    <MudText Typo="Typo.body2" Color="@(IsImportant? Color.Primary: Color.Default)" Style="@(IsImportant ? "font-weight: bold;" : "")">
                         @(CardType == OrderCardType.Marketplace ? Order.StartTime.ToString("dd.MM HH:mm") : Order.StartTime.ToString("dd.MM"))
                     </MudText>
                 </MudStack>
@@ -110,12 +117,19 @@
     [Parameter] public bool IsToday { get; set; } = false;
     [Parameter] public bool IsProcessing { get; set; } = false;
 
+    private bool IsImportant => Order.StartTime <= DateTime.UtcNow.AddDays(2);
+
     private string GetBorderStyle()
     {
-        var color = (CardType == OrderCardType.Marketplace || IsToday)
+        var style = "position: relative; ";
+
+        var color = (IsToday || IsImportant)
             ? "var(--mud-palette-primary)"
             : "var(--mud-palette-grey)";
-        return $"border-left: 6px solid {color};";
+
+        style += $"border-left: 6px solid {color}";
+
+        return style;
     }
 
     private void OpenOrder()
