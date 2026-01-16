@@ -117,7 +117,7 @@
     [Parameter] public bool IsToday { get; set; } = false;
     [Parameter] public bool IsProcessing { get; set; } = false;
 
-    private bool IsImportant => Order.StartTime < DateTime.UtcNow.AddDays(2);
+    private bool IsImportant => Order.StartTime <= DateTime.UtcNow.AddDays(2);
 
     private string GetBorderStyle()
     {

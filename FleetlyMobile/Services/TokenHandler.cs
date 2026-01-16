@@ -2,6 +2,7 @@
 using FleetlyMobile.Constants;
 using System.Net;
 using FleetlyMobile.Services.Auth;
+using Microsoft.Extensions.Logging;
 
 namespace FleetlyMobile.Services
 {
@@ -23,8 +24,16 @@ namespace FleetlyMobile.Services
             {
                 _ = Task.Run(async () =>
                 {
-                    var authService = _serviceProvider.GetRequiredService<IAuthService>();
-                    await authService.LogoutAsync();
+                    try
+                    {
+                        var authService = _serviceProvider.GetRequiredService<IAuthService>();
+                        await authService.LogoutAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        var logger = _serviceProvider.GetService<ILogger<TokenHandler>>();
+                        logger?.LogError(ex, "Krytyczny błąd podczas wylogowywania w tle.");
+                    }
                 }, cancellationToken);
             }
 
