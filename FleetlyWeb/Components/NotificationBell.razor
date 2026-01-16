@@ -233,7 +233,20 @@
 
     private string GetTimeAgo(DateTime date)
     {
-        var span = DateTime.UtcNow - date;
+        DateTime localDate;
+        if (date.Kind == DateTimeKind.Utc)
+        {
+            localDate = date.ToLocalTime();
+        }
+        else if (date.Kind == DateTimeKind.Unspecified)
+        {
+            localDate = DateTime.SpecifyKind(date, DateTimeKind.Local);
+        }
+        else
+        {
+            localDate = date;
+        }
+        var span = DateTime.Now - localDate;
         if (span.TotalMinutes < 1) return "Teraz";
         if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} min temu";
         if (span.TotalHours < 24) return $"{(int)span.TotalHours} godz. temu";

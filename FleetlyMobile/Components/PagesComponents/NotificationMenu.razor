@@ -112,8 +112,20 @@
 
         _timer = new System.Threading.Timer(async _ =>
         {
-            await InvokeAsync(LoadUnreadCount);
+            _ = RefreshUnreadCountAsync();
         }, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+    }
+
+    private async Task RefreshUnreadCountAsync()
+    {
+        try
+        {
+            await InvokeAsync(LoadUnreadCount);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add($"Wystąpił błąd podczas odświeżania liczby nieprzeczytanych powiadomień", Severity.Error);
+        }
     }
 
     private async void StateHasChangedWrapper()
@@ -201,6 +213,7 @@
 
     private async Task DeleteNotification(NotificationResponseDto item, MouseEventArgs e)
     {
+        e.StopPropagation();
         var res = await NotiService.DeleteAsync(item.Id);
         if (res.Success)
         {
@@ -230,11 +243,24 @@
 
     private string GetTimeAgo(DateTime date)
     {
-        var span = DateTime.UtcNow - date;
+        DateTime localDate;
+        if (date.Kind == DateTimeKind.Utc)
+        {
+            localDate = date.ToLocalTime();
+        }
+        else if (date.Kind == DateTimeKind.Unspecified)
+        {
+            localDate = DateTime.SpecifyKind(date, DateTimeKind.Local);
+        }
+        else
+        {
+            localDate = date;
+        }
+        var span = DateTime.Now - localDate;
         if (span.TotalMinutes < 1) return "Teraz";
         if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} min temu";
         if (span.TotalHours < 24) return $"{(int)span.TotalHours} godz. temu";
-        return date.ToString("dd.MM HH:mm");
+        return localDate.ToString("dd.MM HH:mm");
     }
 
     public void Dispose()
