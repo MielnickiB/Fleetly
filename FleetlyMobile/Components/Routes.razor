@@ -4,8 +4,11 @@
     <Router AppAssembly="@typeof(MauiProgram).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" >
+                <Authorizing>
+                    <Loading />
+                </Authorizing>
                 <NotAuthorized>
-                    <Login />
+                    <RedirectToLogin />
                 </NotAuthorized>
             </AuthorizeRouteView>
         </Found>
