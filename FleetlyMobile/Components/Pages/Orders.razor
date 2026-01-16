@@ -27,7 +27,7 @@
     </MudPaper>
     @if (IsLoading)
     {
-        <Loading />
+        <Loading Height="50vh" />
     }
     else if (_isError)
     {
@@ -47,7 +47,13 @@
         }
         else
         {
-            <NoItems Title="Brak dostępnych zleceń" Message="Spróbuj ponownie później lub odśwież stronę." Height="50vh" />
+            <EmptyView OnRetry="LoadDataAsync"
+                       Title="Brak dostępnych zleceń"
+                       Message="Spróbuj ponownie później lub odśwież stronę."
+                       Icon="@Icons.Material.Filled.Inbox"
+                       ButtonIcon="@Icons.Material.Filled.RestartAlt"
+                       ButtonText="Odśwież"
+                       Height="50vh" />
         }
     }
     else
@@ -59,6 +65,43 @@
     }
 </MudStack>
 
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+    <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="0">
+        <MudSelect T="int"
+                   Value="PageSize"
+                   ValueChanged="OnPageSizeChanged"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Class="border-primary"
+                   FitContent="true"
+                   Dense="true">
+            <MudSelectItem T="int" Value="5" />
+            <MudSelectItem T="int" Value="10" />
+            <MudSelectItem T="int" Value="20" />
+        </MudSelect>
+
+        @if (TotalItems == 0)
+        {
+            <MudText Typo="Typo.body2" Class="ml-2">
+                Brak wyników
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="ml-2">
+                @StartItem - @EndItem z @TotalItems
+            </MudText>
+        }
+
+    </MudStack>
+    <MudPagination Count="@TotalPages"
+                   Selected="@CurrentPage"
+                   SelectedChanged="OnPageChanged"
+                   Color="Color.Primary"
+                   ShowPageButtons="false"
+                   Variant="Variant.Filled"
+                   Size="Size.Medium" />
+</MudStack>
 @code {
     private bool _isError = false;
 

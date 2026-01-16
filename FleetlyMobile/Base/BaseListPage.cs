@@ -7,7 +7,9 @@
 
         protected int CurrentPage { get; set; } = 1;
         protected int PageSize { get; set; } = 10;
-
+        protected int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 1;
+        protected int StartItem => TotalItems == 0 ? 0 : (CurrentPage - 1) * PageSize + 1;
+        protected int EndItem => Math.Min(CurrentPage * PageSize, TotalItems);
         protected string SearchString { get; set; } = string.Empty;
 
         protected string SortBy { get; set; } = "date";
@@ -17,6 +19,13 @@
 
         protected override async Task OnInitializedAsync()
         {
+            await ExecuteSafeAsync(LoadDataAsync);
+        }
+
+        protected async Task OnPageSizeChanged(int pageSize)
+        {
+            PageSize = pageSize;
+            CurrentPage = 1;
             await ExecuteSafeAsync(LoadDataAsync);
         }
 

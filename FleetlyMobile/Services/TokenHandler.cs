@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using FleetlyMobile.Constants;
+using System.Net;
 using FleetlyMobile.Services.Auth;
 
 namespace FleetlyMobile.Services
@@ -18,10 +19,13 @@ namespace FleetlyMobile.Services
 
             var response = await base.SendAsync(request, cancellationToken);
 
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                var authService = _serviceProvider.GetRequiredService<IAuthService>();
-                await authService.LogoutAsync();
+                _ = Task.Run(async () =>
+                {
+                    var authService = _serviceProvider.GetRequiredService<IAuthService>();
+                    await authService.LogoutAsync();
+                }, cancellationToken);
             }
 
             return response;

@@ -10,6 +10,7 @@ using FleetlyMobile.Services.Orders;
 using FleetlyMobile.Services.Expense;
 using FleetlyMobile.Services.Protocol;
 using Microsoft.Maui.Devices.Sensors;
+using Microsoft.Extensions.Localization;
 
 namespace FleetlyMobile
 {
