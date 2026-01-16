@@ -2,9 +2,11 @@
 @inherits LayoutComponentBase
 
 <MudThemeProvider Theme="@FleetlyWeb.Theme.FleetlyTheme.Default" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudPopoverProvider />
 
 <MudLayout>
-
     <MudAppBar Elevation="5" Color="Color.Surface">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleOpen" Color="Color.Inherit" />
         <MudText Typo="Typo.h5" Class="ml-2">Fleetly</MudText>
@@ -32,12 +34,7 @@
             @Body
         </MudContainer>
     </MudMainContent>
-
 </MudLayout>
-
-<MudDialogProvider />
-<MudSnackbarProvider />
-<MudPopoverProvider />
 
 @code {
     private bool _open = false;
