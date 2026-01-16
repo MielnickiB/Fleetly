@@ -1,12 +1,9 @@
-﻿@using Fleetly.Shared.Dto.NotificationDtos
-@using FleetlyWeb.Services.Notifications
-@using Fleetly.Shared.Enums
-@implements IDisposable
+﻿@implements IDisposable
 @inject INotificationService NotiService
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
 
-<div class="d-inline-flex align-center relative mx-2">
+<div class="d-inline-flex align-center relative">
     <MudBadge Content="_unreadCount" Color="Color.Error" Overlap="true" Visible="@(_unreadCount > 0)" Class="notification-badge">
         <MudIconButton Icon="@Icons.Material.Filled.Notifications"
                        Color="Color.Inherit"
@@ -17,8 +14,8 @@
                 AnchorOrigin="Origin.BottomRight"
                 TransformOrigin="Origin.TopRight"
                 Fixed="false"
-                Class="px-0 py-2 paper-blur"
-                Style="max-width: 70vw; width: 350px; max-height: 80vh; overflow-y: auto;">
+                Class="py-2"
+                Style="max-width: 80vw; width: 350px; max-height: 80vh; overflow-y: auto;">
 
         <div class="d-flex justify-space-between align-center px-4 py-2">
             <MudText Typo="Typo.subtitle1" Style="font-weight:bold">Powiadomienia</MudText>
@@ -115,8 +112,20 @@
 
         _timer = new System.Threading.Timer(async _ =>
         {
-            await InvokeAsync(LoadUnreadCount);
+            _ = RefreshUnreadCountAsync();
         }, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+    }
+
+    private async Task RefreshUnreadCountAsync()
+    {
+        try
+        {
+            await InvokeAsync(LoadUnreadCount);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add($"Wystąpił błąd podczas odświeżania liczby nieprzeczytanych powiadomień", Severity.Error);
+        }
     }
 
     private async void StateHasChangedWrapper()
@@ -204,6 +213,7 @@
 
     private async Task DeleteNotification(NotificationResponseDto item, MouseEventArgs e)
     {
+        e.StopPropagation();
         var res = await NotiService.DeleteAsync(item.Id);
         if (res.Success)
         {
@@ -250,7 +260,7 @@
         if (span.TotalMinutes < 1) return "Teraz";
         if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} min temu";
         if (span.TotalHours < 24) return $"{(int)span.TotalHours} godz. temu";
-        return date.ToString("dd.MM HH:mm");
+        return localDate.ToString("dd.MM HH:mm");
     }
 
     public void Dispose()

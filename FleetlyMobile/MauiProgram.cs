@@ -9,6 +9,7 @@ using MudBlazor.Services;
 using FleetlyMobile.Services.Orders;
 using FleetlyMobile.Services.Expense;
 using FleetlyMobile.Services.Protocol;
+using FleetlyMobile.Services.Notifications;
 using Microsoft.Maui.Devices.Sensors;
 
 namespace FleetlyMobile
@@ -55,6 +56,7 @@ namespace FleetlyMobile
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IExpenseService, ExpenseService>();
             builder.Services.AddScoped<IProtocolService, ProtocolService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
 
             return builder.Build();
         }
