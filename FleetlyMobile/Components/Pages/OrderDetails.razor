@@ -1,6 +1,5 @@
 ﻿@page "/orders/{OrderId:int}"
 @inherits BasePage
-@attribute [Authorize(Roles = "Worker")]
 
 @inject IOrderService OrderService
 @inject IDialogService DialogService

@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace FleetlyMobile.Base
 {
+    [Authorize(Roles = "Worker")]
     public abstract class BasePage : ComponentBase
     {
         [Inject] protected ISnackbar Snackbar { get; set; } = default!;

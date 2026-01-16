@@ -7,6 +7,7 @@
 @inject ICostLimitService CostLimitService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
+@attribute [Authorize(Roles = "Admin")]
 @inherits PageBase<CostLimitResponseDto>
 
 <PageTitle>Lista limitów</PageTitle>
