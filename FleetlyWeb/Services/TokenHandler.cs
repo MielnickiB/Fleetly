@@ -26,7 +26,7 @@ namespace FleetlyWeb.Services
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
                 var authService = _serviceProvider.GetRequiredService<IAuthService>();
-                _ = authService.Logout();
+                await authService.Logout();
             }
 
             return response;

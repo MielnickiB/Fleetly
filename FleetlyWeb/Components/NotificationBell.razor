@@ -115,7 +115,7 @@
         _timer = new System.Threading.Timer(_ =>
         {
             _ = LoadNotificationsSafe();
-        }, null, TimeSpan.FromSeconds(180), TimeSpan.FromSeconds(180));
+        }, null, TimeSpan.FromMinutes(5), TimeSpan.FromSeconds(5));
     }
 
     private async Task LoadNotificationsSafe()
@@ -126,10 +126,7 @@
         {
             await LoadUnreadCount();
             if (_isOpen) await LoadList();
-            if (!_disposed)
-            {
-                await InvokeAsync(StateHasChanged);
-            }
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
@@ -257,17 +254,9 @@
         return localDate.ToString("dd.MM HH:mm");
     }
 
-    private async void StateHasChangedWrapper()
-    {
-        if (_disposed) return;
-
-        await LoadNotificationsSafe();
-    }
-
     public void Dispose()
     {
         _disposed = true;
-        NotiService.OnChange -= StateHasChangedWrapper;
         _timer?.Dispose();
     }
 }

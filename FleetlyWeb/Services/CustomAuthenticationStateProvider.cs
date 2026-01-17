@@ -33,8 +33,9 @@ namespace FleetlyWeb.Services
 
                 return new AuthenticationState(new ClaimsPrincipal(identity));
             }
-            catch
+            catch (Exception ex) 
             {
+                Console.WriteLine($"Bład pobierania danych autoryzacji: {ex.Message}");
                 return EmptyState();
             }
         }

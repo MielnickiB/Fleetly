@@ -1,7 +1,7 @@
 ﻿using Fleetly.Shared.Client;
 using Fleetly.Shared.Dto.AuthDtos;
 using FleetlyMobile.Constants;
-using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.Json;
 
 namespace FleetlyMobile.Services.Auth
@@ -53,7 +53,6 @@ namespace FleetlyMobile.Services.Auth
             finally
             {
                 _isLogoutInProgress = false;
-                await Task.CompletedTask;
             }
         }
     }
