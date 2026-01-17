@@ -4,7 +4,6 @@ using MudBlazor;
 
 namespace FleetlyMobile.Base
 {
-    [Authorize(Roles = "Worker")]
     public abstract class BasePage : ComponentBase
     {
         [Inject] protected ISnackbar Snackbar { get; set; } = default!;

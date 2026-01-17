@@ -11,6 +11,7 @@ namespace FleetlyMobile.Services.Auth
         private readonly ApiClient _api = api;
         private readonly CustomAuthStateProvider _authStateProvider = authStateProvider;
         private const string _loginEndpoint = "api/Auth/login";
+        private bool _isLogoutInProgress = false;
 
         public async Task<string?> LoginAsync(UserLoginDto dto)
         {
@@ -36,14 +37,24 @@ namespace FleetlyMobile.Services.Auth
             return "Otrzymano nieprawidłowe dane z serwera.";
         }
 
-        public Task LogoutAsync()
+        public async Task LogoutAsync()
         {
-            SecureStorage.Default.Remove(AppConstants.AuthTokenKey);
-            SecureStorage.Default.Remove(AppConstants.UserDataKey);
+            if (_isLogoutInProgress) return;
 
-            _authStateProvider.NotifyUserLogout();
+            try
+            {
+                _isLogoutInProgress = true;
 
-            return Task.CompletedTask;
+                SecureStorage.Default.Remove(AppConstants.AuthTokenKey);
+                SecureStorage.Default.Remove(AppConstants.UserDataKey);
+
+                _authStateProvider.NotifyUserLogout();
+            }
+            finally
+            {
+                _isLogoutInProgress = false;
+                await Task.CompletedTask;
+            }
         }
     }
 }

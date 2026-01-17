@@ -103,42 +103,34 @@
     private List<NotificationResponseDto> _notifications = new();
     private bool _loading = false;
     private System.Threading.Timer? _timer;
+    private bool _disposed = false;
 
     protected override async Task OnInitializedAsync()
     {
-        NotiService.OnChange += StateHasChangedWrapper;
+        _ = LoadNotificationsSafe();
 
-        await LoadUnreadCount();
-
-        _timer = new System.Threading.Timer(async _ =>
+        _timer = new System.Threading.Timer(_ =>
         {
-            _ = RefreshUnreadCountAsync();
-        }, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+            _ = LoadNotificationsSafe();
+        }, null, TimeSpan.FromSeconds(180), TimeSpan.FromSeconds(180));
     }
 
-    private async Task RefreshUnreadCountAsync()
+    private async Task LoadNotificationsSafe()
     {
-        try
-        {
-            await InvokeAsync(LoadUnreadCount);
-        }
-        catch (Exception)
-        {
-            Snackbar.Add($"Wystąpił błąd podczas odświeżania liczby nieprzeczytanych powiadomień", Severity.Error);
-        }
-    }
+        if (_disposed) return;
 
-    private async void StateHasChangedWrapper()
-    {
         try
         {
             await LoadUnreadCount();
             if (_isOpen) await LoadList();
-            await InvokeAsync(StateHasChanged);
+            if (!_disposed)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            Snackbar.Add($"Wystąpił błąd podczas odświeżania powiadomień", Severity.Error);
+            Console.WriteLine($"Wystąpił problem z wczytaniem notyfikacji: {ex.Message}");
         }
     }
 
@@ -213,7 +205,6 @@
 
     private async Task DeleteNotification(NotificationResponseDto item, MouseEventArgs e)
     {
-        e.StopPropagation();
         var res = await NotiService.DeleteAsync(item.Id);
         if (res.Success)
         {
@@ -263,8 +254,16 @@
         return localDate.ToString("dd.MM HH:mm");
     }
 
+    private async void StateHasChangedWrapper()
+    {
+        if (_disposed) return;
+
+        await LoadNotificationsSafe();
+    }
+
     public void Dispose()
     {
+        _disposed = true;
         NotiService.OnChange -= StateHasChangedWrapper;
         _timer?.Dispose();
     }

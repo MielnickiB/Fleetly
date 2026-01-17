@@ -4,6 +4,11 @@
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <Authorizing>
+                    <MudContainer Class="d-flex align-center justify-center" Style="height: 80vh;">
+                        <MudProgressCircular Indeterminate="true" />
+                    </MudContainer>
+                </Authorizing>
                 <NotAuthorized>
                     <RedirectToLogin />
                 </NotAuthorized>

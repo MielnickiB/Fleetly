@@ -39,8 +39,8 @@ namespace FleetlyMobile
 
             builder.Services.AddAuthorizationCore();
 
-            builder.Services.AddScoped<CustomAuthStateProvider>();
-            builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
+            builder.Services.AddSingleton<CustomAuthStateProvider>();
+            builder.Services.AddSingleton<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
 
             builder.Services.AddScoped<TokenHandler>();
 

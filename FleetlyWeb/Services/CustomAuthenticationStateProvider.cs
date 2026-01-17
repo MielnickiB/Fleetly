@@ -12,24 +12,31 @@ namespace FleetlyWeb.Services
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            var token = await _localStorage.GetItemAsync<string>(StorageKeys.AccessToken);
-            var user = await _localStorage.GetItemAsync<UserResponseDto>(StorageKeys.UserProfile);
+            try
+            {
+                var token = await _localStorage.GetItemAsync<string>(StorageKeys.AccessToken);
+                var user = await _localStorage.GetItemAsync<UserResponseDto>(StorageKeys.UserProfile);
 
-            if (string.IsNullOrWhiteSpace(token) || user == null)
+                if (string.IsNullOrWhiteSpace(token) || user == null)
+                    return EmptyState();
+
+                if (!user.IsActive)
+                    return EmptyState();
+
+                var identity = new ClaimsIdentity(
+                [
+                    new Claim(ClaimTypes.NameIdentifier, user!.Id.ToString()),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Role, user.RoleName ?? string.Empty),
+                    new Claim("FullName", $"{user.Details.Name} {user.Details.Surname}"),
+                ], "jwt");
+
+                return new AuthenticationState(new ClaimsPrincipal(identity));
+            }
+            catch
+            {
                 return EmptyState();
-
-            if (!user.IsActive)
-                return EmptyState();
-
-            var identity = new ClaimsIdentity(
-            [
-            new Claim(ClaimTypes.NameIdentifier, user!.Id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.RoleName ?? string.Empty),
-            new Claim("FullName", $"{user.Details.Name} {user.Details.Surname}"),
-            ], "jwt");
-
-            return new AuthenticationState(new ClaimsPrincipal(identity));
+            }
         }
 
         private static AuthenticationState EmptyState()

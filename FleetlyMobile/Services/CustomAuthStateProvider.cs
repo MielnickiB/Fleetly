@@ -48,6 +48,7 @@ namespace FleetlyMobile.Services
 
         public void NotifyUserLogout()
         {
+
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
 
