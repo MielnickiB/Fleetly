@@ -1,143 +1,176 @@
-﻿using System.Net.Http.Json;
+﻿using System.Net;
+using System.Net.Http.Json;
 
 namespace Fleetly.Shared.Client;
-
 public class ApiClient(HttpClient http)
 {
     private readonly HttpClient _http = http;
 
     public async Task<ApiResponse<T?>> GetAsync<T>(string url)
     {
-        using var res = await _http.GetAsync(url);
-        var status = (int)res.StatusCode;
-        if (res.StatusCode == System.Net.HttpStatusCode.NoContent)
+        try
         {
-            return ApiResponse<T?>.SuccessResult(default, status);
+            using var res = await _http.GetAsync(url);
+            return await HandleResponseAsync<T?>(res);
         }
-        if (res.IsSuccessStatusCode)
+        catch (Exception ex)
         {
-            var data = await res.Content.ReadFromJsonAsync<T?>();
-            return ApiResponse<T?>.SuccessResult(data, status);
+            return ApiResponse<T?>.ErrorResult(ex.Message, 0);
         }
-
-        var error = await SafeReadStringAsync(res);
-        return ApiResponse<T?>.ErrorResult(error, status);
     }
 
     public async Task<ApiResponse<TResponse?>> PostAsync<TRequest, TResponse>(string url, TRequest data)
     {
-        using var res = await _http.PostAsJsonAsync(url, data);
-        var status = (int)res.StatusCode;
-        if (res.IsSuccessStatusCode)
+        try
         {
-            var dto = await res.Content.ReadFromJsonAsync<TResponse?>();
-            return ApiResponse<TResponse?>.SuccessResult(dto, status);
+            using var res = await _http.PostAsJsonAsync(url, data);
+            return await HandleResponseAsync<TResponse?>(res);
         }
-
-        var error = await SafeReadStringAsync(res);
-        return ApiResponse<TResponse?>.ErrorResult(error, status);
-    }
-
-
-    public async Task<ApiResponse<TResponse?>> PatchAsync<TResponse>(string url, object? data = null)
-    {
-        using var request = new HttpRequestMessage(HttpMethod.Patch, url);
-
-        if (data != null)
+        catch (Exception ex)
         {
-            request.Content = JsonContent.Create(data);
+            return ApiResponse<TResponse?>.ErrorResult(ex.Message, 0);
         }
-
-        using var res = await _http.SendAsync(request);
-        var status = (int)res.StatusCode;
-        if (res.IsSuccessStatusCode)
-        {
-            var dto = await res.Content.ReadFromJsonAsync<TResponse?>();
-            return ApiResponse<TResponse?>.SuccessResult(dto, status);
-        }
-
-        var error = await SafeReadStringAsync(res);
-        return ApiResponse<TResponse?>.ErrorResult(error, status);
     }
 
     public async Task<ApiResponse<bool>> PostNoResultAsync<TRequest>(string url, TRequest data)
     {
-        using var res = await _http.PostAsJsonAsync(url, data);
-        var status = (int)res.StatusCode;
-        if (res.IsSuccessStatusCode)
+        try
         {
-            return ApiResponse<bool>.SuccessResult(true, status);
+            using var res = await _http.PostAsJsonAsync(url, data);
+            return await HandleBoolResponseAsync(res);
         }
-
-        var error = await SafeReadStringAsync(res);
-        return ApiResponse<bool>.ErrorResult(error, status);
-    }
-
-    public async Task<ApiResponse<TResponse?>> PutAsync<TRequest, TResponse>(string url, TRequest data)
-    {
-        using var res = await _http.PutAsJsonAsync(url, data);
-        var status = (int)res.StatusCode;
-        if (res.IsSuccessStatusCode)
+        catch (Exception ex)
         {
-            var dto = await res.Content.ReadFromJsonAsync<TResponse?>();
-            return ApiResponse<TResponse?>.SuccessResult(dto, status);
+            return ApiResponse<bool>.ErrorResult(ex.Message, 0);
         }
-        var error = await SafeReadStringAsync(res);
-        return ApiResponse<TResponse?>.ErrorResult(error, status);
-    }
-
-    public async Task<ApiResponse<bool>> DeleteAsync(string url)
-    {
-        using var res = await _http.DeleteAsync(url);
-        var status = (int)res.StatusCode;
-        if (res.IsSuccessStatusCode)
-        {
-            return ApiResponse<bool>.SuccessResult(true, status);
-        }
-
-        var error = await SafeReadStringAsync(res);
-        return ApiResponse<bool>.ErrorResult(error, status);
-    }
-
-    public async Task<ApiResponse<TResponse?>> DeleteAsync<TResponse>(string url)
-    {
-        using var res = await _http.DeleteAsync(url);
-        var status = (int)res.StatusCode;
-
-        if (res.IsSuccessStatusCode)
-        {
-            var dto = await res.Content.ReadFromJsonAsync<TResponse?>();
-            return ApiResponse<TResponse?>.SuccessResult(dto, status);
-        }
-
-        var error = await SafeReadStringAsync(res);
-        return ApiResponse<TResponse?>.ErrorResult(error, status);
     }
 
     public async Task<ApiResponse<TResponse?>> PostMultipartAsync<TResponse>(string url, MultipartFormDataContent content)
     {
-        using var res = await _http.PostAsync(url, content);
-        var status = (int)res.StatusCode;
-        if (res.IsSuccessStatusCode)
+        try
         {
-            var dto = await res.Content.ReadFromJsonAsync<TResponse?>();
-            return ApiResponse<TResponse?>.SuccessResult(dto, status);
+            using var res = await _http.PostAsync(url, content);
+            return await HandleResponseAsync<TResponse?>(res);
         }
-        var error = await SafeReadStringAsync(res);
-        return ApiResponse<TResponse?>.ErrorResult(error, status);
+        catch (Exception ex)
+        {
+            return ApiResponse<TResponse?>.ErrorResult(ex.Message, 0);
+        }
+    }
+    public async Task<ApiResponse<TResponse?>> PutAsync<TRequest, TResponse>(string url, TRequest data)
+    {
+        try
+        {
+            using var res = await _http.PutAsJsonAsync(url, data);
+            return await HandleResponseAsync<TResponse?>(res);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<TResponse?>.ErrorResult(ex.Message, 0);
+        }
     }
 
     public async Task<ApiResponse<TResponse?>> PutMultipartAsync<TResponse>(string url, MultipartFormDataContent content)
     {
-        using var res = await _http.PutAsync(url, content);
+        try
+        {
+            using var res = await _http.PutAsync(url, content);
+            return await HandleResponseAsync<TResponse?>(res);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<TResponse?>.ErrorResult(ex.Message, 0);
+        }
+    }
+
+    public async Task<ApiResponse<TResponse?>> PatchAsync<TResponse>(string url, object? data = null)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Patch, url);
+            if (data != null)
+            {
+                request.Content = JsonContent.Create(data);
+            }
+
+            using var res = await _http.SendAsync(request);
+            return await HandleResponseAsync<TResponse?>(res);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<TResponse?>.ErrorResult(ex.Message, 0);
+        }
+    }
+
+    public async Task<ApiResponse<bool>> DeleteAsync(string url)
+    {
+        try
+        {
+            using var res = await _http.DeleteAsync(url);
+            return await HandleBoolResponseAsync(res);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<bool>.ErrorResult(ex.Message, 0);
+        }
+    }
+
+    public async Task<ApiResponse<TResponse?>> DeleteAsync<TResponse>(string url)
+    {
+        try
+        {
+            using var res = await _http.DeleteAsync(url);
+            return await HandleResponseAsync<TResponse?>(res);
+        }
+        catch (Exception ex)
+        {
+            return ApiResponse<TResponse?>.ErrorResult(ex.Message, 0);
+        }
+    }
+
+    private static async Task<ApiResponse<T>> HandleResponseAsync<T>(HttpResponseMessage res)
+    {
         var status = (int)res.StatusCode;
+
+        if (res.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            return ApiResponse<T>.ErrorResult("Brak autoryzacji, zaloguj się ponownie", status);
+        }
+
+        if (res.StatusCode == HttpStatusCode.NoContent)
+        {
+            return ApiResponse<T>.SuccessResult(default!, status);
+        }
+
         if (res.IsSuccessStatusCode)
         {
-            var dto = await res.Content.ReadFromJsonAsync<TResponse?>();
-            return ApiResponse<TResponse?>.SuccessResult(dto, status);
+            if (res.Content.Headers.ContentLength == 0)
+                return ApiResponse<T>.SuccessResult(default!, status);
+
+            var data = await res.Content.ReadFromJsonAsync<T>();
+            return ApiResponse<T>.SuccessResult(data!, status);
         }
+
         var error = await SafeReadStringAsync(res);
-        return ApiResponse<TResponse?>.ErrorResult(error, status);
+        return ApiResponse<T>.ErrorResult(error, status);
+    }
+
+    private static async Task<ApiResponse<bool>> HandleBoolResponseAsync(HttpResponseMessage res)
+    {
+        var status = (int)res.StatusCode;
+
+        if (res.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            return ApiResponse<bool>.ErrorResult("Brak autoryzacji, zaloguj się ponownie", status);
+        }
+
+        if (res.IsSuccessStatusCode)
+        {
+            return ApiResponse<bool>.SuccessResult(true, status);
+        }
+
+        var error = await SafeReadStringAsync(res);
+        return ApiResponse<bool>.ErrorResult(error, status);
     }
 
     private static async Task<string?> SafeReadStringAsync(HttpResponseMessage res)
@@ -149,7 +182,7 @@ public class ApiClient(HttpClient http)
         }
         catch
         {
-            return null;
+            return "Wystąpił nieoczekiwany błąd sieciowy.";
         }
     }
 }

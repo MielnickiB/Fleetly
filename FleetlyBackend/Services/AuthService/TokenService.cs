@@ -23,7 +23,7 @@ namespace FleetlyBackend.Services.AuthService
             SecretKeyHelper.EnsureMinimumKeyLength(keyBytes);
 
             var creds = new SigningCredentials(new SymmetricSecurityKey(keyBytes), SecurityAlgorithms.HmacSha512);
-            var expires = DateTime.UtcNow.AddHours(_configuration.GetValue("AppSettings:TokenLifetimeHours", 2));
+            var expires = DateTime.UtcNow.AddHours(_configuration.GetValue("AppSettings:TokenLifetimeHours", 24));
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["AppSettings:Issuer"],

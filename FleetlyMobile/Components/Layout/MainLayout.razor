@@ -1,6 +1,4 @@
 ﻿@inherits LayoutComponentBase
-@inject NavigationManager Nav
-@inject IAuthService AuthService
 
 <MudThemeProvider Theme="@FleetlyMobile.Theme.FleetlyTheme.Default" />
 <MudDialogProvider />
@@ -22,11 +20,3 @@
 
     <NavMenu />
 </MudLayout>
-
-@code {
-    private async Task Logout()
-    {
-        await AuthService.LogoutAsync();
-        Nav.NavigateTo("/login");
-    }
-}

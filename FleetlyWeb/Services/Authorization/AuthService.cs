@@ -3,18 +3,22 @@ using Fleetly.Shared.Dto.UserDtos;
 using Blazored.LocalStorage;
 using FleetlyWeb.Constants;
 using Fleetly.Shared.Client;
+using Microsoft.AspNetCore.Components;
 
 namespace FleetlyWeb.Services.Authorization
 {
-    public class AuthService(ApiClient api, ILocalStorageService localStorage, CustomAuthStateProvider state) : IAuthService
+    public class AuthService(ApiClient api, ILocalStorageService localStorage, CustomAuthStateProvider state, NavigationManager nav) : IAuthService
     {
         private readonly ApiClient _api = api;
         private readonly ILocalStorageService _localStorage = localStorage;
         private readonly CustomAuthStateProvider _state = state;
-        private readonly string _baseUrl = "api/Auth/";
+        private readonly NavigationManager _nav = nav;
+        private readonly string _baseUrl = "api/Auth";
+        private bool _isLogoutInProgress = false;
+
         public async Task<string?> Login(UserLoginDto dto)
         {
-            var resp = await _api.PostAsync<UserLoginDto, AuthResultDto>($"{_baseUrl}login", dto);
+            var resp = await _api.PostAsync<UserLoginDto, AuthResultDto>($"{_baseUrl}/login", dto);
 
             if (resp is null)
             {
@@ -43,9 +47,23 @@ namespace FleetlyWeb.Services.Authorization
 
         public async Task Logout()
         {
-            await _localStorage.RemoveItemAsync(StorageKeys.AccessToken);
-            await _localStorage.RemoveItemAsync(StorageKeys.UserProfile);
-            _state.NotifyAuthStateChanged();
+            if (_isLogoutInProgress) return;
+
+            try
+            {
+                _isLogoutInProgress = true;
+
+                await _localStorage.RemoveItemAsync(StorageKeys.AccessToken);
+                await _localStorage.RemoveItemAsync(StorageKeys.UserProfile);
+
+                _state.NotifyAuthStateChanged();
+
+                _nav.NavigateTo("/");
+            }
+            finally
+            {
+                _isLogoutInProgress = false;
+            }
         }
 
         public async Task<string?> Register(UserRegisterDto dto)

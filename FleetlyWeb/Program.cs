@@ -27,7 +27,7 @@ var apiUrl = builder.Configuration.GetValue<string>("ApiUrl") ?? "http://192.168
 builder.Services.AddMudServices();
 builder.Services.AddBlazoredLocalStorage();
 
-builder.Services.AddScoped<TokenHandler>();
+builder.Services.AddTransient<TokenHandler>();
 
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<CustomAuthStateProvider>();

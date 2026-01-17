@@ -1,4 +1,5 @@
 ﻿@page "/orders"
+@attribute [Authorize(Roles = "Worker")]
 @inject IOrderService OrderService
 @inherits BaseListPage<OrderLiteDto>
 
@@ -31,7 +32,7 @@
     }
     else if (_isError)
     {
-        <EmptyView OnRetry="LoadDataAsync" IsBusy="@IsLoading" />
+        <EmptyView OnRetry="@(() => ExecuteSafeAsync(LoadDataAsync))" IsBusy="@IsLoading" Height="50vh"/>
     }
     else if (!Items.Any())
     {
@@ -47,7 +48,7 @@
         }
         else
         {
-            <EmptyView OnRetry="LoadDataAsync"
+            <EmptyView OnRetry="@(() => ExecuteSafeAsync(LoadDataAsync))"
                        Title="Brak dostępnych zleceń"
                        Message="Spróbuj ponownie później lub odśwież stronę."
                        Icon="@Icons.Material.Filled.Inbox"

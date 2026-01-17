@@ -24,7 +24,7 @@
 }
 else if (_order == null)
 {
-    <EmptyView OnRetry="LoadDataAsync" Message="Nie znaleziono zlecenia." />
+    <EmptyView OnRetry="@(() => ExecuteSafeAsync(LoadDataAsync))" Message="Nie znaleziono zlecenia." />
 }
 else
 {

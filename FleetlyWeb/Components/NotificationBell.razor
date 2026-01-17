@@ -106,30 +106,31 @@
     private List<NotificationResponseDto> _notifications = new();
     private bool _loading = false;
     private System.Threading.Timer? _timer;
+    private bool _disposed = false;
 
     protected override async Task OnInitializedAsync()
     {
-        NotiService.OnChange += StateHasChangedWrapper;
+        _ = LoadNotificationsSafe();
 
-        await LoadUnreadCount();
-
-        _timer = new System.Threading.Timer(async _ =>
+        _timer = new System.Threading.Timer(_ =>
         {
-            await InvokeAsync(LoadUnreadCount);
-        }, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+            _ = LoadNotificationsSafe();
+        }, null, TimeSpan.FromMinutes(5), TimeSpan.FromSeconds(5));
     }
 
-    private async void StateHasChangedWrapper()
+    private async Task LoadNotificationsSafe()
     {
+        if (_disposed) return;
+
         try
         {
             await LoadUnreadCount();
             if (_isOpen) await LoadList();
             await InvokeAsync(StateHasChanged);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            Snackbar.Add($"Wystąpił błąd podczas odświeżania powiadomień", Severity.Error);
+            Console.WriteLine($"Wystąpił problem z wczytaniem notyfikacji: {ex.Message}");
         }
     }
 
@@ -250,12 +251,12 @@
         if (span.TotalMinutes < 1) return "Teraz";
         if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes} min temu";
         if (span.TotalHours < 24) return $"{(int)span.TotalHours} godz. temu";
-        return date.ToString("dd.MM HH:mm");
+        return localDate.ToString("dd.MM HH:mm");
     }
 
     public void Dispose()
     {
-        NotiService.OnChange -= StateHasChangedWrapper;
+        _disposed = true;
         _timer?.Dispose();
     }
 }
