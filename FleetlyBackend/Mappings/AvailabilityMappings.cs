@@ -10,8 +10,7 @@ namespace FleetlyBackend.Mappings
             {
                 Id = a.Id,
                 WorkerId = a.WorkerId,
-                StartDate = a.StartDate,
-                EndDate = a.EndDate,
+                Date = a.Date,
                 StartHour = a.StartHour,
                 EndHour = a.EndHour,
                 IsAvailable = a.IsAvailable

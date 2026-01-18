@@ -13,9 +13,9 @@ namespace FleetlyBackend.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin, Worker")]
-        public async Task<ActionResult<List<AvailabilityResponseDto>>> GetAll(int page = 1, int pageSize = 10)
+        public async Task<ActionResult<List<AvailabilityResponseDto>>> GetByRange([FromQuery] DateOnly start, [FromQuery] DateOnly end)
         {
-            return Ok(await _service.GetAll(page, pageSize));
+            return Ok(await _service.GetByRange(start, end));
         }
 
         [HttpGet("{id:int}")]
@@ -25,7 +25,7 @@ namespace FleetlyBackend.Controllers
             try
             {
                 var result = await _service.Get(id);
-                return result is null ? NotFound("Nie znaleziono danej dostępności") : Ok(result);
+                return result is null ? NotFound() : Ok(result);
             }
             catch (UnauthorizedAccessException)
             {
@@ -35,18 +35,15 @@ namespace FleetlyBackend.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Worker")]
-        public async Task<ActionResult<AvailabilityResponseDto>> Create(AvailabilityCreateDto dto)
+        public async Task<ActionResult<List<AvailabilityResponseDto>>> Create(AvailabilityCreateDto dto)
         {
-            try { 
-                return Ok(await _service.Create(dto)); 
+            try
+            {
+                return Ok(await _service.Create(dto));
             }
-            catch (InvalidOperationException ex) 
-            { 
-                return BadRequest(ex.Message); 
-            }
-            catch (ArgumentException ex) 
-            { 
-                return NotFound(ex.Message); 
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
 
@@ -74,11 +71,12 @@ namespace FleetlyBackend.Controllers
 
         [HttpDelete("{id:int}")]
         [Authorize(Roles = "Worker")]
-        public async Task<ActionResult<bool>> Delete(int id)
+        public async Task<ActionResult> Delete(int id)
         {
             try
             {
-                return Ok(await _service.Delete(id));
+                await _service.Delete(id);
+                return NoContent();
             }
             catch (ArgumentException ex)
             {
