@@ -10,6 +10,7 @@ namespace FleetlyBackend.Services.UserSerivce
         public Task<UserResponseDto?> GetById(int id);
         public Task<UserResponseDto?> Create(UserCreateDto newUser);
         public Task<UserResponseDto> Update(int id, UserUpdateDto updatedUser);
+        public Task ChangePasswordAsync(ChangePasswordDto updatePassword);
         public Task<bool> Deactivate(int id);
     }
 }

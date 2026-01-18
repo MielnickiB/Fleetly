@@ -81,6 +81,23 @@ namespace FleetlyBackend.Controllers
             }
         }
 
+        [HttpPut("change-password")]
+        [Authorize]
+        public async Task<ActionResult> ChangePassword(ChangePasswordDto dto)
+        {
+            try {
+                await _service.ChangePasswordAsync(dto);
+                return Ok(true);
+            }
+            catch (ArgumentException ex) {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpDelete("{id:int}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult<bool>> Deactivate(int id)

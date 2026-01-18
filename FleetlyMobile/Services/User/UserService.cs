@@ -15,5 +15,9 @@ namespace FleetlyMobile.Services.User
         {
             return await _api.PutAsync<UserUpdateDto, UserResponseDto>($"{BaseUrl}/{id}", dto);
         }
+        public async Task<ApiResponse<bool>> ChangePasswordAsync(ChangePasswordDto dto)
+        {
+            return await _api.PutAsync<ChangePasswordDto, bool>($"{BaseUrl}/change-password", dto);
+        }
     }
 }

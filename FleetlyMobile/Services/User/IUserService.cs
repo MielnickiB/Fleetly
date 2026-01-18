@@ -7,5 +7,6 @@ namespace FleetlyMobile.Services.User
     {
         public Task<ApiResponse<UserResponseDto?>> GetByIdAsync(int id);
         public Task<ApiResponse<UserResponseDto?>> UpdateUserAsync(int id, UserUpdateDto dto);
+        public Task<ApiResponse<bool>> ChangePasswordAsync(ChangePasswordDto dto);
     }
 }

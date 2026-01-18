@@ -201,6 +201,38 @@ namespace FleetlyBackend.Services.UserSerivce
             return updatedUser.ToResponseDto();
         }
 
+        public async Task ChangePasswordAsync(ChangePasswordDto dto)
+        {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            var user = _http.CurrentUser()
+                ?? throw new InvalidOperationException("Nie można znaleźć aktualnego użytkownika");
+            var userId = user.GetUserId();
+
+            var userEntity = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == userId)
+                ?? throw new ArgumentException("Nie znaleziono użytkownika");
+
+            if (!userEntity.IsActive)
+                throw new InvalidOperationException("Użytkownik nieaktywny");
+
+            var verificationResult = _hasher.VerifyHashedPassword(userEntity, userEntity.PasswordHash, dto.OldPassword);
+            if (verificationResult == PasswordVerificationResult.Failed)
+            {
+                throw new ArgumentException("Podano nieprawidłowe obecne hasło.");
+            }
+
+            if (dto.OldPassword == dto.NewPassword)
+            {
+                throw new ArgumentException("Nowe hasło musi różnić się od poprzedniego.");
+            }
+
+            userEntity.PasswordHash = _hasher.HashPassword(userEntity, dto.NewPassword);
+            userEntity.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<bool> Deactivate(int id)
         {
             if (id <= 0) throw new ArgumentException("Id użytkownika musi być większe od 0");

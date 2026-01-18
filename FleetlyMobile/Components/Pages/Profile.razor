@@ -76,7 +76,7 @@ else
                     <MudText Typo="Typo.body1" Color="Color.Secondary">Zmień dane</MudText>
                 </MudListItem>
 
-                <MudListItem Icon="@Icons.Material.Filled.Lock" IconColor="Color.Primary">
+                <MudListItem Icon="@Icons.Material.Filled.Lock" IconColor="Color.Primary" OnClick="OpenChangePasswordDialog">
                     <MudText Typo="Typo.body1" Color="Color.Secondary">Zmień hasło</MudText>
                 </MudListItem>
                 <MudDivider />
@@ -147,14 +147,8 @@ else
 
     private async Task OpenChangePasswordDialog()
     {
-        //Todo: implement change password dialog
-        // var dialog = await DialogService.ShowAsync<ChangePasswordDialog>("Zmiana hasła");
-        // var result = await dialog.Result;
-
-        // if (!result.Canceled)
-        // {
-        //     Snackbar.Add("Hasło zostało zmienione", Severity.Success);
-        // }
+        var dialogRef = await DialogService.ShowAsync<ChangePasswordDialog>("Zmiana hasła", DialogHelper.GetStandardFormOptions());
+        await dialogRef.Result;
     }
 
     private void OnIntervalChanged(int newValue)
