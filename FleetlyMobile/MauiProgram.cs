@@ -6,6 +6,7 @@ using FleetlyMobile.Constants;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
+using FleetlyMobile.Services.User;
 using FleetlyMobile.Services.Orders;
 using FleetlyMobile.Services.Expense;
 using FleetlyMobile.Services.Protocol;
@@ -51,12 +52,14 @@ namespace FleetlyMobile
             })
             .AddHttpMessageHandler<TokenHandler>();
 
+            builder.Services.AddSingleton<LayoutService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IDashboardService, DashboardService>();
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IExpenseService, ExpenseService>();
             builder.Services.AddScoped<IProtocolService, ProtocolService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<IUserService, UserService>();
 
             return builder.Build();
         }

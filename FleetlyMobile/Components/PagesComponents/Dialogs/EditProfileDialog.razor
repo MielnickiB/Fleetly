@@ -1,0 +1,57 @@
+﻿@inject ApiClient Api
+
+<MudDialog>
+    <DialogContent>
+        <EditForm Model="_model" @ref="EditForm">
+        <DataAnnotationsValidator />
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_model.Details.Name" Label="Imię" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_model.Details.Surname" Label="Nazwisko" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_model.Email" InputMode="InputMode.email" Label="Email" Variant="Variant.Outlined" Margin="Margin.Dense" InputType="InputType.Email" />
+            <MudTextField @bind-Value="_model.PhoneNumber" InputMode="InputMode.tel" Mask="@(new PatternMask("000 000 000"))" Label="Numer telefonu" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        </MudStack>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="_isBusy">
+            @if (_isBusy) { <MudProgressCircular Size="Size.Small" Indeterminate="true"/> } else { "Zapisz" }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter] public UserResponseDto User { get; set; }
+
+    private UpdateProfileDto _model = new();
+    private bool _isBusy;
+
+    protected override void OnInitialized()
+    {
+        // Mapowanie istniejących danych
+        _model.Name = User.Name;
+        _model.Surname = User.Surname;
+        _model.PhoneNumber = User.PhoneNumber;
+    }
+
+    private async Task Submit()
+    {
+        _isBusy = true;
+        // Pamiętaj o endpoincie na backendzie!
+        var response = await Api.PutAsync<UpdateProfileDto, object>("api/account/update-profile", _model);
+        _isBusy = false;
+
+        if (response.Success)
+        {
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            // Możesz wstrzyknąć ISnackbar i pokazać błąd
+            Console.WriteLine(response.Error); 
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

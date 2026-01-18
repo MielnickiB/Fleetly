@@ -1,6 +1,5 @@
 ﻿using Fleetly.Shared.Dto;
 using Fleetly.Shared.Dto.UserDtos;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Services.UserSerivce;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,32 +29,21 @@ namespace FleetlyBackend.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<UserResponseDto>> GetById(int id)
+        [Authorize]
+        public async Task<ActionResult<UserResponseDto?>> GetById(int id)
         {
             try
             {
                 var user = await _service.GetById(id);
-                return user is null ? NotFound("Użytkownik nie istnieje.") : Ok(user);
+                return Ok(user);
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
             }
-        }
-
-        [HttpGet("me")]
-        [Authorize]
-        public async Task<ActionResult<UserResponseDto>> Get()
-        {
-            try
+            catch (KeyNotFoundException ex)
             {
-                var user = await _service.Get();
-                return user is null ? NotFound("Użytkownik nie istnieje.") : Ok(user);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Forbid();
+                return NotFound(ex.Message);
             }
         }
 

@@ -56,25 +56,27 @@ namespace FleetlyBackend.Services.UserSerivce
         {
             if (id <= 0) throw new ArgumentException("Id użytkownika musi być większe od 0");
 
-            var user = await _context.Users
-                .AsNoTracking()
+            var actionUser = _http.CurrentUser();
+            var userId = actionUser.GetUserId();
+
+            var query = _context.Users
                 .Include(u => u.Role)
                 .Include(u => u.Details)
-                .Where(u => u.Id == id)
-                .FirstOrDefaultAsync();
+                .AsQueryable();
 
-            return user?.ToResponseDto();
-        }
-        public async Task<UserResponseDto?> Get()
-        {
-            var user = await _context.Users
-                .AsNoTracking()
-                .Include(u => u.Role)
-                .Include(u => u.Details)
-                .Where(u => u.Id == _http.CurrentUser().GetUserId())
-                .FirstOrDefaultAsync();
+            if (!actionUser.IsAdmin())
+            {
+                query = query.Where(u => u.Id == userId);
+            }
+            else
+            {
+                query = query.Where(u => u.Id == id);
+            }
 
-            return user?.ToResponseDto();
+            var user = await query.FirstOrDefaultAsync()
+                ?? throw new KeyNotFoundException("Nie znaleziono użytkownika");
+
+            return user.ToResponseDto();
         }
 
         public async Task<UserResponseDto?> Create(UserCreateDto newUser)
