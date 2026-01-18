@@ -2,7 +2,6 @@
 using FleetlyMobile.Constants;
 using System.Net;
 using FleetlyMobile.Services.Auth;
-using Microsoft.Extensions.Logging;
 
 namespace FleetlyMobile.Services
 {
@@ -22,19 +21,12 @@ namespace FleetlyMobile.Services
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                _ = Task.Run(async () =>
+                if (request.RequestUri != null && (request.RequestUri.AbsolutePath.Contains("/login")))
                 {
-                    try
-                    {
-                        var authService = _serviceProvider.GetRequiredService<IAuthService>();
-                        await authService.LogoutAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        var logger = _serviceProvider.GetService<ILogger<TokenHandler>>();
-                        logger?.LogError(ex, "Krytyczny błąd podczas wylogowywania w tle.");
-                    }
-                }, cancellationToken);
+                    return response;
+                }
+                var authService = _serviceProvider.GetRequiredService<IAuthService>();
+                await authService.LogoutAsync();
             }
 
             return response;

@@ -2,7 +2,6 @@
 using Fleetly.Shared.Dto.UserDtos;
 using FleetlyBackend.Data;
 using FleetlyBackend.Extensions;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using Microsoft.AspNetCore.Identity;
@@ -56,25 +55,30 @@ namespace FleetlyBackend.Services.UserSerivce
         {
             if (id <= 0) throw new ArgumentException("Id użytkownika musi być większe od 0");
 
-            var user = await _context.Users
-                .AsNoTracking()
+            var actionUser = _http.CurrentUser();
+            var userId = actionUser.GetUserId();
+
+            var query = _context.Users
                 .Include(u => u.Role)
                 .Include(u => u.Details)
-                .Where(u => u.Id == id)
-                .FirstOrDefaultAsync();
+                .AsQueryable();
 
-            return user?.ToResponseDto();
-        }
-        public async Task<UserResponseDto?> Get()
-        {
-            var user = await _context.Users
-                .AsNoTracking()
-                .Include(u => u.Role)
-                .Include(u => u.Details)
-                .Where(u => u.Id == _http.CurrentUser().GetUserId())
-                .FirstOrDefaultAsync();
+            if (!actionUser.IsAdmin())
+            {
+                if (userId != id)
+                    throw new UnauthorizedAccessException("Nie masz uprawnień do przeglądania tego użytkownika");
 
-            return user?.ToResponseDto();
+                query = query.Where(u => u.Id == userId);
+            }
+            else
+            {
+                query = query.Where(u => u.Id == id);
+            }
+
+            var user = await query.FirstOrDefaultAsync()
+                ?? throw new KeyNotFoundException("Nie znaleziono użytkownika");
+
+            return user.ToResponseDto();
         }
 
         public async Task<UserResponseDto?> Create(UserCreateDto newUser)
@@ -197,6 +201,38 @@ namespace FleetlyBackend.Services.UserSerivce
                 ?? throw new InvalidOperationException("Nie udało się pobrać zaaktualizowanego użytkownika");
 
             return updatedUser.ToResponseDto();
+        }
+
+        public async Task ChangePasswordAsync(ChangePasswordDto dto)
+        {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            var user = _http.CurrentUser()
+                ?? throw new InvalidOperationException("Nie można znaleźć aktualnego użytkownika");
+            var userId = user.GetUserId();
+
+            var userEntity = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == userId)
+                ?? throw new ArgumentException("Nie znaleziono użytkownika");
+
+            if (!userEntity.IsActive)
+                throw new InvalidOperationException("Użytkownik nieaktywny");
+
+            var verificationResult = _hasher.VerifyHashedPassword(userEntity, userEntity.PasswordHash, dto.OldPassword);
+            if (verificationResult == PasswordVerificationResult.Failed)
+            {
+                throw new ArgumentException("Podano nieprawidłowe obecne hasło.");
+            }
+
+            if (dto.OldPassword == dto.NewPassword)
+            {
+                throw new ArgumentException("Nowe hasło musi różnić się od poprzedniego.");
+            }
+
+            userEntity.PasswordHash = _hasher.HashPassword(userEntity, dto.NewPassword);
+            userEntity.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task<bool> Deactivate(int id)

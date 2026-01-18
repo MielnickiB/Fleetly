@@ -8,9 +8,9 @@ namespace FleetlyBackend.Services.UserSerivce
         public Task<PagedResult<UserResponseDto>> GetAll();
         public Task<List<UserResponseDto>> GetAllByRole(string roleName);
         public Task<UserResponseDto?> GetById(int id);
-        public Task<UserResponseDto?> Get();
         public Task<UserResponseDto?> Create(UserCreateDto newUser);
         public Task<UserResponseDto> Update(int id, UserUpdateDto updatedUser);
+        public Task ChangePasswordAsync(ChangePasswordDto updatePassword);
         public Task<bool> Deactivate(int id);
     }
 }

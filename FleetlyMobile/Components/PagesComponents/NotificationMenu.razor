@@ -109,10 +109,12 @@
     {
         _ = LoadNotificationsSafe();
 
+        var intervalMinutes = Preferences.Default.Get(AppConstants.NotificationIntervalKey, AppConstants.DefaultNotificationInterval);
+
         _timer = new System.Threading.Timer(_ =>
         {
             _ = LoadNotificationsSafe();
-        }, null, TimeSpan.FromMinutes(5), TimeSpan.FromSeconds(5));
+        }, null, TimeSpan.FromMinutes(intervalMinutes), TimeSpan.FromMinutes(intervalMinutes));
     }
 
     private async Task LoadNotificationsSafe()

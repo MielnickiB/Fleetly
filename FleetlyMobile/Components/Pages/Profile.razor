@@ -2,16 +2,187 @@
 @attribute [Authorize(Roles = "Worker")]
 @inherits BasePage
 @inject IAuthService AuthService
+@inject IUserService UserService
+@inject IDialogService DialogService
+@inject LayoutService LayoutService
+@inject AuthenticationStateProvider AuthStateProvider
 
-<MudText Typo="Typo.h5">Mój Profil</MudText>
-<MudButton OnClick="Logout">
-    Wyloguj
-</MudButton>
+@if (IsLoading)
+{
+    <Loading />
+}
+else
+{
+    <UserGreeting UserName="@(_user?.Details.Name + " " + _user?.Details.Surname)" GreetingMessage="Twoja rola w systemie to Kierowca!" />
+    <MudStack Spacing="2" Class="pb-16">
+
+        @if (_user is not null)
+        {
+            <MudText Typo="Typo.subtitle2" Class="mb-2" Color="Color.Secondary">Dane użytkownika</MudText>
+            <MudPaper Elevation="3" Class="rounded-lg overflow-hidden">
+                <MudList T="string" Dense="true">
+                    <MudListItem Icon="@Icons.Material.Filled.Person" IconColor="Color.Primary">
+                        <PageListItem Title="Imię i nazwisko" Value="@($"{_user.Details.Name} {_user.Details.Surname}")" />
+                    </MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.Email" IconColor="Color.Primary">
+                        <PageListItem Title="Email" Value="@_user.Email" />
+                    </MudListItem>
+                    <MudListItem Icon="@Icons.Material.Filled.Phone" IconColor="Color.Primary">
+                        <PageListItem Title="Numer telefonu" Value="@_user.Details.PhoneNumber" />
+                    </MudListItem>
+                </MudList>
+            </MudPaper>
+        }
+        else
+        {
+            <MudAlert CloseIcon="@Icons.Material.Filled.Close"
+                      Icon="@Icons.Material.Filled.Warning"
+                      ShowCloseIcon="true"
+                      Severity="Severity.Error"
+                      Variant="Variant.Outlined">
+                Nie udało się załadować danych użytkownika.
+            </MudAlert>
+        }
+
+        <MudText Typo="Typo.subtitle2" Class="my-2" Color="Color.Secondary">Ustawienia</MudText>
+        <MudPaper Elevation="3" class="rounded-lg overflow-hidden">
+            <MudList T="string" Dense="true">
+                <MudListItem Icon="@Icons.Material.Filled.Timer" IconColor="Color.Primary">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Notyfikacje co:</MudText>
+                        <MudSelect T="int"
+                                   Value="@_notificationInterval"
+                                   ValueChanged="OnIntervalChanged"
+                                   Dense="true"
+                                   AnchorOrigin="Origin.BottomCenter"
+                                   TransformOrigin="Origin.BottomCenter">
+                            <MudSelectItem Value="5">5 minut</MudSelectItem>
+                            <MudSelectItem Value="10">10 minut</MudSelectItem>
+                            <MudSelectItem Value="30">30 minut</MudSelectItem>
+                            <MudSelectItem Value="60">60 minut</MudSelectItem>
+                        </MudSelect>
+                    </MudStack>
+                </MudListItem>
+                <MudListItem Icon="@Icons.Material.Filled.Brightness6" IconColor="Color.Primary">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.body2">Tryb ciemny</MudText>
+                        <MudSwitch T="bool"
+                                   Value="@_isDarkMode"
+                                   ValueChanged="ToggleDarkMode"
+                                   Color="Color.Primary" />
+                    </MudStack>
+                </MudListItem>
+                <MudListItem Icon="@Icons.Material.Filled.Person" IconColor="Color.Primary" OnClick="OpenEditDialog">
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">Zmień dane</MudText>
+                </MudListItem>
+
+                <MudListItem Icon="@Icons.Material.Filled.Lock" IconColor="Color.Primary" OnClick="OpenChangePasswordDialog">
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">Zmień hasło</MudText>
+                </MudListItem>
+                <MudDivider />
+                <MudListItem>
+                    <PageListItem Title="Wersja aplikacji" Value="1.0.0" />
+                </MudListItem>
+            </MudList>
+        </MudPaper>
+
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Error"
+                   FullWidth="true"
+                   Class="my-4"
+                   StartIcon="@Icons.Material.Filled.Logout"
+                   OnClick="Logout">
+            <MudText Typo="Typo.button">Wyloguj się</MudText>
+        </MudButton>
+
+    </MudStack>
+}
 
 @code {
+    private UserResponseDto? _user;
+    private int _userId;
+    private bool _isDarkMode;
+    private int _notificationInterval = AppConstants.DefaultNotificationInterval;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserData();
+        await ExecuteSafeAsync(LoadDataAsync);
+        _notificationInterval = Preferences.Default.Get(AppConstants.NotificationIntervalKey, AppConstants.DefaultNotificationInterval);
+        if (Preferences.Default.ContainsKey("is_dark_mode"))
+        {
+            _isDarkMode = Preferences.Default.Get("is_dark_mode", false);
+        }
+    }
+
+    private async Task LoadUserData()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = ClaimsHelper.GetUserId(authState.User);
+    }
+
+    private async Task LoadDataAsync()
+    {
+        var response = await UserService.GetByIdAsync(_userId);
+        if (response.Success && response.Data != null)
+        {
+            _user = response.Data;
+        }
+        else
+        {
+            throw new Exception(response.Error ?? "Nie udało się pobrać danych użytkownika.");
+        }
+    }
+
+    private async Task OpenEditDialog()
+    {
+        var parameters = new DialogParameters<EditProfileDialog>
+        {
+            { x => x.User, _user }
+        };
+
+        var dialogRef = await DialogService.ShowAsync<EditProfileDialog>("Edycja danych", parameters, DialogHelper.GetStandardFormOptions());
+        var result = await dialogRef.Result;
+
+        if (!result.Canceled)
+        {
+            await ExecuteSafeAsync(LoadDataAsync);
+            Snackbar.Add("Dane użytkownika zostały zaktualizowane.", Severity.Success);
+        }
+    }
+
+    private async Task OpenChangePasswordDialog()
+    {
+        var dialogRef = await DialogService.ShowAsync<ChangePasswordDialog>("Zmiana hasła", DialogHelper.GetStandardFormOptions());
+        await dialogRef.Result;
+    }
+
+    private void OnIntervalChanged(int newValue)
+    {
+        _notificationInterval = newValue;
+
+        Preferences.Default.Set(AppConstants.NotificationIntervalKey, newValue);
+
+        Snackbar.Add($"Zmieniono częstotliwość odświeżania notyfikacji na: {newValue} minut.", Severity.Success);
+    }
+
+    private void ToggleDarkMode(bool value)
+    {
+        _isDarkMode = value;
+        Preferences.Default.Set("is_dark_mode", value);
+        LayoutService.SetDarkMode(value);
+    }
+
     private async Task Logout()
     {
-        await AuthService.LogoutAsync();
-        Nav.NavigateTo("/login");
+        bool? result = await DialogService.ShowMessageBox(
+            "Wylogowanie",
+            "Czy na pewno chcesz się wylogować?",
+            yesText: "Wyloguj", cancelText: "Anuluj");
+
+        if (result == true)
+        {
+            await AuthService.LogoutAsync();
+        }
     }
 }

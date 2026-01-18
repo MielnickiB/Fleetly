@@ -1,6 +1,10 @@
 ﻿@inherits LayoutComponentBase
+@inject LayoutService LayoutService
+@implements IDisposable
 
-<MudThemeProvider Theme="@FleetlyMobile.Theme.FleetlyTheme.Default" />
+<MudThemeProvider @ref="_mudThemeProvider"
+                  Theme="@FleetlyMobile.Theme.FleetlyTheme.Default"
+                  IsDarkMode="@LayoutService.IsDarkMode" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
@@ -15,3 +19,19 @@
         </MudContainer>
     </MudMainContent>
 </MudLayout>
+
+@code {
+    private MudThemeProvider _mudThemeProvider = default!;
+
+    protected override void OnInitialized()
+    {
+        LayoutService.OnMajorUpdateOccurred += StateHasChanged;
+        var savedMode = Preferences.Default.Get("is_dark_mode", false);
+        LayoutService.SetDarkMode(savedMode);
+    }
+
+    public void Dispose()
+    {
+        LayoutService.OnMajorUpdateOccurred -= StateHasChanged;
+    }
+}

@@ -1,0 +1,93 @@
+﻿@inherits DialogBase<UserUpdateDto>
+@inject IUserService UserService
+
+<MudDialog>
+    <DialogContent>
+        <EditForm Model="@Model" @ref="EditForm">
+            <DataAnnotationsValidator />
+
+            <MudStack Spacing="3">
+
+                <MudTextField @bind-Value="Model.Details.Name"
+                              For="@(() => Model.Details.Name)"
+                              Label="Imię"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+
+                <MudTextField @bind-Value="Model.Details.Surname"
+                              For="@(() => Model.Details.Surname)"
+                              Label="Nazwisko"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+                <MudTextField @bind-Value="Model.Email"
+                              For="@(() => Model.Email)"
+                              Label="Email"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              InputMode="InputMode.email"
+                              Placeholder="x@mail.com" />
+                <MudTextField @bind-Value="Model.Details.PhoneNumber"
+                              For="@(() => Model.Details.PhoneNumber)"
+                              Label="Numer telefonu"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              InputMode="InputMode.tel"
+                              Placeholder="123 456 789" />
+            </MudStack>
+        </EditForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="IsBusy">Anuluj</MudButton>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="SubmitForm"
+                   Disabled="IsBusy">
+            @if (IsBusy)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                <MudText Typo="Typo.button">Zapisz</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public UserResponseDto User { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Model = new UserUpdateDto
+        {
+            Email = User.Email,
+            RoleId = User.RoleId,
+            Details = new UserDetailsDto
+            {
+                Name = User.Details.Name,
+                Surname = User.Details.Surname,
+                PhoneNumber = User.Details.PhoneNumber,
+                Company = User.Details?.Company
+            }
+        };
+    }
+
+    protected override async Task Submit()
+    {
+        var response = await UserService.UpdateUserAsync(User.Id, Model);
+
+        if (response.Success)
+        {
+            Snackbar.Add("Profil zaktualizowany pomyślnie", Severity.Success);
+
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add(response.Error ?? "Nie udało się zaktualizować profilu", Severity.Error);
+        }
+    }
+}

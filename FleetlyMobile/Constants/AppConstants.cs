@@ -6,5 +6,7 @@
 
         public const string AuthTokenKey = "auth_token";
         public const string UserDataKey = "user_data";
+        public const string NotificationIntervalKey = "noti_interval";
+        public const int DefaultNotificationInterval = 5; // Domyślnie 5 minut
     }
 }
