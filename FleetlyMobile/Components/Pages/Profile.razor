@@ -13,7 +13,7 @@
 }
 else
 {
-    <UserGreeting UserName="@_userName" GreetingMessage="Twoja rola w systemie to Kierowca!" />
+    <UserGreeting UserName="@(_user?.Details.Name + " " + _user?.Details.Surname)" GreetingMessage="Twoja rola w systemie to Kierowca!" />
     <MudStack Spacing="2" Class="pb-16">
 
         @if (_user is not null)
@@ -72,11 +72,12 @@ else
                                    Color="Color.Primary" />
                     </MudStack>
                 </MudListItem>
-                <MudListItem Icon="@Icons.Material.Filled.Person" IconColor="Color.Primary">
-                    <MudText Typo="Typo.button" Color="Color.Secondary">Zmień dane</MudText>
+                <MudListItem Icon="@Icons.Material.Filled.Person" IconColor="Color.Primary" OnClick="OpenEditDialog">
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">Zmień dane</MudText>
                 </MudListItem>
+
                 <MudListItem Icon="@Icons.Material.Filled.Lock" IconColor="Color.Primary">
-                    <MudText Typo="Typo.button" Color="Color.Secondary">Zmień hasło</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Secondary">Zmień hasło</MudText>
                 </MudListItem>
                 <MudDivider />
                 <MudListItem >
@@ -100,7 +101,6 @@ else
 @code {
     private UserResponseDto? _user;
     private int _userId;
-    private string _userName = string.Empty;
     private bool _isDarkMode;
     private int _notificationInterval = AppConstants.DefaultNotificationInterval;
 
@@ -118,7 +118,6 @@ else
     private async Task LoadUserData()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        _userName = ClaimsHelper.GetFullName(authState.User);
         _userId = ClaimsHelper.GetUserId(authState.User);
     }
 
@@ -137,26 +136,25 @@ else
 
     private async Task OpenEditDialog()
     {
-        var parameters = new DialogParameters { ["User"] = _user };
-        var dialog = await DialogService.ShowAsync<EditProfileDialog>("Edytuj dane", parameters);
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
+        var parameters = new DialogParameters<EditProfileDialog>
         {
-            await LoadUserData(); // Odśwież po edycji
-            Snackbar.Add("Dane zostały zaktualizowane", Severity.Success);
-        }
+            { x => x.User, _user }
+        };
+
+        var dialogRef = await DialogService.ShowAsync<EditProfileDialog>("Edycja danych", parameters, DialogHelper.GetStandardFormOptions());
+        await dialogRef.Result;
     }
 
     private async Task OpenChangePasswordDialog()
     {
-        var dialog = await DialogService.ShowAsync<ChangePasswordDialog>("Zmiana hasła");
-        var result = await dialog.Result;
+        //Todo: implement change password dialog
+        // var dialog = await DialogService.ShowAsync<ChangePasswordDialog>("Zmiana hasła");
+        // var result = await dialog.Result;
 
-        if (!result.Canceled)
-        {
-            Snackbar.Add("Hasło zostało zmienione", Severity.Success);
-        }
+        // if (!result.Canceled)
+        // {
+        //     Snackbar.Add("Hasło zostało zmienione", Severity.Success);
+        // }
     }
 
     private void OnIntervalChanged(int newValue)

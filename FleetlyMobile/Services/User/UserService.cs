@@ -11,5 +11,9 @@ namespace FleetlyMobile.Services.User
         {
             return await _api.GetAsync<UserResponseDto>($"{BaseUrl}/{id}");
         }
+        public async Task<ApiResponse<UserResponseDto?>> UpdateUserAsync(int id, UserUpdateDto dto)
+        {
+            return await _api.PutAsync<UserUpdateDto, UserResponseDto>($"{BaseUrl}/{id}", dto);
+        }
     }
 }
