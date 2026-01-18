@@ -162,6 +162,7 @@ else
 
     private void ToggleDarkMode(bool value)
     {
+        _isDarkMode = value;
         Preferences.Default.Set("is_dark_mode", value);
         LayoutService.SetDarkMode(value);
     }
