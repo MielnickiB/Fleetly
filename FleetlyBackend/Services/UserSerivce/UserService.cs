@@ -2,7 +2,6 @@
 using Fleetly.Shared.Dto.UserDtos;
 using FleetlyBackend.Data;
 using FleetlyBackend.Extensions;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using Microsoft.AspNetCore.Identity;
@@ -66,6 +65,9 @@ namespace FleetlyBackend.Services.UserSerivce
 
             if (!actionUser.IsAdmin())
             {
+                if (userId != id)
+                    throw new UnauthorizedAccessException("Nie masz uprawnień do przeglądania tego użytkownika");
+
                 query = query.Where(u => u.Id == userId);
             }
             else

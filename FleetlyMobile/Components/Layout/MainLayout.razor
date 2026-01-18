@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @inject LayoutService LayoutService
+@implements IDisposable
 
 <MudThemeProvider @ref="_mudThemeProvider"
                   Theme="@FleetlyMobile.Theme.FleetlyTheme.Default" 
@@ -29,13 +30,13 @@
 
     protected override void OnInitialized()
     {
-        LayoutService.OnMajorUpdateOccured += StateHasChanged;
+        LayoutService.OnMajorUpdateOccurred += StateHasChanged;
         var savedMode = Preferences.Default.Get("is_dark_mode", false);
         LayoutService.SetDarkMode(savedMode);
     }
 
     public void Dispose()
     {
-        LayoutService.OnMajorUpdateOccured -= StateHasChanged;
+        LayoutService.OnMajorUpdateOccurred -= StateHasChanged;
     }
 }

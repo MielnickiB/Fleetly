@@ -45,6 +45,10 @@ namespace FleetlyBackend.Controllers
             {
                 return NotFound(ex.Message);
             }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
         }
 
         [HttpPost]
@@ -85,11 +89,13 @@ namespace FleetlyBackend.Controllers
         [Authorize]
         public async Task<ActionResult> ChangePassword(ChangePasswordDto dto)
         {
-            try {
+            try 
+            {
                 await _service.ChangePasswordAsync(dto);
                 return Ok(true);
             }
-            catch (ArgumentException ex) {
+            catch (ArgumentException ex) 
+            {
                 return BadRequest(ex.Message);
             }
             catch (InvalidOperationException ex)

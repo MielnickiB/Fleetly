@@ -80,7 +80,7 @@ else
                     <MudText Typo="Typo.body1" Color="Color.Secondary">Zmień hasło</MudText>
                 </MudListItem>
                 <MudDivider />
-                <MudListItem >
+                <MudListItem>
                     <PageListItem Title="Wersja aplikacji" Value="1.0.0" />
                 </MudListItem>
             </MudList>
@@ -142,7 +142,13 @@ else
         };
 
         var dialogRef = await DialogService.ShowAsync<EditProfileDialog>("Edycja danych", parameters, DialogHelper.GetStandardFormOptions());
-        await dialogRef.Result;
+        var result = await dialogRef.Result;
+
+        if (!result.Canceled)
+        {
+            await ExecuteSafeAsync(LoadDataAsync);
+            Snackbar.Add("Dane użytkownika zostały zaktualizowane.", Severity.Success);
+        }
     }
 
     private async Task OpenChangePasswordDialog()

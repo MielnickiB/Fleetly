@@ -114,7 +114,7 @@
         _timer = new System.Threading.Timer(_ =>
         {
             _ = LoadNotificationsSafe();
-        }, null, TimeSpan.FromMinutes(intervalMinutes), TimeSpan.FromSeconds(intervalMinutes));
+        }, null, TimeSpan.FromMinutes(intervalMinutes), TimeSpan.FromMinutes(intervalMinutes));
     }
 
     private async Task LoadNotificationsSafe()
