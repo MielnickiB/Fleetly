@@ -4,7 +4,6 @@ using Fleetly.Shared.Dto.VehicleDtos;
 using FleetlyBackend.Services.VehicleService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
 
 namespace FleetlyBackend.Controllers
 {
