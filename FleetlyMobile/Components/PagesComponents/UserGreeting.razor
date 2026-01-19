@@ -1,6 +1,6 @@
 ﻿<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
     <MudAvatar Color="Color.Primary" Variant="Variant.Filled">
-        @UserName.FirstOrDefault()
+        @(string.IsNullOrEmpty(UserName) ? "Kierowco" : UserName.FirstOrDefault())
     </MudAvatar>
     <MudStack Spacing="0">
         <MudText Typo="Typo.h6" Style="font-weight:bold">Cześć, @UserName!</MudText>
@@ -10,7 +10,7 @@
 
 @code {
     [Parameter]
-    public string UserName { get; set; } = "Kierowco";
+    public string? UserName { get; set; }
     [Parameter]
     public string GreetingMessage { get; set; } = "Miłego dnia w pracy!";
 }

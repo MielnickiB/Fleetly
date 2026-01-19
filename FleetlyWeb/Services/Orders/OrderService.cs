@@ -9,9 +9,10 @@ namespace FleetlyWeb.Services.Orders
         private readonly ApiClient _api = api;
         private const string BaseUrl = "api/Orders"; 
 
-        public async Task<ApiResponse<PagedResult<OrderResponseDto>?>> GetAllOrdersAsync()
+        public async Task<ApiResponse<PagedResult<OrderResponseDto>?>> GetAllOrdersAsync(bool includeInactive)
         {
-            return await _api.GetAsync<PagedResult<OrderResponseDto>>(BaseUrl);
+            var url = $"{BaseUrl}?includeInactive={includeInactive}";
+            return await _api.GetAsync<PagedResult<OrderResponseDto>>(url);
         }
 
         public async Task<ApiResponse<OrderResponseDto?>> GetOrderByIdAsync(int orderId)
@@ -40,9 +41,9 @@ namespace FleetlyWeb.Services.Orders
             return await _api.PostAsync<object, OrderResponseDto>($"{BaseUrl}/{orderId}/activate", new object());
         }
 
-        public async Task<ApiResponse<OrderResponseDto?>> ApproveCostsAsync(int orderId)
+        public async Task<ApiResponse<bool>> ApproveCostsAsync(int orderId)
         {
-            return await _api.PostAsync<object, OrderResponseDto>($"{BaseUrl}/{orderId}/costs/approve", new object());
+            return await _api.PatchAsync<bool>($"{BaseUrl}/{orderId}/costs/approve", new object());
         }
         public async Task<ApiResponse<int>> CalculateDistanceAsync(string start, string end)
         {

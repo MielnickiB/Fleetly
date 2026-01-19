@@ -14,7 +14,7 @@
 <PageTitle>Lista Użytkowników</PageTitle>
 
 <PageHeader Title="Lista Użytkowników" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Imię / Nazwisko / Email...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
-<MudItem xs="12" Style="overflow-x:auto;width:100%">
+<MudItem xs="12" Class="pb-4" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
@@ -130,14 +130,14 @@
     };
 
     private Func<UserResponseDto, int, string> _rowStyleFunc => (x, i) =>
-{
+    {
     if (x.IsActive)
     {
         return "";
     }
 
     return "background-color: #f8d7da; color: #721c24;";
-};
+    };
 
     private async Task OpenAddDialogAsync()
     {

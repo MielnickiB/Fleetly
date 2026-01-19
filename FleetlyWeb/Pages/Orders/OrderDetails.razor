@@ -306,6 +306,10 @@
         </MudGrid>
 
         <div class="mt-4 d-flex justify-end w-100 gap-2">
+            @if (_order.Status == OrderStatus.WaitingForCostApproval && User.IsInRole("Admin"))
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" OnClick="ApproveCostsAsync">Zatwierdź koszty</MudButton>
+            }
             <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Nav.NavigateTo("/orders", true))">Wróć do listy</MudButton>
         </div>
     }
@@ -349,6 +353,49 @@
         finally
         {
             _loading = false;
+        }
+    }
+
+    private async Task ApproveCostsAsync()
+    {
+        var parameters = new DialogParameters<ConfirmDialog>
+        {
+            { x => x.Title, "Zatwierdzenie kosztów" },
+            { x => x.Content, $"Potwierdzasz, że wszystkie koszty są podstawne i nie ma zastrzeżeń co do wykonania zlecenia?" },
+            { x => x.ConfirmText, "Tak" },
+            { x => x.Color, Color.Success },
+            { x => x.Icon, Icons.Material.Filled.Check },
+            { x => x.IconColor, Color.Success }
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, DialogHelper.GetConfirmationOptions());
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            try
+            {
+                _loading = true;
+                var response = await OrderService.ApproveCostsAsync(OrderId);
+                if (response.Success)
+                {
+                    Snackbar.Add("Koszty zostały zatwierdzone.", Severity.Success);
+                    await OnParametersSetAsync();
+                    Nav.NavigateTo("/orders", true);
+                }
+                else
+                {
+                    Snackbar.Add(response.Error ?? "Wystąpił błąd podczas zatwierdzania kosztów.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Krytyczny błąd: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                _loading = false;
+            }
         }
     }
 

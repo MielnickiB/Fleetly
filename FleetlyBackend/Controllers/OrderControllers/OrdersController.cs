@@ -15,9 +15,9 @@ namespace FleetlyBackend.Controllers.OrderControllers
 
         [Authorize(Roles = "Admin, Client")]
         [HttpGet]
-        public async Task<ActionResult<PagedResult<OrderResponseDto>>> GetAll()
+        public async Task<ActionResult<PagedResult<OrderResponseDto>>> GetAll([FromQuery] bool includeInactive = false)
         {
-            return Ok(await _service.GetAllOrders());
+            return Ok(await _service.GetAllOrders(includeInactive));
         }
 
         [Authorize(Roles = "Admin, Client")]
@@ -76,10 +76,14 @@ namespace FleetlyBackend.Controllers.OrderControllers
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpPost("{orderId:int}/costs/approve")]
-        public async Task<ActionResult<OrderResponseDto>> ApproveCosts(int orderId)
+        [HttpPatch("{orderId:int}/costs/approve")]
+        public async Task<ActionResult> ApproveCosts(int orderId)
         {
-            try { return Ok(await _service.ApproveCostsAndCompleteOrder(orderId)); }
+            try
+            {
+                await _service.ApproveCostsAndCompleteOrder(orderId);
+                return Ok(true);
+            }
             catch (ArgumentException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
             catch (UnauthorizedAccessException) { return Forbid(); }

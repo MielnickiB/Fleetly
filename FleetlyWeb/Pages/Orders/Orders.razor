@@ -16,8 +16,8 @@
 
 <PageTitle>Lista Zleceń</PageTitle>
 
-<PageHeader Title="Lista Zleceń" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Nr Zlecenia / Klient...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
-<MudItem xs="12" Style="overflow-x:auto;width:100%">
+<PageHeader Title="Lista Zleceń" @bind-SearchString="SearchString" InactiveValue="ShowInactive" InactiveValueChanged="OnShowInactiveChanged" SearchPlaceholder="Szukaj (Nr Zlecenia / Klient...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
+<MudItem xs="12" Class="pb-4" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
@@ -43,20 +43,31 @@
                          Items="Items"
                          Striped="true"
                          Bordered="true"
+                         Hover="true"
+                         Filterable="true"
+                         FixedHeader="true"
                          SortMode="SortMode.Single"
                          ColumnResizeMode="ResizeMode.Column"
                          Loading="@IsLoading"
-                         Filterable="true"
                          FilterMode="@DataGridFilterMode.ColumnFilterMenu"
                          FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
                          Class="pa-4 rounded-xl"
                          Style="margin:4px"
-                         FixedHeader="true"
+                         Breakpoint="Breakpoint.Sm"
                          Elevation="5"
-                         RowStyle="font-weight:bold; cursor:pointer"
+                         RowStyleFunc="@_rowStyleFunc"
                          RowClick="OnRowClick">
                 <Columns>
-                    <PropertyColumn Property="x => x.Id" Title="Nr Zlecenia" Editable="false" Filterable="false" StickyLeft />
+                    <PropertyColumn Property="x => x.Id" Title="Nr Zlecenia" StickyLeft />
+                    <PropertyColumn Property="x => x.Status" Title="Status zlecenia">
+                        <CellTemplate>
+                            <MudChip T="string"
+                                     Style="@($"background-color: {context.Item.Status.ToHexColor()}; color: white; font-weight: bold;")"
+                                     Text="@context.Item.Status.ToPolishName()"
+                                     Size="Size.Small"
+                                     Variant="Variant.Filled" />
+                        </CellTemplate>
+                    </PropertyColumn>
                     @if (_isAdmin)
                     {
                         <PropertyColumn Property="x => x.Client.Email" Title="Klient" />
@@ -73,28 +84,39 @@
                             </MudTooltip>
                         </CellTemplate>
                     </PropertyColumn>
-                    <PropertyColumn Property="x => x.Status" Title="Status zlecenia">
-                        <CellTemplate>
-                            <MudChip T="string"
-                                     Color="@context.Item.Status.ToColor()"
-                                     Size="Size.Small"
-                                     Variant="Variant.Text">
-                                @context.Item.Status.ToPolishName()
-                            </MudChip>
-                        </CellTemplate>
-                    </PropertyColumn>
                     <TemplateColumn Title="Akcje" StickyRight>
                         <CellTemplate>
-                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
-
-                            @if (_isAdmin && context.Item.Status == OrderStatus.PendingApproval)
-                            {
-                                <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" OnClick="@(() => OnAcceptClicked(context.Item))" />
-                            }
-                            @if (context.Item.IsActive && context.Item.Status < OrderStatus.OrderStarted)
-                            {
-                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
-                            }
+                            <MudGrid Spacing="2" Justify="Justify.Center">
+                                <MudItem xs="6">
+                                    <MudTooltip Placement="Placement.Bottom" Text="Anuluj zlecenie">
+                                        <MudIconButton Disabled="!context.Item.IsActive || context.Item.Status > OrderStatus.OrderFinishedByWorker" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+                                    </MudTooltip>
+                                </MudItem>
+                                @if (_isAdmin && context.Item.Status == OrderStatus.PendingApproval)
+                                {
+                                    <MudItem xs="6">
+                                        <MudTooltip Placement="Placement.Bottom" Text="Zatwierdź do realizacji">
+                                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" OnClick="@(() => OnAcceptClicked(context.Item))" />
+                                        </MudTooltip>
+                                    </MudItem>
+                                }
+                                @if (_isAdmin && context.Item.Status == OrderStatus.WaitingForCostApproval)
+                                {
+                                    <MudItem xs="6">
+                                        <MudTooltip Placement="Placement.Bottom" Text="Zatwierdź koszty i zakończ">
+                                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Money" Color="Color.Success" Size="Size.Small" OnClick="@(() => Nav.NavigateTo($"/orders/{context.Item.Id}"))" />
+                                        </MudTooltip>
+                                    </MudItem>
+                                }
+                                @if (context.Item.IsActive && context.Item.Status < OrderStatus.OrderStarted)
+                                {
+                                    <MudItem xs="6">
+                                        <MudTooltip Placement="Placement.Bottom" Text="Edytuj zlecenie">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                                        </MudTooltip>
+                                    </MudItem>
+                                }
+                            </MudGrid>
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
@@ -126,7 +148,8 @@
     protected override async Task LoadDataAsync()
     {
         IsLoading = true;
-        var response = await OrderService.GetAllOrdersAsync();
+
+        var response = await OrderService.GetAllOrdersAsync(ShowInactive);
 
         if (response.Success)
         {
@@ -138,6 +161,12 @@
             Snackbar.Add(response.Error ?? "Błąd pobierania danych", Severity.Error);
         }
         IsLoading = false;
+    }
+
+    private async Task OnShowInactiveChanged(bool value)
+    {
+        ShowInactive = value;
+        await LoadDataAsync();
     }
 
     private Func<OrderResponseDto, bool> _quickFilter => x =>
@@ -184,14 +213,14 @@
     private async Task OnDeleteClicked(OrderResponseDto order)
     {
         var parameters = new DialogParameters<ConfirmDialog>
-    {
-        { x => x.Title, "Anulzacja zlecenia" },
-        { x => x.Content, $"Czy na pewno chcesz anulować to zlecenie?" },
-        { x => x.ConfirmText, "Anuluj" },
-        { x => x.Color, Color.Error },
-        { x => x.Icon, Icons.Material.Filled.DeleteForever },
-        { x => x.IconColor, Color.Error }
-    };
+        {
+            { x => x.Title, "Anulzacja zlecenia" },
+            { x => x.Content, $"Czy na pewno chcesz anulować to zlecenie?" },
+            { x => x.ConfirmText, "Anuluj" },
+            { x => x.Color, Color.Error },
+            { x => x.Icon, Icons.Material.Filled.DeleteForever },
+            { x => x.IconColor, Color.Error }
+        };
 
         var dialog = await DialogService.ShowAsync<ConfirmDialog>("Potwierdzenie", parameters, DialogHelper.GetConfirmationOptions());
         var result = await dialog.Result;
@@ -255,4 +284,17 @@
     {
         Nav.NavigateTo($"/orders/{args.Item.Id}");
     }
+
+    private Func<OrderResponseDto, int, string> _rowStyleFunc => (x, i) =>
+    {
+        string style = "cursor: pointer;";
+
+        if (x.Status == OrderStatus.Cancelled)
+            style += "background-color: #F8D7DA;";
+
+        if (x.Status == OrderStatus.ApprovedByAdmin)
+            style += "background-color: #C8E6C9;";
+
+        return style;
+    };
 }

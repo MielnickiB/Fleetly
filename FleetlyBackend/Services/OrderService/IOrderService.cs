@@ -7,7 +7,7 @@ namespace FleetlyBackend.Services.OrderService
     public interface IOrderService
     {
         public Task<OrderResponseDto?> GetOrderById(int orderId);
-        public Task<PagedResult<OrderResponseDto>> GetAllOrders();
+        public Task<PagedResult<OrderResponseDto>> GetAllOrders(bool includeInactive = false);
         public Task<PagedResult<OrderLiteDto>> GetAvailableOrders(
             int page = 1, 
             int pageSize = 10,
@@ -21,7 +21,7 @@ namespace FleetlyBackend.Services.OrderService
         public Task ResignOrder(int orderId);
         public Task<OrderResponseDto> FinishOrderByWorker(int orderId);
         public Task SubmitAllOrderCosts(int orderId);
-        public Task<OrderResponseDto> ApproveCostsAndCompleteOrder(int orderId);
+        public Task ApproveCostsAndCompleteOrder(int orderId);
         public Task<OrderResponseDto> ApproveOrder(int orderId);
         public Task<OrderResponseDto> AddCost(int orderId, ExpenseCreateDto dto);
         public Task<OrderResponseDto> UpdateCost(int orderId, int expenseId, ExpenseUpdateDto dto);
