@@ -167,6 +167,13 @@ namespace FleetlyBackend.Data
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Protocol 1:N ProtocolPhoto
+            modelBuilder.Entity<Protocol>()
+                .HasMany(p => p.Photos)
+                .WithOne(ph => ph.Protocol)
+                .HasForeignKey(ph => ph.ProtocolId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<User>()
                 .Navigation(u => u.Role)
                 .IsRequired();
