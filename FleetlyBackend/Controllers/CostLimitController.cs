@@ -14,8 +14,8 @@ namespace FleetlyBackend.Controllers
         private readonly ICostLimitService _service = service;
 
         [HttpGet]
-        public async Task<ActionResult<PagedResult<CostLimitResponseDto>>> GetAll()
-            => Ok(await _service.GetAll());
+        public async Task<ActionResult<PagedResult<CostLimitResponseDto>>> GetAll([FromQuery] bool includeInactive)
+            => Ok(await _service.GetAll(includeInactive));
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<CostLimitResponseDto>> Get(int id)

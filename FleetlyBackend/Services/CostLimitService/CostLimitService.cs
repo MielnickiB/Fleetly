@@ -11,14 +11,22 @@ namespace FleetlyBackend.Services.CostLimitService
     {
         private readonly FleetlyContext _context = context;
 
-        public async Task<PagedResult<CostLimitResponseDto>> GetAll()
+        public async Task<PagedResult<CostLimitResponseDto>> GetAll(bool includeInactive)
         {
             var totalCount = await _context.CostLimits.CountAsync();
-            var items = await _context.CostLimits
-                .AsNoTracking()
+
+            var query = _context.CostLimits.AsNoTracking().AsQueryable();
+
+            if (!includeInactive)
+            {
+                query = query.Where(c => c.IsActive);
+            }
+
+            var items = await query
                 .OrderBy(c => c.RangeOfKmMin)
                 .Select(c => c.ToResponseDto())
                 .ToListAsync();
+
             return new PagedResult<CostLimitResponseDto>
             {
                 Items = items,

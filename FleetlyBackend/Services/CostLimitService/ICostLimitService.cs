@@ -5,7 +5,7 @@ namespace FleetlyBackend.Services.CostLimitService
 {
     public interface ICostLimitService
     {
-        Task<PagedResult<CostLimitResponseDto>> GetAll();
+        Task<PagedResult<CostLimitResponseDto>> GetAll(bool includeInactive);
         Task<CostLimitResponseDto?> Get(int id);
         Task<CostLimitResponseDto> GetByRangeOfKm(int rangeOfKm);
         Task<CostLimitResponseDto> Create(CostLimitCreateDto dto);
