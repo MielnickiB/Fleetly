@@ -9,9 +9,10 @@ namespace FleetlyWeb.Services.Locations
         private readonly ApiClient _api = api;
         private const string BaseUrl = "api/Location";
 
-        public async Task<ApiResponse<PagedResult<LocationResponseDto>>> GetAllLocationsAsync()
+        public async Task<ApiResponse<PagedResult<LocationResponseDto>>> GetAllLocationsAsync(bool includeInactive)
         {
-            var resp = await _api.GetAsync<PagedResult<LocationResponseDto>>(BaseUrl) 
+            var url = $"{BaseUrl}?includeInactive={includeInactive}";
+            var resp = await _api.GetAsync<PagedResult<LocationResponseDto>>(url) 
                 ?? throw new Exception("Brak odpowiedzi z serwera.");
             if (!resp.Success)
             {

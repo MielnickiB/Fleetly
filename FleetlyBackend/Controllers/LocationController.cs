@@ -1,5 +1,4 @@
 ﻿using FleetlyBackend.Services.LocationService;
-using FleetlyBackend.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Fleetly.Shared.Dto.LocationDtos;
@@ -14,9 +13,9 @@ namespace FleetlyBackend.Controllers
         private readonly ILocationService _service = service;
 
         [HttpGet]
-        public async Task<ActionResult<List<LocationResponseDto>>> GetAll()
+        public async Task<ActionResult<List<LocationResponseDto>>> GetAll([FromQuery] bool includeInactive)
         {
-            return Ok(await _service.GetAll());
+            return Ok(await _service.GetAll(includeInactive));
         }
 
         [HttpGet("{id:int}")]

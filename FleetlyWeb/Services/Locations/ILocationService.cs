@@ -6,7 +6,7 @@ namespace FleetlyWeb.Services.Locations
 {
     public interface ILocationService
     {
-        Task<ApiResponse<PagedResult<LocationResponseDto>>> GetAllLocationsAsync();
+        Task<ApiResponse<PagedResult<LocationResponseDto>>> GetAllLocationsAsync(bool includeInactive);
         Task<ApiResponse<LocationResponseDto?>> GetLocationByIdAsync(int locationId);
         Task<ApiResponse<LocationResponseDto>> CreateLocationAsync(LocationCreateDto dto);
         Task<ApiResponse<LocationResponseDto>> UpdateLocationAsync(int id, LocationUpdateDto dto);

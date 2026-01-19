@@ -13,7 +13,7 @@ namespace FleetlyBackend.Services.LocationService
         private readonly FleetlyContext _context = context;
         private readonly IHttpContextAccessor _http = http;
 
-        public async Task<PagedResult<LocationResponseDto>> GetAll()
+        public async Task<PagedResult<LocationResponseDto>> GetAll(bool includeInactive)
         {
             var user = _http.CurrentUser();
             var query = _context.Locations.AsNoTracking().AsQueryable();
@@ -21,6 +21,11 @@ namespace FleetlyBackend.Services.LocationService
             if (user.IsClient() || user.IsWorker())
             {
                 query = query.Where(l => l.UserId == user.GetUserId());
+            }
+
+            if (!includeInactive)
+            {
+                query = query.Where(l => l.IsActive);
             }
 
             var totalCount = await query.CountAsync();
