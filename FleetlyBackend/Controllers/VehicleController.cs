@@ -4,6 +4,7 @@ using Fleetly.Shared.Dto.VehicleDtos;
 using FleetlyBackend.Services.VehicleService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace FleetlyBackend.Controllers
 {
@@ -15,9 +16,9 @@ namespace FleetlyBackend.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin, Client")]
-        public async Task<ActionResult<PagedResult<VehicleResponseDto>>> GetAll()
+        public async Task<ActionResult<PagedResult<VehicleResponseDto>>> GetAll(bool includeInactive)
         {
-            return Ok(await _service.GetAll());
+            return Ok(await _service.GetAll(includeInactive));
         }
 
         [HttpGet("{id:int}")]

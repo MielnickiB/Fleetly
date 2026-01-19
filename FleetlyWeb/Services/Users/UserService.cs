@@ -12,7 +12,7 @@ namespace FleetlyWeb.Services.Users
         public async Task<ApiResponse<PagedResult<UserResponseDto>>> GetAllUsersAsync(bool includeInactive)
         {
             var url = $"{BaseUrl}?includeInactive={includeInactive}";
-            var resp = await _api.GetAsync<PagedResult<UserResponseDto>>(BaseUrl)
+            var resp = await _api.GetAsync<PagedResult<UserResponseDto>>(url)
                 ?? throw new Exception("Brak odpowiedzi z serwera.");
             if (!resp.Success)
             {

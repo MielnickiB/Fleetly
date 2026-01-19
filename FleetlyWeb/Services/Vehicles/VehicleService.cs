@@ -8,10 +8,10 @@ namespace FleetlyWeb.Services.Vehicles
     {
         private readonly ApiClient _api = api;
         private const string BaseUrl = "api/Vehicle";
-        public async Task<ApiResponse<PagedResult<VehicleResponseDto>>> GetAllVehiclesAsync()
+        public async Task<ApiResponse<PagedResult<VehicleResponseDto>>> GetAllVehiclesAsync(bool includeInactive)
         {
-
-            var resp = await _api.GetAsync<PagedResult<VehicleResponseDto>>(BaseUrl) 
+            var url = $"{BaseUrl}?includeInactive={includeInactive}";
+            var resp = await _api.GetAsync<PagedResult<VehicleResponseDto>>(url) 
                 ?? throw new Exception("Brak odpowiedzi z serwera.");
 
             if (!resp.Success)
