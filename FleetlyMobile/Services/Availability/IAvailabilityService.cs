@@ -1,7 +1,7 @@
 ﻿using Fleetly.Shared.Client;
 using Fleetly.Shared.Dto.AvailabilityDtos;
 
-namespace FleetlyMobile.Availability
+namespace FleetlyMobile.Services.Availability
 {
     public interface IAvailabilityService
     {
@@ -10,5 +10,6 @@ namespace FleetlyMobile.Availability
         Task<ApiResponse<List<AvailabilityResponseDto>?>> CreateAsync(AvailabilityCreateDto dto);
         Task<ApiResponse<AvailabilityResponseDto?>> UpdateAsync(int id, AvailabilityUpdateDto dto);
         Task<ApiResponse<bool>> DeleteAsync(int id);
+        Task<ApiResponse<bool>> DeleteRangeAsync(DateOnly start, DateOnly end);
     }
 }

@@ -9,5 +9,6 @@ namespace FleetlyBackend.Services.AvailabilityService
         Task<List<AvailabilityResponseDto>> Create(AvailabilityCreateDto dto);
         Task<AvailabilityResponseDto> Update(int id, AvailabilityUpdateDto dto);
         Task Delete(int id);
+        Task DeleteByRange(DateOnly start, DateOnly end);
     }
 }

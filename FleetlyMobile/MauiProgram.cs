@@ -12,6 +12,7 @@ using FleetlyMobile.Services.Expense;
 using FleetlyMobile.Services.Protocol;
 using FleetlyMobile.Services.Notifications;
 using Microsoft.Maui.Devices.Sensors;
+using FleetlyMobile.Services.Availability;
 
 namespace FleetlyMobile
 {
@@ -60,6 +61,7 @@ namespace FleetlyMobile
             builder.Services.AddScoped<IProtocolService, ProtocolService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 
             return builder.Build();
         }

@@ -1,7 +1,6 @@
 ﻿using Fleetly.Shared.Dto.AvailabilityDtos;
 using FleetlyBackend.Data;
 using FleetlyBackend.Extensions;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -102,6 +101,8 @@ namespace FleetlyBackend.Services.AvailabilityService
             if (user.GetUserId() != entity.WorkerId)
                 throw new UnauthorizedAccessException("Nie masz uprawnień do edytowania tej dostępności.");
 
+            ValidateModificationDate(entity.Date);
+
             var newStart = dto.StartHour ?? entity.StartHour;
             var newEnd = dto.EndHour ?? entity.EndHour;
 
@@ -137,8 +138,44 @@ namespace FleetlyBackend.Services.AvailabilityService
             if (user.GetUserId() != entity.WorkerId)
                 throw new UnauthorizedAccessException("Brak uprawnień.");
 
+            ValidateModificationDate(entity.Date);
+
             _context.Availabilities.Remove(entity);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteByRange(DateOnly start, DateOnly end)
+        {
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
+            var entities = await _context.Availabilities
+                .Where(a => a.WorkerId == userId && a.Date >= start && a.Date <= end)
+                .ToListAsync();
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var minAllowedDate = today.AddDays(1);
+
+            if (start <= minAllowedDate)
+                throw new InvalidOperationException("Zakres usuwania obejmuje dni zablokowane do edycji (dzisiaj/jutro/przeszłość).");
+
+            if (entities.Count != 0)
+            {
+                _context.Availabilities.RemoveRange(entities);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        private static void ValidateModificationDate(DateOnly availabilityDate)
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var minAllowedDate = today.AddDays(1);
+
+            if (availabilityDate <= minAllowedDate)
+            {
+                throw new InvalidOperationException("Nie można modyfikować dostępności na mniej niż 24h przed (lub wstecz).");
+            }
         }
     }
 }

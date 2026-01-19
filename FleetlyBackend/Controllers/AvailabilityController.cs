@@ -87,5 +87,13 @@ namespace FleetlyBackend.Controllers
                 return Forbid();
             }
         }
+
+        [HttpDelete("range")]
+        [Authorize(Roles = "Worker")]
+        public async Task<ActionResult> DeleteRange([FromQuery] DateOnly start, [FromQuery] DateOnly end)
+        {
+            await _service.DeleteByRange(start, end);
+            return NoContent();
+        }
     }
 }

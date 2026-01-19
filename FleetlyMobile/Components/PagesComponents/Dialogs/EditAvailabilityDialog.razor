@@ -1,0 +1,77 @@
+﻿@inherits DialogBase<AvailabilityUpdateDto>
+@inject IAvailabilityService AvailService
+
+<MudDialog>
+    <DialogContent>
+        <MudStack>
+            <MudText Typo="Typo.body2">Edytujesz dostępność dla dnia: <b>@Availability.Date.ToString("dd.MM.yyyy")</b></MudText>
+
+            <EditForm Model="@Model"
+                      @ref="EditForm">
+                <MudTimePicker Label="Od" @bind-Time="_startSpan" Editable="true" />
+                <MudTimePicker Label="Do" @bind-Time="_endSpan" Editable="true" />
+
+                <MudSwitch @bind-Value="_localIsAvailable"
+                           Color="@(_localIsAvailable? Color.Success: Color.Error)"
+                           Label="@(_localIsAvailable ? "Dostępny" : "Niedostępny")" />
+            </EditForm>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="IsBusy">
+            @if (IsBusy)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+            }
+            else
+            {
+                <MudText Typo="Typo.button">Zapisz</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public required AvailabilityResponseDto Availability { get; set; }
+
+    private TimeSpan? _startSpan;
+    private TimeSpan? _endSpan;
+    private bool _localIsAvailable;
+
+    protected override void OnInitialized()
+    {
+        Model.StartHour = Availability.StartHour;
+        Model.EndHour = Availability.EndHour;
+        Model.IsAvailable = Availability.IsAvailable;
+
+        _startSpan = Availability.StartHour.ToTimeSpan();
+        _endSpan = Availability.EndHour.ToTimeSpan();
+        _localIsAvailable = Availability.IsAvailable;
+    }
+
+    protected override async Task Submit()
+    {
+        if (_startSpan >= _endSpan)
+        {
+            Snackbar.Add("Godzina zakończenia musi być późniejsza.", Severity.Warning);
+            return;
+        }
+
+        Model.StartHour = TimeOnly.FromTimeSpan(_startSpan ?? TimeSpan.Zero);
+        Model.EndHour = TimeOnly.FromTimeSpan(_endSpan ?? TimeSpan.Zero);
+        Model.IsAvailable = _localIsAvailable;
+
+        var response = await AvailService.UpdateAsync(Availability.Id, Model);
+
+        if (response.Success)
+        {
+            Snackbar.Add("Zaktualizowano dostępność", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add(response.Error ?? "Błąd aktualizacji", Severity.Error);
+        }
+    }
+}
