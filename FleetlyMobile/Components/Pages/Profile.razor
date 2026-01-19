@@ -13,7 +13,7 @@
 }
 else
 {
-    <UserGreeting UserName="@(_user?.Details.Name + " " + _user?.Details.Surname)" GreetingMessage="Twoja rola w systemie to Kierowca!" />
+    <UserGreeting UserName="@(_user?.Details.Name)" GreetingMessage="Twoja rola w systemie to Kierowca!" />
     <MudStack Spacing="2" Class="pb-16">
 
         @if (_user is not null)

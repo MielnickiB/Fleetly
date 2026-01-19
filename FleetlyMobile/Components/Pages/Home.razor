@@ -100,7 +100,13 @@ else
     private async Task LoadUserData()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        userName = authState.User.Identity?.Name ?? authState.User.FindFirst("FullName")?.Value ?? "Kierowco";
+        var fullName = authState.User.Identity?.Name ?? authState.User.FindFirst("FullName")?.Value ?? "Kierowco";
+
+        var spaceIndex = fullName.IndexOf(' ');
+
+        userName = spaceIndex > -1
+            ? fullName.Substring(0, spaceIndex)
+            : fullName;
     }
 
     private async Task LoadDataAsync()
