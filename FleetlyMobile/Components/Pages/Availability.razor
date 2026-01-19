@@ -129,7 +129,7 @@ else
     {
         var minAllowedDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
 
-        return date > minAllowedDate;
+        return date >= minAllowedDate;
     }
 
     protected override async Task OnInitializedAsync()
@@ -213,7 +213,7 @@ else
             await ExecuteSafeAsync(async () =>
             {
                 var today = DateOnly.FromDateTime(DateTime.Today);
-                var safeStart = today.AddDays(2);
+                var safeStart = today.AddDays(1);
                 var limit = today.AddDays(30);
 
                 if (safeStart > limit)
@@ -280,8 +280,11 @@ else
     private string DateClassFunc(DateTime date)
     {
         var dateOnly = DateOnly.FromDateTime(date);
+        if (_allCachedAvailabilities == null) return string.Empty;
+
         var entry = _allCachedAvailabilities.FirstOrDefault(x => x.Date == dateOnly);
         if (entry == null) return string.Empty;
+
         return entry.IsAvailable ? "availability-success" : "availability-error";
     }
 

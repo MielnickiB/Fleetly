@@ -92,8 +92,15 @@ namespace FleetlyBackend.Controllers
         [Authorize(Roles = "Worker")]
         public async Task<ActionResult> DeleteRange([FromQuery] DateOnly start, [FromQuery] DateOnly end)
         {
-            await _service.DeleteByRange(start, end);
-            return NoContent();
+            try
+            {
+                await _service.DeleteByRange(start, end);
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

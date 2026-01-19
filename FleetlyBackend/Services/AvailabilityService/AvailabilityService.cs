@@ -174,7 +174,7 @@ namespace FleetlyBackend.Services.AvailabilityService
 
             if (availabilityDate <= minAllowedDate)
             {
-                throw new InvalidOperationException("Nie można modyfikować dostępności na mniej niż 24h przed (lub wstecz).");
+                throw new InvalidOperationException("Nie można modyfikować dostępności na dziś, jutro ani wstecz. Zmiany są dozwolone tylko od pojutrza.");
             }
         }
     }

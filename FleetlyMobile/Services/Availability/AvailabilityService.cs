@@ -21,7 +21,6 @@ namespace FleetlyMobile.Services.Availability
 
         public async Task<ApiResponse<List<AvailabilityResponseDto>?>> CreateAsync(AvailabilityCreateDto dto)
         {
-
             return await _api.PostAsync<AvailabilityCreateDto, List<AvailabilityResponseDto>>(BaseUrl, dto);
         }
 
