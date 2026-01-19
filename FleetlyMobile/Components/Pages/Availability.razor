@@ -1,0 +1,299 @@
+﻿@page "/availability"
+@inject IAvailabilityService AvailService
+@inject IDialogService DialogService
+@inherits BasePage
+
+@if (IsLoading)
+{
+    <Loading Height="80vh" />
+}
+else if (_allCachedAvailabilities == null && _upcomingAvailabilities == null)
+{
+    <EmptyView OnRetry="@(() => ExecuteSafeAsync(LoadDataAsync))" IsBusy="@IsLoading" />
+}
+else 
+{
+    <MudStack Spacing="4" Class="py-4">
+        <MudText Typo="Typo.h5" Style="font-weight:bold">Twój grafik</MudText>
+
+        <MudPaper Elevation="3" Class="pa-2 rounded-lg">
+            <MudDatePicker PickerVariant="PickerVariant.Static"
+                           Date="@_selectedDate"
+                           DateChanged="OnDateSelected"
+                           AdditionalDateClassesFunc="DateClassFunc"
+                           Elevation="0"
+                           Class="mx-auto" />
+
+            <MudStack Row="true" Justify="Justify.Center" Class="mt-2">
+                <MudIcon Icon="@Icons.Material.Filled.Circle" Color="Color.Success" Size="Size.Small" />
+                <MudText Typo="Typo.caption">Dostępny</MudText>
+                <MudIcon Icon="@Icons.Material.Filled.Circle" Color="Color.Error" Size="Size.Small" Class="ml-4" />
+                <MudText Typo="Typo.caption">Niedostępny</MudText>
+            </MudStack>
+        </MudPaper>
+
+        <MudPaper Elevation="3" Class="pa-4 rounded-lg">
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Dodaj dostępność</MudText>
+
+            <MudDateRangePicker Label="Wybierz zakres dat"
+                                @bind-DateRange="_dateRange"
+                                Margin="Margin.Dense"
+                                Variant="Variant.Outlined" />
+
+            <MudStack Row="true" Spacing="2">
+                <MudTimePicker Label="Od godz." @bind-Time="_startTime" Margin="Margin.Dense" Variant="Variant.Outlined" />
+                <MudTimePicker Label="Do godz." @bind-Time="_endTime" Margin="Margin.Dense" Variant="Variant.Outlined" />
+            </MudStack>
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-2" Justify="Justify.SpaceBetween">
+                <MudSwitch @bind-Value="_isAvailable"
+                           Color="@(_isAvailable? Color.Success: Color.Error)"
+                           Label="@(_isAvailable ? "Będę dostępny" : "Będę niedostępny")" />
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="AddAvailability"
+                           Disabled="IsLoading">
+                    @if (IsLoading)
+                    {
+                        <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.button">Dodaj</MudText>
+                    }
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+
+        <MudExpansionPanels MultiExpansion="true">
+            <MudExpansionPanel Text="@($"Nadchodzące ({_upcomingAvailabilities.Count})")" IsExpanded="true">
+
+                @if (_upcomingAvailabilities.Any())
+                {
+                    <MudButton StartIcon="@Icons.Material.Filled.DeleteForever"
+                               Color="Color.Error"
+                               Variant="Variant.Text"
+                               FullWidth="true"
+                               OnClick="DeleteAllFuture"
+                               Class="mb-2">
+                    <MudText Typo="Typo.button">Usuń wszystkie widoczne</MudText>
+                    </MudButton>
+                }
+
+                @if (!_upcomingAvailabilities.Any())
+                {
+                    <MudAlert Severity="Severity.Info">Brak zaplanowanych dostępności na najbliższy miesiąc.</MudAlert>
+                }
+                else
+                {
+                    <MudStack Spacing="2">
+                        @foreach (var item in _upcomingAvailabilities)
+                        {
+                            var isEditable = IsEditable(item.Date);
+
+                            <MudCard Elevation="2" Class="@(item.IsAvailable ? "border-l-4 border-solid mud-border-success" : "border-l-4 border-solid mud-border-error")">
+                                <MudCardContent Class="py-2 px-3">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                        <div>
+                                            <MudText Typo="Typo.subtitle2">@item.Date.ToString("dd.MM.yyyy (dddd)")</MudText>
+                                            <MudText Typo="Typo.caption">@item.StartHour - @item.EndHour</MudText>
+                                        </div>
+                                        <div>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="() => EditItem(item)" Disabled="@(!isEditable)" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteItem(item)" Disabled="@(!isEditable)" />
+                                        </div>
+                                    </MudStack>
+                                </MudCardContent>
+                            </MudCard>
+                        }
+                    </MudStack>
+                }
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+
+    </MudStack>
+}
+
+@code {
+    private List<AvailabilityResponseDto>? _allCachedAvailabilities;
+    private List<AvailabilityResponseDto>? _upcomingAvailabilities;
+
+    private DateTime? _selectedDate = DateTime.Today;
+    private DateRange _dateRange = new DateRange(DateTime.Today, DateTime.Today);
+    private TimeSpan? _startTime = new TimeSpan(8, 0, 0);
+    private TimeSpan? _endTime = new TimeSpan(16, 0, 0);
+    private bool _isAvailable = true;
+
+    private bool IsEditable(DateOnly date)
+    {
+        var minAllowedDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
+
+        return date >= minAllowedDate;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ExecuteSafeAsync(LoadDataAsync);
+    }
+
+    private async Task LoadDataAsync()
+    {
+        var start = DateOnly.FromDateTime(DateTime.Today.AddDays(-5));
+        var end = DateOnly.FromDateTime(DateTime.Today.AddMonths(2));
+
+        var response = await AvailService.GetByRangeAsync(start, end);
+
+        if (response.Success && response.Data != null)
+        {
+            _allCachedAvailabilities = response.Data;
+            RefreshUpcomingList();
+        }
+    }
+
+    private void RefreshUpcomingList()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var limit = today.AddDays(30);
+
+        _upcomingAvailabilities = _allCachedAvailabilities
+            .Where(x => x.Date >= today && x.Date <= limit)
+            .OrderBy(x => x.Date)
+            .ThenBy(x => x.StartHour)
+            .ToList();
+    }
+
+    private async Task AddAvailability()
+    {
+        if (_dateRange.Start == null || _dateRange.End == null || _startTime == null || _endTime == null)
+        {
+            Snackbar.Add("Uzupełnij wszystkie pola", Severity.Warning);
+            return;
+        }
+
+        if (_endTime <= _startTime)
+        {
+            Snackbar.Add("Godzina zakończenia musi być późniejsza", Severity.Warning);
+            return;
+        }
+
+        var dto = new AvailabilityCreateDto
+        {
+            StartDate = DateOnly.FromDateTime(_dateRange.Start.Value),
+            EndDate = DateOnly.FromDateTime(_dateRange.End.Value),
+            StartHour = TimeOnly.FromTimeSpan(_startTime.Value),
+            EndHour = TimeOnly.FromTimeSpan(_endTime.Value),
+            IsAvailable = _isAvailable
+        };
+
+        await ExecuteSafeAsync(async () =>
+        {
+            var result = await AvailService.CreateAsync(dto);
+
+            if (result.Success)
+            {
+                Snackbar.Add("Dodano dostępność", Severity.Success);
+                await LoadDataAsync();
+            }
+            else
+            {
+                throw new Exception(result.Error ?? "Błąd dodawania");
+            }
+        });
+    }
+
+    private async Task DeleteAllFuture()
+    {
+        var confirm = await DialogService.ShowMessageBox("Usuwanie grupowe",
+            "Czy na pewno chcesz usunąć WSZYSTKIE widoczne dostępności (najbliższe 30 dni)?",
+            yesText: "Usuń wszystko", cancelText: "Anuluj");
+
+        if (confirm == true)
+        {
+            await ExecuteSafeAsync(async () =>
+            {
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                var safeStart = today.AddDays(1);
+                var limit = today.AddDays(30);
+
+                if (safeStart > limit)
+                {
+                    Snackbar.Add("Brak dostępności możliwych do usunięcia", Severity.Info);
+                    return;
+                }
+
+                var res = await AvailService.DeleteRangeAsync(safeStart, limit);
+
+                if (res.Success)
+                {
+                    Snackbar.Add("Wyczyszczono grafik", Severity.Success);
+                    await LoadDataAsync();
+                }
+                else
+                {
+                    throw new Exception(res.Error ?? "Błąd usuwania");
+                }
+            });
+        }
+    }
+
+    private async Task DeleteItem(AvailabilityResponseDto item)
+    {
+        var confirm = await DialogService.ShowMessageBox("Usuwanie",
+            $"Czy na pewno usunąć dostępność z dnia {item.Date}?",
+            yesText: "Usuń", cancelText: "Anuluj");
+
+        if (confirm == true)
+        {
+            await ExecuteSafeAsync(async () =>
+            {
+                var res = await AvailService.DeleteAsync(item.Id);
+                if (res.Success)
+                {
+                    Snackbar.Add("Usunięto", Severity.Success);
+                    await LoadDataAsync();
+                }
+                else
+                {
+                    throw new Exception("Błąd usuwania");
+                }
+            });
+        }
+    }
+
+    private async Task EditItem(AvailabilityResponseDto item)
+    {
+        var parameters = new DialogParameters<EditAvailabilityDialog>
+        {
+            { x => x.Availability, item }
+        };
+
+        var dialog = await DialogService.ShowAsync<EditAvailabilityDialog>("Edycja", parameters);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await ExecuteSafeAsync(LoadDataAsync);
+        }
+    }
+
+    private string DateClassFunc(DateTime date)
+    {
+        var dateOnly = DateOnly.FromDateTime(date);
+        if (_allCachedAvailabilities == null) return string.Empty;
+
+        var entry = _allCachedAvailabilities.FirstOrDefault(x => x.Date == dateOnly);
+        if (entry == null) return string.Empty;
+
+        return entry.IsAvailable ? "availability-success" : "availability-error";
+    }
+
+    private void OnDateSelected(DateTime? date)
+    {
+        if (date.HasValue)
+        {
+            _selectedDate = date;
+            _dateRange = new DateRange(date.Value, date.Value);
+        }
+    }
+}

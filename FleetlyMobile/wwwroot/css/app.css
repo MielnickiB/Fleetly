@@ -171,3 +171,17 @@ h1:focus {
         opacity: 0.5;
     }
 }
+
+.availability-success {
+    background-color: var(--mud-palette-success) !important;
+    color: white !important;
+    font-weight: bold;
+    border-radius: 50%;
+}
+
+.availability-error {
+    background-color: var(--mud-palette-error) !important;
+    color: white !important;
+    font-weight: bold;
+    border-radius: 50%;
+}

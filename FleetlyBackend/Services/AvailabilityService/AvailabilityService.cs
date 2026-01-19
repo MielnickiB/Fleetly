@@ -1,7 +1,6 @@
 ﻿using Fleetly.Shared.Dto.AvailabilityDtos;
 using FleetlyBackend.Data;
 using FleetlyBackend.Extensions;
-using FleetlyBackend.Helpers;
 using FleetlyBackend.Mappings;
 using FleetlyBackend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -13,9 +12,8 @@ namespace FleetlyBackend.Services.AvailabilityService
         private readonly FleetlyContext _context = context;
         private readonly IHttpContextAccessor _http = http;
 
-        public async Task<List<AvailabilityResponseDto>> GetAll(int page, int pageSize)
+        public async Task<List<AvailabilityResponseDto>> GetByRange(DateOnly start, DateOnly end)
         {
-            var (skip, take) = PaginationHelper.Calculate(page, pageSize);
             var user = _http.CurrentUser();
 
             var query = _context.Availabilities.AsNoTracking().AsQueryable();
@@ -27,10 +25,9 @@ namespace FleetlyBackend.Services.AvailabilityService
             }
 
             return await query
-                .OrderBy(a => a.StartDate)
+                .Where(a => a.Date >= start && a.Date <= end)
+                .OrderBy(a => a.Date)
                 .ThenBy(a => a.StartHour)
-                .Skip(skip)
-                .Take(take)
                 .Select(a => a.ToResponseDto())
                 .ToListAsync();
         }
@@ -39,56 +36,99 @@ namespace FleetlyBackend.Services.AvailabilityService
         {
             var user = _http.CurrentUser();
             var availability = await _context.Availabilities.FindAsync(id);
-            if (availability is null)
-                return null;
+
+            if (availability is null) return null;
+
             if (user.IsWorker() && user.GetUserId() != availability.WorkerId)
                 throw new UnauthorizedAccessException("Nie masz uprawnień do przeglądania tej dostępności.");
+
             return availability.ToResponseDto();
         }
 
-        public async Task<AvailabilityResponseDto> Create(AvailabilityCreateDto dto)
+        public async Task<List<AvailabilityResponseDto>> Create(AvailabilityCreateDto dto)
         {
             var user = _http.CurrentUser();
             var workerId = user.GetUserId();
 
-            if (dto.EndDate < dto.StartDate)
-                throw new InvalidOperationException("Data zakończenia dostępności musi być równa lub późniejsza niż data rozpoczęcia.");
-
             if (dto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow.Date))
-                throw new InvalidOperationException("Data dostępności nie może zaczynać się w przeszłości.");
+                throw new InvalidOperationException("Nie można dodać dostępności w przeszłości.");
 
-            var startHour = dto.StartHour;
-            var endHour = dto.EndHour;
-            if (endHour <= startHour)
-                throw new InvalidOperationException("Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia.");
+            if (dto.EndDate < dto.StartDate)
+                throw new InvalidOperationException("Data końcowa nie może być wcześniejsza niż początkowa.");
 
-            var availabilityExists = await _context.Availabilities.AnyAsync(a =>
-                a.WorkerId == workerId
-                && a.StartDate <= dto.EndDate
-                && a.EndDate >= dto.StartDate
-                && startHour < a.EndHour
-                && a.StartHour < endHour);
+            if (dto.EndHour <= dto.StartHour)
+                throw new InvalidOperationException("Godzina zakończenia musi być późniejsza niż rozpoczęcia.");
 
-            if (availabilityExists)
-                throw new InvalidOperationException("W podanym zakresie dat i godzin istnieje już dostępność.");
+            var existingAvailabilities = await _context.Availabilities
+                .Where(a => a.WorkerId == workerId && a.Date >= dto.StartDate && a.Date <= dto.EndDate)
+                .ToListAsync();
 
-            var entity = new Availability
+            var newEntities = new List<Availability>();
+
+            for (var dt = dto.StartDate; dt <= dto.EndDate; dt = dt.AddDays(1))
             {
-                WorkerId = workerId,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
-                StartHour = startHour,
-                EndHour = endHour,
-                IsAvailable = dto.IsAvailable
-            };
+                var conflict = existingAvailabilities
+                    .Any(e => e.Date == dt && (e.StartHour < dto.EndHour && dto.StartHour < e.EndHour));
 
-            _context.Availabilities.Add(entity);
-            await _context.SaveChangesAsync();
+                if (conflict)
+                    throw new InvalidOperationException($"Konflikt dostępności w dniu {dt}. Zmień zakres lub usuń istniejący wpis.");
 
-            return entity.ToResponseDto();
+                newEntities.Add(new Availability
+                {
+                    WorkerId = workerId,
+                    Date = dt,
+                    StartHour = dto.StartHour,
+                    EndHour = dto.EndHour,
+                    IsAvailable = dto.IsAvailable
+                });
+            }
+
+            if (newEntities.Count != 0)
+            {
+                _context.Availabilities.AddRange(newEntities);
+                await _context.SaveChangesAsync();
+            }
+
+            return newEntities.Select(x => x.ToResponseDto()).ToList();
         }
 
         public async Task<AvailabilityResponseDto> Update(int id, AvailabilityUpdateDto dto)
+        {
+            var entity = await _context.Availabilities.FindAsync(id)
+                ?? throw new ArgumentException("Nie znaleziono dostępności.");
+
+            var user = _http.CurrentUser();
+            if (user.GetUserId() != entity.WorkerId)
+                throw new UnauthorizedAccessException("Nie masz uprawnień do edytowania tej dostępności.");
+
+            ValidateModificationDate(entity.Date);
+
+            var newStart = dto.StartHour ?? entity.StartHour;
+            var newEnd = dto.EndHour ?? entity.EndHour;
+
+            if (newEnd <= newStart)
+                throw new InvalidOperationException("Godzina zakończenia musi być późniejsza niż rozpoczęcia.");
+
+            var hasConflict = await _context.Availabilities.AnyAsync(a =>
+                a.Id != id &&
+                a.WorkerId == entity.WorkerId &&
+                a.Date == entity.Date && 
+                (a.StartHour < newEnd && newStart < a.EndHour));
+
+            if (hasConflict)
+                throw new InvalidOperationException("W tym dniu masz już inną dostępność w tych godzinach.");
+
+            entity.StartHour = newStart;
+            entity.EndHour = newEnd;
+
+            if (dto.IsAvailable.HasValue)
+                entity.IsAvailable = dto.IsAvailable.Value;
+
+            await _context.SaveChangesAsync();
+            return entity.ToResponseDto();
+        }
+
+        public async Task Delete(int id)
         {
             var user = _http.CurrentUser();
 
@@ -96,56 +136,46 @@ namespace FleetlyBackend.Services.AvailabilityService
                 ?? throw new ArgumentException("Nie znaleziono dostępności.");
 
             if (user.GetUserId() != entity.WorkerId)
-                throw new UnauthorizedAccessException("Nie masz uprawnień do edytowania tej dostępności.");
+                throw new UnauthorizedAccessException("Brak uprawnień.");
 
-            var newStartDate = dto.StartDate ?? entity.StartDate;
-            var newEndDate = dto.EndDate ?? entity.EndDate;
-
-            if (newEndDate < newStartDate)
-                throw new ArgumentException("Data zakończenia dostępności musi być równa lub późniejsza niż data rozpoczęcia.");
-
-            if (newStartDate < DateOnly.FromDateTime(DateTime.UtcNow.Date))
-                throw new InvalidOperationException("Data dostępności nie może zaczynać się w przeszłości.");
-
-            var newStartHour = dto.StartHour ?? entity.StartHour;
-            var newEndHour = dto.EndHour ?? entity.EndHour;
-
-            if (newEndHour <= newStartHour)
-                throw new InvalidOperationException("Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia.");
-
-            var availabilityExists = await _context.Availabilities.AnyAsync(a =>
-                a.Id != id
-                && a.WorkerId == entity.WorkerId
-                && a.StartDate <= newEndDate
-                && a.EndDate >= newStartDate
-                && newStartHour < a.EndHour
-                && a.StartHour < newEndHour);
-
-            if (availabilityExists)
-                throw new ArgumentException("W podanym zakresie dat i godzin istnieje już inna dostępność.");
-
-            if (dto.IsAvailable.HasValue) entity.IsAvailable = dto.IsAvailable.Value;
-            entity.StartDate = newStartDate;
-            entity.EndDate = newEndDate;
-            entity.StartHour = newStartHour;
-            entity.EndHour = newEndHour;
-            entity.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-            return entity.ToResponseDto();
-        }
-
-        public async Task<bool> Delete(int id)
-        {
-            var user = _http.CurrentUser();
-
-            var entity = await _context.Availabilities.FindAsync(id) ?? throw new ArgumentException("Nie znaleziono dostępności.");
-            if (user.GetUserId() != entity.WorkerId)
-                throw new UnauthorizedAccessException("Nie masz uprawnień do usunięcia tej dostępności.");
+            ValidateModificationDate(entity.Date);
 
             _context.Availabilities.Remove(entity);
             await _context.SaveChangesAsync();
-            return true;
+        }
+
+        public async Task DeleteByRange(DateOnly start, DateOnly end)
+        {
+            var user = _http.CurrentUser();
+            var userId = user.GetUserId();
+
+            var entities = await _context.Availabilities
+                .Where(a => a.WorkerId == userId && a.Date >= start && a.Date <= end)
+                .ToListAsync();
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var minAllowedDate = today.AddDays(1);
+
+            if (start <= minAllowedDate)
+                throw new InvalidOperationException("Zakres usuwania obejmuje dni zablokowane do edycji (dzisiaj/jutro/przeszłość).");
+
+            if (entities.Count != 0)
+            {
+                _context.Availabilities.RemoveRange(entities);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        private static void ValidateModificationDate(DateOnly availabilityDate)
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var minAllowedDate = today.AddDays(1);
+
+            if (availabilityDate <= minAllowedDate)
+            {
+                throw new InvalidOperationException("Nie można modyfikować dostępności na dziś, jutro ani wstecz. Zmiany są dozwolone tylko od pojutrza.");
+            }
         }
     }
 }

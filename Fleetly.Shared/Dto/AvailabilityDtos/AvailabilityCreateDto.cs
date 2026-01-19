@@ -4,16 +4,16 @@ namespace Fleetly.Shared.Dto.AvailabilityDtos
 {
     public class AvailabilityCreateDto
     {
-        [Required]
+        [Required(ErrorMessage = "Data początkowa jest wymagana!")]
         public DateOnly StartDate { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Data końcowa jest wymagana!")]
         public DateOnly EndDate { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Godzina początkowa jest wymagana!")]
         public TimeOnly StartHour { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Godzina końcowa jest wymagana!")]
         public TimeOnly EndHour { get; set; }
         public bool IsAvailable { get; set; }
     }
