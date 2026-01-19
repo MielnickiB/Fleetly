@@ -13,7 +13,7 @@
 
 <PageTitle>Lista Użytkowników</PageTitle>
 
-<PageHeader Title="Lista Użytkowników" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Imię / Nazwisko / Email...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
+<PageHeader Title="Lista Użytkowników" @bind-SearchString="SearchString" InactiveValue="ShowInactive" InactiveValueChanged="OnShowInactiveChanged" SearchPlaceholder="Szukaj (Imię / Nazwisko / Email...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
 <MudItem xs="12" Class="pb-4" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
@@ -93,7 +93,7 @@
         try
         {
             IsLoading = true;
-            var apiResponse = await UserService.GetAllUsersAsync();
+            var apiResponse = await UserService.GetAllUsersAsync(ShowInactive);
             if (apiResponse.Success)
             {
                 Items = apiResponse.Data!.Items!;

@@ -9,8 +9,9 @@ namespace FleetlyWeb.Services.Users
         private readonly ApiClient _api = api;
         private const string BaseUrl = "api/Users";
 
-        public async Task<ApiResponse<PagedResult<UserResponseDto>>> GetAllUsersAsync()
+        public async Task<ApiResponse<PagedResult<UserResponseDto>>> GetAllUsersAsync(bool includeInactive)
         {
+            var url = $"{BaseUrl}?includeInactive={includeInactive}";
             var resp = await _api.GetAsync<PagedResult<UserResponseDto>>(BaseUrl)
                 ?? throw new Exception("Brak odpowiedzi z serwera.");
             if (!resp.Success)

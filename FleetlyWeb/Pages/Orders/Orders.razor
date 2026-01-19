@@ -163,12 +163,6 @@
         IsLoading = false;
     }
 
-    private async Task OnShowInactiveChanged(bool value)
-    {
-        ShowInactive = value;
-        await LoadDataAsync();
-    }
-
     private Func<OrderResponseDto, bool> _quickFilter => x =>
     {
         if (!ShowInactive && !x.IsActive)
