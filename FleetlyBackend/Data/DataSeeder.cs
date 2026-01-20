@@ -73,6 +73,7 @@ namespace FleetlyBackend.Data
             await SeedCostLimitsAsync(context);
             await SeedBrandsAndModelsAsync(context);
             await SeedUsersAsync(context, passwordHasher);
+            await SeedOrdersAsync(context);
         }
 
         private static async Task SeedRolesAsync(FleetlyContext context)
@@ -235,6 +236,124 @@ namespace FleetlyBackend.Data
             }
         }
 
+        private static async Task SeedOrdersAsync(FleetlyContext context)
+        {
+            if (await context.Orders.AnyAsync()) return;
+
+            var clients = await context.Users
+                .Where(u => u.Role.RoleName == "Client")
+                .Include(u => u.Vehicles)
+                .Include(u => u.Locations)
+                .Include(u => u.Role)
+                .ToListAsync();
+
+            var workers = await context.Users
+                .Where(u => u.Role.RoleName == "Worker")
+                .Include(u => u.Role)
+                .ToListAsync();
+
+            var costLimits = await context.CostLimits.OrderBy(x => x.RangeOfKmMin).ToListAsync();
+
+            var orders = new List<Order>();
+
+            foreach (var client in clients)
+            {
+                int ordersCount = _random.Next(5, 9);
+
+                for (int i = 0; i < ordersCount; i++)
+                {
+                    if (client.Vehicles.Count == 0 || client.Locations.Count < 2) continue;
+
+                    var vehicle = client.Vehicles.ElementAt(_random.Next(client.Vehicles.Count));
+
+                    int? assignedWorkerId = null;
+
+                    var startLocation = client.Locations.ElementAt(_random.Next(client.Locations.Count));
+
+                    var availableEndLocations = client.Locations.Where(l => l.Id != startLocation.Id).ToList();
+
+                    if (availableEndLocations.Count == 0) continue;
+
+                    var endLocation = availableEndLocations[_random.Next(availableEndLocations.Count)];
+
+                    var dateOffset = _random.Next(-10, 46);
+                    var startTime = DateTime.Now.AddDays(dateOffset).AddHours(_random.Next(8, 16));
+                    var deadline = startTime.AddHours(_random.Next(4, 24));
+
+                    OrderStatus status;
+                    DateTime? actualStart = null;
+                    DateTime? actualEnd = null;
+
+                    if (dateOffset < -1)
+                    {
+                        status = OrderStatus.ApprovedByAdmin;
+                        actualStart = startTime.AddMinutes(_random.Next(-15, 30));
+                        actualEnd = actualStart.Value.AddHours(_random.Next(2, 8));
+
+                        var worker = workers[_random.Next(workers.Count)];
+                        assignedWorkerId = worker.Id;
+                    }
+                    else if (dateOffset <= 5)
+                    {
+                        status = OrderStatus.Created;
+                    }
+                    else
+                    {
+                        status = OrderStatus.PendingApproval;
+                    }
+
+                    int distance = _random.Next(50, 950);
+                    var limit = costLimits.FirstOrDefault(l => distance >= l.RangeOfKmMin && distance <= l.RangeOfKmMax)
+                                ?? costLimits.Last();
+
+                    var contactPerson = GetRandomName();
+
+                    var order = new Order
+                    {
+                        ClientId = client.Id,
+
+                        WorkerId = assignedWorkerId,
+
+                        VehicleId = vehicle.Id,
+
+                        StartLocation = startLocation,
+                        EndLocation = endLocation,
+
+                        CostLimitId = limit.Id,
+                        RangeOfKm = distance,
+                        Salary = limit.BaseSalary,
+                        FuelCosts = Math.Round(limit.MaxCosts * 0.7m, 2),
+                        AdditionalCosts = 0m,
+                        Expenses = new List<Expense>(),
+
+                        Status = status,
+                        Details = _random.Next(0, 2) == 0 ? "Proszę o kontakt przed przyjazdem" : null,
+
+                        EndContactName = $"{contactPerson.Name} {contactPerson.Surname}",
+                        EndContactPhone = $"600{_random.Next(100000, 999999)}",
+
+                        StartTime = startTime,
+                        Deadline = deadline,
+                        ActualStartTime = actualStart,
+                        ActualEndTime = actualEnd,
+
+                        IsActive = true
+                    };
+
+                    orders.Add(order);
+                }
+            }
+
+            try
+            {
+                await context.Orders.AddRangeAsync(orders);
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Błąd dodawania zleceń: {ex.InnerException?.Message ?? ex.Message}");
+            }
+        }
 
         private static User CreateUser(int roleId, string email, string name, string surname, string? company, IPasswordHasher<User> passwordHasher)
         {

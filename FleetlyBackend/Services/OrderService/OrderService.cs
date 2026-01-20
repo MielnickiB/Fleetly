@@ -54,7 +54,7 @@ namespace FleetlyBackend.Services.OrderService
 
             if (user.IsWorker())
             {
-                if (order.WorkerId == userId) 
+                if (order.WorkerId == userId)
                     return order.ToResponseDto();
 
                 if (order.Status == OrderStatus.Created && order.WorkerId == null)
@@ -108,7 +108,7 @@ namespace FleetlyBackend.Services.OrderService
 
             var query = _context.Orders
                 .AsNoTracking()
-                .Where(o => o.Status == OrderStatus.Created && o.WorkerId == null);
+                .Where(o => o.Status == OrderStatus.Created && o.WorkerId == null && o.StartTime >= DateTime.UtcNow);
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -145,7 +145,6 @@ namespace FleetlyBackend.Services.OrderService
 
             var orders = await query
                .IncludeAllLiteOrderRelations()
-               .Where(o => o.StartTime.Date >= DateTime.UtcNow.Date)
                .Skip(skip)
                .Take(safe)
                .Select(o => o.ToLiteDto())
@@ -383,18 +382,18 @@ namespace FleetlyBackend.Services.OrderService
             if (!dto.IsFuelExpense && order.AdditionalCosts + dto.Cost > order.CostLimit.MaxCosts)
                 throw new InvalidOperationException($"Przekroczono limit kosztów dodatkowych ({order.CostLimit.MaxCosts} PLN).");
 
+            var expenseResponse = await _expenseService.Create(orderId, dto);
+
             using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
-                var expense = await _expenseService.Create(orderId, dto);
 
-                if (expense.IsFuelExpense)
-                    order.FuelCosts += expense.Cost;
+                if (dto.IsFuelExpense)
+                    order.FuelCosts += dto.Cost;
                 else
-                    order.AdditionalCosts += expense.Cost;
+                    order.AdditionalCosts += dto.Cost;
 
                 order.UpdatedAt = DateTime.UtcNow;
-
 
                 await _context.SaveChangesAsync();
 
@@ -405,6 +404,7 @@ namespace FleetlyBackend.Services.OrderService
             catch
             {
                 await tx.RollbackAsync();
+                await _expenseService.Delete(expenseResponse.Id);
                 throw;
             }
         }
@@ -436,12 +436,12 @@ namespace FleetlyBackend.Services.OrderService
                     throw new InvalidOperationException($"Aktualizacja spowoduje przekroczenie limitu kosztów dodatkowych.");
             }
 
+            var updatedExpense = await _expenseService.Update(expenseId, dto);
+
             using var tx = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                var updatedExpense = await _expenseService.Update(expenseId, dto);
-
                 if (oldIsFuel) order.FuelCosts -= oldCost;
                 else order.AdditionalCosts -= oldCost;
 
@@ -476,6 +476,10 @@ namespace FleetlyBackend.Services.OrderService
                 .FirstOrDefaultAsync(e => e.Id == expenseId && e.OrderId == orderId)
                 ?? throw new ArgumentException("Koszt nie istnieje.");
 
+            var deleted = await _expenseService.Delete(expenseId);
+            if (!deleted)
+                throw new InvalidOperationException("Nie udało się usunąć kosztu.");
+
             using var tx = await _context.Database.BeginTransactionAsync();
 
             try
@@ -484,10 +488,6 @@ namespace FleetlyBackend.Services.OrderService
                     order.FuelCosts -= expenseToDelete.Cost;
                 else
                     order.AdditionalCosts -= expenseToDelete.Cost;
-
-                var deleted = await _expenseService.Delete(expenseId);
-                if (!deleted)
-                    throw new InvalidOperationException("Nie udało się usunąć kosztu.");
 
                 order.UpdatedAt = DateTime.UtcNow;
 
@@ -500,7 +500,12 @@ namespace FleetlyBackend.Services.OrderService
             }
             catch
             {
-                await tx.RollbackAsync(); 
+                await tx.RollbackAsync();
+                await _expenseService.Create(orderId, new ExpenseCreateDto
+                {
+                    Cost = expenseToDelete.Cost,
+                    IsFuelExpense = expenseToDelete.IsFuelExpense
+                });
                 throw;
             }
         }
