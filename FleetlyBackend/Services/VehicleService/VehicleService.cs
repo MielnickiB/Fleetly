@@ -13,7 +13,7 @@ namespace FleetlyBackend.Services.VehicleService
         private readonly FleetlyContext _context = context;
         private readonly IHttpContextAccessor _http = http;
 
-        public async Task<PagedResult<VehicleResponseDto>> GetAll()
+        public async Task<PagedResult<VehicleResponseDto>> GetAll(bool includeInactive)
         {
             var user = _http.CurrentUser();
             var userId = user.GetUserId();
@@ -27,6 +27,11 @@ namespace FleetlyBackend.Services.VehicleService
             if (!user.IsInRole("Admin"))
             {
                 vehiclesQuery = vehiclesQuery.Where(v => v.UserId == userId);
+            }
+
+            if (!includeInactive)
+            {
+                vehiclesQuery = vehiclesQuery.Where(v => v.IsActive);
             }
 
             var totalCount = await vehiclesQuery.CountAsync();

@@ -5,7 +5,7 @@ namespace FleetlyBackend.Services.LocationService
 {
     public interface ILocationService
     {
-        Task<PagedResult<LocationResponseDto>> GetAll();
+        Task<PagedResult<LocationResponseDto>> GetAll(bool includeInactive);
         Task<LocationResponseDto?> GetById(int id);
         Task<LocationResponseDto> Create(LocationCreateDto dto);
         Task<LocationResponseDto> Update(int id, LocationUpdateDto dto);

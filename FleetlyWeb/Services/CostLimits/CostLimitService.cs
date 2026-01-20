@@ -9,9 +9,10 @@ namespace FleetlyWeb.Services.CostLimits
         private readonly ApiClient _api = api;
         private const string BaseUrl = "api/CostLimit";
 
-        public async Task<ApiResponse<PagedResult<CostLimitResponseDto>?>> GetAllAsync()
+        public async Task<ApiResponse<PagedResult<CostLimitResponseDto>?>> GetAllAsync(bool includeInactive)
         {
-            return await _api.GetAsync<PagedResult<CostLimitResponseDto>>(BaseUrl);
+            var url = $"{BaseUrl}?includeInactive={includeInactive}";
+            return await _api.GetAsync<PagedResult<CostLimitResponseDto>>(url);
         }
 
         public async Task<ApiResponse<CostLimitResponseDto?>> GetAsync(int id)

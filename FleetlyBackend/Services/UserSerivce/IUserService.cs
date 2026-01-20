@@ -5,7 +5,7 @@ namespace FleetlyBackend.Services.UserSerivce
 {
     public interface IUserService
     {
-        public Task<PagedResult<UserResponseDto>> GetAll();
+        public Task<PagedResult<UserResponseDto>> GetAll(bool includeInactive);
         public Task<List<UserResponseDto>> GetAllByRole(string roleName);
         public Task<UserResponseDto?> GetById(int id);
         public Task<UserResponseDto?> Create(UserCreateDto newUser);

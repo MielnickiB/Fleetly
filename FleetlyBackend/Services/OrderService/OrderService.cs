@@ -64,7 +64,7 @@ namespace FleetlyBackend.Services.OrderService
             throw new UnauthorizedAccessException("Brak dostępu do tego zlecenia.");
         }
 
-        public async Task<PagedResult<OrderResponseDto>> GetAllOrders()
+        public async Task<PagedResult<OrderResponseDto>> GetAllOrders(bool includeInactive = false)
         {
             var user = _http.CurrentUser();
             var userId = user.GetUserId();
@@ -79,11 +79,14 @@ namespace FleetlyBackend.Services.OrderService
             else if (user.IsWorker())
                 query = query.Where(o => o.WorkerId == userId);
 
+            if (!includeInactive)
+                query = query.Where(o => o.Status != OrderStatus.Cancelled);
+
             var totalCount = await query.CountAsync();
 
             var orders = await query
                 .AsNoTracking()
-                .OrderByDescending(o => o.CreatedAt)
+                .OrderByDescending(o => o.StartTime)
                 .Select(o => o.ToResponseDto())
                 .ToListAsync();
 
@@ -521,7 +524,7 @@ namespace FleetlyBackend.Services.OrderService
 
         #region ADMIN
 
-        public async Task<OrderResponseDto> ApproveCostsAndCompleteOrder(int orderId)
+        public async Task ApproveCostsAndCompleteOrder(int orderId)
         {
             if (!_http.CurrentUser().IsAdmin())
                 throw new UnauthorizedAccessException("Tylko administrator może zatwierdzać koszty.");
@@ -556,7 +559,6 @@ namespace FleetlyBackend.Services.OrderService
                 await tx.CommitAsync();
 
                 await _notificationService.NotifyOrderApprovedByAdmin(order);
-                return await GetFresh(orderId);
             }
             catch (Exception)
             {

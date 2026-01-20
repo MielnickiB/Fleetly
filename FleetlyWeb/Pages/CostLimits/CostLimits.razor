@@ -12,7 +12,7 @@
 
 <PageTitle>Lista limitów</PageTitle>
 
-<PageHeader Title="Lista limitów" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" OnClick="OpenAddDialogAsync" SearchPlaceholder="Szukaj..." IsLoading="@IsLoading" />
+<PageHeader Title="Lista limitów" @bind-SearchString="SearchString" InactiveValue="ShowInactive" InactiveValueChanged="OnShowInactiveChanged" OnClick="OpenAddDialogAsync" SearchPlaceholder="Szukaj..." IsLoading="@IsLoading" />
 @if (IsLoading)
 {
     <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
@@ -58,7 +58,7 @@ else
         try
         {
             IsLoading = true;
-            var apiResponse = await CostLimitService.GetAllAsync();
+            var apiResponse = await CostLimitService.GetAllAsync(ShowInactive);
             if (apiResponse.Success)
             {
                 Items = apiResponse.Data!.Items!;

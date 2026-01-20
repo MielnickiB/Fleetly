@@ -24,7 +24,6 @@ using FleetlyBackend.Workers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.Filters;
@@ -35,6 +34,7 @@ builder.Services.AddControllers();
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -44,7 +44,6 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Dokumentacja API"
     });
 
-    // Definicja JWT (Bearer)
     options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
     {
         Description = "Przykladowo: \"Bearer {token}\"",
@@ -53,14 +52,20 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.ApiKey,
     });
 
-    // Automatyczne wymaganie autoryzacji dla endpointow z [Authorize]
     options.OperationFilter<SecurityRequirementsOperationFilter>();
 });
 
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddDbContext<FleetlyContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")).EnableSensitiveDataLogging());
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableSensitiveDataLogging();
+    }
+});
 
 builder.Services.Configure<FileUploadOptions>(builder.Configuration.GetSection("FileUpload"));
 
@@ -76,7 +81,7 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
 builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 builder.Services.AddScoped<ICostLimitService, CostLimitService>();
-builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IFileService, AzureBlobService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -84,6 +89,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IPayrollService, PayrollService>();
 builder.Services.AddScoped<IProtocolService, ProtocolService>();
+
 builder.Services.AddHttpClient<IRouteService, RouteService>(client =>
 {
     client.DefaultRequestHeaders.UserAgent.ParseAdd("FleetlyApp/1.0");
@@ -118,39 +124,15 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:5251",
-                "https://localhost:5251",
-                "http://192.168.0.4:5251",
-                "http://192.168.0.4:5225"
-               )
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+              .AllowAnyMethod();
     });
 });
 
 builder.Services.AddHostedService<UrgentOrderWorker>();
 
-builder.Services.Configure<FileUploadOptions>(builder.Configuration.GetSection("FileUpload"));
-
 var app = builder.Build();
-
-var uploadSettings = builder.Configuration.GetSection("FileUpload").Get<FileUploadOptions>()
-                     ?? new FileUploadOptions();
-
-var uploadsPath = Path.Combine(app.Environment.ContentRootPath, uploadSettings.RootPath);
-
-if (!Directory.Exists(uploadsPath))
-{
-    Directory.CreateDirectory(uploadsPath);
-}
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(uploadsPath),
-    RequestPath = "/" + uploadSettings.RootPath
-});
 
 using (var scope = app.Services.CreateScope())
 {
@@ -165,32 +147,36 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Wystapil problem z seedowaniem bazy danych: {ex.Message}");
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Blad podczas migracji lub seedowania bazy.");
     }
 }
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Fleetly API V1");
+    });
 }
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
-
 app.UseAuthorization();
 
-app.MapControllers();
 
-var supportedCultures = new[] { "en-US", "pl-PL" };
+var supportedCultures = new[] { "pl-PL", "en-US" };
 var localizationOptions = new RequestLocalizationOptions()
     .SetDefaultCulture(supportedCultures[0])
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
 
 app.UseRequestLocalization(localizationOptions);
+
+app.MapControllers();
 
 app.Run();

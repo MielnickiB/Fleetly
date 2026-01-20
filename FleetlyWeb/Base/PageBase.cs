@@ -12,5 +12,11 @@ namespace FleetlyWeb.Base
         protected bool ShowInactive = false;
 
         protected abstract Task LoadDataAsync();
+
+        protected async Task OnShowInactiveChanged(bool value)
+        {
+            ShowInactive = value;
+            await LoadDataAsync();
+        }
     }
 }

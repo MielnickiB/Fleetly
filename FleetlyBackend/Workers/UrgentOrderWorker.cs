@@ -60,7 +60,16 @@ namespace FleetlyBackend.Workers
                     if (order.Salary >= maxSalary)
                         continue;
 
-                    var bump = (maxSalary - order.Salary) / 2;
+                    TimeSpan timeUntilCritical = order.StartTime - criticalThreshold;
+
+                    double hoursLeft = Math.Max(1, timeUntilCritical.TotalHours);
+
+                    decimal remainingMoney = maxSalary - order.Salary;
+
+                    decimal bump = remainingMoney / (decimal)hoursLeft;
+
+                    bump = Math.Round(bump, 2);
+
                     order.Salary = Math.Min(order.Salary + bump, maxSalary);
                 }
 

@@ -13,8 +13,8 @@
 
 <PageTitle>Lista Użytkowników</PageTitle>
 
-<PageHeader Title="Lista Użytkowników" @bind-SearchString="SearchString" @bind-InactiveValue="ShowInactive" SearchPlaceholder="Szukaj (Imię / Nazwisko / Email...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
-<MudItem xs="12" Style="overflow-x:auto;width:100%">
+<PageHeader Title="Lista Użytkowników" @bind-SearchString="SearchString" InactiveValue="ShowInactive" InactiveValueChanged="OnShowInactiveChanged" SearchPlaceholder="Szukaj (Imię / Nazwisko / Email...)" OnClick="OpenAddDialogAsync" IsLoading="@IsLoading" />
+<MudItem xs="12" Class="pb-4" Style="overflow-x:auto;width:100%">
     @if (IsLoading)
     {
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
@@ -39,17 +39,18 @@
             <MudDataGrid T="UserResponseDto"
                          QuickFilter="@_quickFilter"
                          Items="Items"
+                         Hover="true"
                          Striped="true"
                          Bordered="true"
+                         Filterable="true"
+                         FixedHeader="true"
                          SortMode="SortMode.Single"
                          ColumnResizeMode="ResizeMode.Column"
                          Loading="@IsLoading"
-                         Filterable="true"
                          FilterMode="@DataGridFilterMode.ColumnFilterMenu"
                          FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
                          Class="pa-4 rounded-xl"
                          Style="margin:4px"
-                         FixedHeader="true"
                          Elevation="5"
                          RowStyleFunc="@_rowStyleFunc"
                          RowStyle="font-weight:bold;">
@@ -93,7 +94,7 @@
         try
         {
             IsLoading = true;
-            var apiResponse = await UserService.GetAllUsersAsync();
+            var apiResponse = await UserService.GetAllUsersAsync(ShowInactive);
             if (apiResponse.Success)
             {
                 Items = apiResponse.Data!.Items!;
@@ -130,14 +131,14 @@
     };
 
     private Func<UserResponseDto, int, string> _rowStyleFunc => (x, i) =>
-{
+    {
     if (x.IsActive)
     {
         return "";
     }
 
     return "background-color: #f8d7da; color: #721c24;";
-};
+    };
 
     private async Task OpenAddDialogAsync()
     {

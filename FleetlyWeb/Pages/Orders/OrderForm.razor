@@ -94,8 +94,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var vTask = VehicleService.GetAllVehiclesAsync();
-        var lTask = LocationService.GetAllLocationsAsync();
+        var vTask = VehicleService.GetAllVehiclesAsync(false);
+        var lTask = LocationService.GetAllLocationsAsync(false);
 
         await Task.WhenAll(vTask, lTask);
 

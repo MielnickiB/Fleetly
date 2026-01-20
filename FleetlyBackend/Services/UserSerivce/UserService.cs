@@ -15,16 +15,24 @@ namespace FleetlyBackend.Services.UserSerivce
         private readonly IPasswordHasher<User> _hasher = hasher;
         private readonly IHttpContextAccessor _http = http;
 
-        public async Task<PagedResult<UserResponseDto>> GetAll()
+        public async Task<PagedResult<UserResponseDto>> GetAll(bool includeInactive)
         {
-            var totalCount = await _context.Users.CountAsync();
-            var users = await _context.Users
-                .AsNoTracking()
+            var query = _context.Users
                 .Include(u => u.Role)
                 .Include(u => u.Details)
+                .AsQueryable();
+
+            if (!includeInactive)
+                query = query.Where(u => u.IsActive);
+
+            var users = await query
+                .AsNoTracking()
                 .OrderBy(u => u.Id)
                 .Select(u => u.ToResponseDto())
                 .ToListAsync();
+
+            var totalCount = await query.CountAsync();
+
             return new PagedResult<UserResponseDto>
             {
                 Items = users,

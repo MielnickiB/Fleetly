@@ -6,7 +6,7 @@ namespace FleetlyWeb.Services.Users
 {
     public interface IUserService
     {
-        Task<ApiResponse<PagedResult<UserResponseDto>>> GetAllUsersAsync();
+        Task<ApiResponse<PagedResult<UserResponseDto>>> GetAllUsersAsync(bool includeInactive);
         Task<ApiResponse<UserResponseDto?>> GetUserByIdAsync(int userId);
         Task<ApiResponse<UserResponseDto>> CreateUserAsync(UserCreateDto dto);
         Task<ApiResponse<UserResponseDto>> UpdateUserAsync(int id, UserUpdateDto dto);

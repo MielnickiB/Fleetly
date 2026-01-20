@@ -19,15 +19,27 @@ namespace FleetlyWeb.Extensions
             _ => status.ToString()
         };
 
-        public static Color ToColor(this OrderStatus status) => status switch
+        public static string ToHexColor(this OrderStatus status) => status switch
         {
-            OrderStatus.Created => Color.Info,
-            OrderStatus.PendingApproval => Color.Warning,
-            OrderStatus.Assigned => Color.Primary,
-            OrderStatus.OrderStarted => Color.Secondary,
-            OrderStatus.ApprovedByAdmin => Color.Success,
-            OrderStatus.Cancelled => Color.Error,
-            _ => Color.Default
+            OrderStatus.Created => "#64DD17",
+
+            OrderStatus.PendingApproval => "#FFA726",
+
+            OrderStatus.Assigned => "#64B5F6",
+
+            OrderStatus.OrderStarted => "#1E88E5",
+
+            OrderStatus.ArrivedToClient => "#1565C0",
+
+            OrderStatus.OrderFinishedByWorker => "#42A5F5",
+
+            OrderStatus.WaitingForCostApproval => "#00E676",
+
+            OrderStatus.ApprovedByAdmin => "#00C853",
+
+            OrderStatus.Cancelled => "#F44336",
+
+            _ => "#9E9E9E"
         };
     }
 }
