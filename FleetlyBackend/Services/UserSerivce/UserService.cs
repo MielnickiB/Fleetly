@@ -17,8 +17,6 @@ namespace FleetlyBackend.Services.UserSerivce
 
         public async Task<PagedResult<UserResponseDto>> GetAll(bool includeInactive)
         {
-            var totalCount = await _context.Users.CountAsync();
-
             var query = _context.Users
                 .Include(u => u.Role)
                 .Include(u => u.Details)
@@ -32,6 +30,8 @@ namespace FleetlyBackend.Services.UserSerivce
                 .OrderBy(u => u.Id)
                 .Select(u => u.ToResponseDto())
                 .ToListAsync();
+
+            var totalCount = await query.CountAsync();
 
             return new PagedResult<UserResponseDto>
             {

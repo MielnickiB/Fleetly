@@ -105,7 +105,7 @@ namespace FleetlyBackend.Services.FileService
             }
             catch (Exception)
             {
-                
+                Console.WriteLine("Nie udało się usunąć pliku z Azure Blob Storage.");
             }
         }
 

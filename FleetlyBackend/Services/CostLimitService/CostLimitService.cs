@@ -13,7 +13,6 @@ namespace FleetlyBackend.Services.CostLimitService
 
         public async Task<PagedResult<CostLimitResponseDto>> GetAll(bool includeInactive)
         {
-            var totalCount = await _context.CostLimits.CountAsync();
 
             var query = _context.CostLimits.AsNoTracking().AsQueryable();
 
@@ -26,6 +25,8 @@ namespace FleetlyBackend.Services.CostLimitService
                 .OrderBy(c => c.RangeOfKmMin)
                 .Select(c => c.ToResponseDto())
                 .ToListAsync();
+
+            var totalCount = await query.CountAsync();
 
             return new PagedResult<CostLimitResponseDto>
             {
