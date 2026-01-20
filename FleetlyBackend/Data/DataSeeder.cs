@@ -17,7 +17,12 @@ namespace FleetlyBackend.Data
             { "Katarzyna", new List<string> { "Krawczyk", "Kaczmarek", "Piotrowska", "Grabowska", "Pawłowska" } },
             { "Tomasz", new List<string> { "Michalski", "Nowicki", "Adamczyk", "Duda", "Zając" } },
             { "Mateusz", new List<string> { "Król", "Wieczorek", "Jabłoński", "Majewski", "Olszewski" } },
-            { "Magdalena", new List<string> { "Stępień", "Dudek", "Wróbel", "Pawlak", "Sikora" } }
+            { "Magdalena", new List<string> { "Stępień", "Dudek", "Wróbel", "Pawlak", "Sikora" } },
+            { "Agnieszka", new List<string> { "Baran", "Rutkowska", "Gajda", "Czarnecka", "Włodarczyk" } },
+            { "Łukasz", new List<string> { "Sawicki", "Bąk", "Szczepański", "Lis", "Wilk" } },
+            { "Joanna", new List<string> { "Zawadzka", "Kubiak", "Witkowska", "Walczak", "Sadowska" } },
+            { "Marcin", new List<string> { "Kucharski", "Górski", "Urbański", "Chmielowski", "Cieślak" } },
+            { "Monika", new List<string> { "Sikorska", "Wysocka", "Kalinowska", "Błaszczyk", "Makowska" } }
         };
 
         private static readonly List<string> _companies = new()
@@ -151,11 +156,16 @@ namespace FleetlyBackend.Data
 
             var allModels = await context.BrandModels.Include(m => m.CarBrand).ToListAsync();
 
-            if (!await context.Users.AnyAsync(u => u.Email == "admin@fleetly.com"))
+            var createdEmails = new HashSet<string>();
+
+            var existingDbEmails = await context.Users.Select(u => u.Email).ToListAsync();
+            foreach (var dbEmail in existingDbEmails) createdEmails.Add(dbEmail.ToLower());
+
+            if (!await context.Users.AnyAsync(u => u.Email == "user@example.com"))
             {
                 var admins = new List<User>
                 {
-                    CreateUser(adminRole.Id, "admin@fleetly.com", "System", "Admin", "Fleetly HQ", passwordHasher),
+                    CreateUser(adminRole.Id, "user@example.com", "System", "Admin", "Fleetly HQ", passwordHasher),
                     CreateUser(adminRole.Id, "support@fleetly.com", "Helpdesk", "Support", "Fleetly Ops", passwordHasher)
                 };
                 await context.Users.AddRangeAsync(admins);
@@ -167,11 +177,20 @@ namespace FleetlyBackend.Data
                 for (int i = 0; i < 30; i++)
                 {
                     var (name, surname) = GetRandomName();
-                    var email = GenerateEmail(name, surname, "fleetly.com");
+                    var email = GenerateUniqueEmail(name, surname, "fleetly.com", createdEmails);
+                    createdEmails.Add(email.ToLower());
 
                     workers.Add(CreateUser(workerRole.Id, email, name, surname, null, passwordHasher));
                 }
-                await context.Users.AddRangeAsync(workers);
+                try
+                {
+                    await context.Users.AddRangeAsync(workers);
+                    await context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Błąd przy zapisie pracowników: {ex.InnerException?.Message ?? ex.Message}");
+                }
             }
 
             if (!await context.Users.AnyAsync(u => u.Role.RoleName == "Client"))
@@ -185,7 +204,7 @@ namespace FleetlyBackend.Data
                     var (name, surname) = GetRandomName();
                     string company = availableCompanies.Count > 0 ? availableCompanies.Dequeue() : "Firma";
                     string domain = SanitizeText(company.Replace(" ", "")) + ".pl";
-                    string email = GenerateEmail(name, surname, domain);
+                    string email = GenerateUniqueEmail(name, surname, domain, createdEmails);
 
                     var client = CreateUser(clientRole.Id, email, name, surname, company, passwordHasher);
 
@@ -204,10 +223,16 @@ namespace FleetlyBackend.Data
 
                     clients.Add(client);
                 }
-                await context.Users.AddRangeAsync(clients);
+                try
+                {
+                    await context.Users.AddRangeAsync(clients);
+                    await context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Błąd przy zapisie klientów: {ex.InnerException?.Message ?? ex.Message}");
+                }
             }
-
-            await context.SaveChangesAsync();
         }
 
 
@@ -227,7 +252,7 @@ namespace FleetlyBackend.Data
                     PhoneNumber = $"500{_random.Next(100000, 999999)}"
                 }
             };
-            user.PasswordHash = passwordHasher.HashPassword(user, "Haslo123!");
+            user.PasswordHash = passwordHasher.HashPassword(user, "string");
             return user;
         }
 
@@ -281,12 +306,27 @@ namespace FleetlyBackend.Data
             return (name, surname);
         }
 
-        private static string GenerateEmail(string name, string surname, string domain)
+        private static string GenerateUniqueEmail(string name, string surname, string domain, HashSet<string> existingEmails)
         {
             string cleanName = SanitizeText(name);
             string cleanSurname = SanitizeText(surname);
+            string baseEmail = $"{cleanName}.{cleanSurname}@{domain}".ToLower();
 
-            return $"{cleanName}.{cleanSurname}@{domain}".ToLower();
+            if (!existingEmails.Contains(baseEmail))
+            {
+                return baseEmail;
+            }
+
+            int counter = 1;
+            while (true)
+            {
+                string newEmail = $"{cleanName}.{cleanSurname}{counter}@{domain}".ToLower();
+                if (!existingEmails.Contains(newEmail))
+                {
+                    return newEmail;
+                }
+                counter++;
+            }
         }
 
         private static string SanitizeText(string text)
