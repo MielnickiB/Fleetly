@@ -152,6 +152,14 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+var supportedCultures = new[] { "pl-PL", "en-US" };
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture(supportedCultures[1])
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
+app.UseRequestLocalization(localizationOptions);
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -164,14 +172,6 @@ app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-var supportedCultures = new[] { "pl-PL", "en-US" };
-var localizationOptions = new RequestLocalizationOptions()
-    .SetDefaultCulture(supportedCultures[0])
-    .AddSupportedCultures(supportedCultures)
-    .AddSupportedUICultures(supportedCultures);
-
-app.UseRequestLocalization(localizationOptions);
 
 app.MapControllers();
 

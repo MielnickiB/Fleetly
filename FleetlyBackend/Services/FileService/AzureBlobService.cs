@@ -16,7 +16,7 @@ namespace FleetlyBackend.Services.FileService
 
         private const string ContainerName = "uploads";
 
-        private const int MaxImageWidth = 2000;
+        private const int MaxImageWidth = 5000;
         private const int JpegQuality = 85;
         private const int MagicNumberBufferSize = 12;
 

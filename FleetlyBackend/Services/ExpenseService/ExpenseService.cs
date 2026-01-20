@@ -49,7 +49,7 @@ namespace FleetlyBackend.Services.ExpenseService
 
             string? savedFilePath = null;
 
-            string folderStructure = Path.Combine("Orders", orderId.ToString(), "Costs");
+            string folderStructure = Path.Combine("orders", orderId.ToString(), "costs");
 
             try
             {
@@ -95,7 +95,7 @@ namespace FleetlyBackend.Services.ExpenseService
 
             if (dto.CostPhoto is not null)
             {
-                string folderStructure = Path.Combine("Orders", exp.OrderId.ToString(), "Costs");
+                string folderStructure = Path.Combine("orders", exp.OrderId.ToString(), "costs");
                 try
                 {
                     newFilePath = await _fileService.SaveFileAsync(dto.CostPhoto, folderStructure);
