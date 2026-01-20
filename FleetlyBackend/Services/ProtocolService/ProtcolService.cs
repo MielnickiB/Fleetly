@@ -92,7 +92,7 @@ namespace FleetlyBackend.Services.ProtocolService
         {
             var protocol = await GetProtocolWithAccessCheck(dto.ProtocolId);
 
-            string folderStructure = Path.Combine("Orders", protocol.OrderId.ToString(), "Protocols", protocol.Type.ToString(), "Photos");
+            string folderStructure = Path.Combine("orders", protocol.OrderId.ToString(), "protocols", protocol.Type.ToString(), "photos");
 
             string fileName = await _fileService.SaveFileAsync(dto.Photo, folderStructure);
 
@@ -113,7 +113,7 @@ namespace FleetlyBackend.Services.ProtocolService
         {
             var protocol = await GetProtocolWithAccessCheck(dto.ProtocolId);
 
-            string folderStructure = Path.Combine("Vehicles", protocol.Vehicle.RegistrationNumber, "Damages");
+            string folderStructure = Path.Combine("vehicles", protocol.Vehicle.RegistrationNumber, "damages");
 
             string fileName = await _fileService.SaveFileAsync(dto.Photo, folderStructure);
 
