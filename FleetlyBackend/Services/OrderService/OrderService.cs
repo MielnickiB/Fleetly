@@ -80,7 +80,7 @@ namespace FleetlyBackend.Services.OrderService
                 query = query.Where(o => o.WorkerId == userId);
 
             if (!includeInactive)
-                query = query.Where(o => o.Status != OrderStatus.ApprovedByAdmin && o.Status != OrderStatus.Cancelled);
+                query = query.Where(o => o.Status != OrderStatus.Cancelled);
 
             var totalCount = await query.CountAsync();
 
