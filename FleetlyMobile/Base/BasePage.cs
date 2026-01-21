@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
+using FleetlyMobile.Components.PagesComponents.Dialogs;
+using FleetlyMobile.Helpers;
 using MudBlazor;
 
 namespace FleetlyMobile.Base
@@ -7,6 +9,7 @@ namespace FleetlyMobile.Base
     {
         [Inject] protected ISnackbar Snackbar { get; set; } = default!;
         [Inject] protected NavigationManager Nav { get; set; } = default!;
+        [Inject] protected IDialogService DialogService { get; set; } = default!;
 
         protected bool IsLoading { get; set; } = false;
 
@@ -34,6 +37,38 @@ namespace FleetlyMobile.Base
                 IsLoading = false;
                 StateHasChanged();
             }
+        }
+
+        protected static string BuildImageUrl(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                return string.Empty;
+
+            if (Uri.IsWellFormedUriString(fileName, UriKind.Absolute))
+            {
+                return fileName;
+            }
+
+            var safePath = fileName.Replace("\\", "/");
+            return safePath;
+        }
+
+        protected async Task OpenImagePreviewAsync(string? fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                Snackbar.Add("Brak zdjęcia.", Severity.Warning);
+                return;
+            }
+
+            string fullUrl = BuildImageUrl(fileName);
+
+            var parameters = new DialogParameters
+            {
+                ["ImageUrl"] = fullUrl
+            };
+
+            await DialogService.ShowAsync<ImagePreviewDialog>("Podgląd", parameters, DialogHelper.GetImagePreviewOptions());
         }
     }
 }

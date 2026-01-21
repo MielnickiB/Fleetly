@@ -117,21 +117,29 @@ namespace FleetlyBackend.Services.ProtocolService
 
             string fileName = await _fileService.SaveFileAsync(dto.Photo, folderStructure);
 
-            var damage = new Damage
+            try
             {
-                ProtocolId = protocol.Id,
-                VehicleId = protocol.VehicleId,
-                Side = dto.DamageSide,
-                Part = dto.DamagePart,
-                Type = dto.DamageType,
-                Description = dto.Description,
-                PhotoUrl = fileName
-            };
+                var damage = new Damage
+                {
+                    ProtocolId = protocol.Id,
+                    VehicleId = protocol.VehicleId,
+                    Side = dto.DamageSide,
+                    Part = dto.DamagePart,
+                    Type = dto.DamageType,
+                    Description = dto.Description,
+                    PhotoUrl = fileName
+                };
 
-            _context.Damages.Add(damage);
-            await _context.SaveChangesAsync();
+                _context.Damages.Add(damage);
+                await _context.SaveChangesAsync();
 
-            return await GetProtocolDtoInternal(dto.ProtocolId);
+                return await GetProtocolDtoInternal(dto.ProtocolId);
+            }
+            catch
+            {
+                await _fileService.DeleteFileAsync(fileName);
+                throw;
+            }
         }
 
         public async Task<ProtocolResponseDto> DeleteDamageAsync(int damageId)
@@ -199,7 +207,7 @@ namespace FleetlyBackend.Services.ProtocolService
             if (protocol.WorkerId != user.GetUserId() && !user.IsAdmin())
                 throw new UnauthorizedAccessException("Brak dostępu do protokołu.");
 
-            string folderStructure = Path.Combine("Orders", protocol.OrderId.ToString(), "Protocols", protocol.Type.ToString(), "Signatures");
+            string folderStructure = Path.Combine("orders", protocol.OrderId.ToString(), "protocols", protocol.Type.ToString(), "signatures");
             string signaturePath = await _fileService.SaveFileAsync(dto.SignaturePhoto, folderStructure);
 
             protocol.Mileage = dto.Mileage;

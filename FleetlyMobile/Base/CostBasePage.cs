@@ -68,13 +68,15 @@ namespace FleetlyMobile.Base
             var newFile = Path.Combine(FileSystem.CacheDirectory, uniqueName);
 
             using var stream = await fileResult.OpenReadAsync();
-            using var newStream = File.Create(newFile);
-
-            await stream.CopyToAsync(newStream);
+            using (var newStream = File.Create(newFile))
+            {
+                await stream.CopyToAsync(newStream);
+            }
 
             LocalFilePath = newFile;
             OriginalFileName = fileResult.FileName;
             ShowFileError = false;
+
             StateHasChanged();
         }
 

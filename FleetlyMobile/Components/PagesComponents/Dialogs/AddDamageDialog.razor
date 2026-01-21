@@ -39,7 +39,7 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Variant="Variant.Outlined" Disabled="@IsLoading" Color="Color.Default">Anuluj</MudButton>
+        <MudButton OnClick="Cancel" Disabled="@IsLoading">Anuluj</MudButton>
         <MudButton Color="Color.Error" Variant="Variant.Filled" Disabled=@(string.IsNullOrEmpty(LocalFilePath)) OnClick="Submit">
             @if (IsLoading)
             {

@@ -1,6 +1,5 @@
 ﻿@page "/availability"
 @inject IAvailabilityService AvailService
-@inject IDialogService DialogService
 @inherits BasePage
 
 @if (IsLoading)
@@ -67,9 +66,9 @@ else
         </MudPaper>
 
         <MudExpansionPanels MultiExpansion="true">
-            <MudExpansionPanel Text="@($"Nadchodzące ({_upcomingAvailabilities.Count})")" IsExpanded="true">
+            <MudExpansionPanel Text="@($"Nadchodzące ({_upcomingAvailabilities?.Count ?? 0})")" IsExpanded="true">
 
-                @if (_upcomingAvailabilities.Any())
+                @if ((_upcomingAvailabilities?.Any() ?? false))
                 {
                     <MudButton StartIcon="@Icons.Material.Filled.DeleteForever"
                                Color="Color.Error"
@@ -81,7 +80,7 @@ else
                     </MudButton>
                 }
 
-                @if (!_upcomingAvailabilities.Any())
+                @if (!(_upcomingAvailabilities?.Any() ?? false))
                 {
                     <MudAlert Severity="Severity.Info">Brak zaplanowanych dostępności na najbliższy miesiąc.</MudAlert>
                 }
@@ -156,7 +155,7 @@ else
         var today = DateOnly.FromDateTime(DateTime.Today);
         var limit = today.AddDays(30);
 
-        _upcomingAvailabilities = _allCachedAvailabilities
+        _upcomingAvailabilities = (_allCachedAvailabilities ?? Enumerable.Empty<AvailabilityResponseDto>())
             .Where(x => x.Date >= today && x.Date <= limit)
             .OrderBy(x => x.Date)
             .ThenBy(x => x.StartHour)
