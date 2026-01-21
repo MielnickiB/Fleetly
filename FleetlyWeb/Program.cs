@@ -17,6 +17,7 @@ using FleetlyWeb.Services.Dashboard;
 using FleetlyWeb.Services.Vehicles;
 using FleetlyWeb.Services.Authorization;
 using Blazored.LocalStorage;
+using FleetlyWeb.Services.Invoices;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -52,5 +53,6 @@ builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ICostLimitService, CostLimitService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
 await builder.Build().RunAsync();

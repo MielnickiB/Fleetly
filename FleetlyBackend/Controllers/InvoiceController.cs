@@ -56,7 +56,7 @@ namespace FleetlyBackend.Controllers
             }
         }
 
-        [HttpPut("{id:int}/pay")]
+        [HttpPut("{id:int}")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Update(int id, InvoiceUpdateDto dto)
         {
@@ -68,9 +68,27 @@ namespace FleetlyBackend.Controllers
             catch (ArgumentException ex) { return NotFound(ex.Message); }
         }
 
+        [HttpPost("{id:int}/pay-online")]
+        [Authorize(Roles = "Client")]
+        public async Task<ActionResult<string>> InitPayment(int id, [FromServices] PaymentService paymentService)
+        {
+            try
+            {
+                var domain = "http://localhost:5251/invoices";
+
+                var paymentUrl = await paymentService.CreateCheckoutSession(id, domain);
+
+                return Ok(paymentUrl);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
         [HttpPost("confirm-payment")]
         [Authorize(Roles = "Client, Admin")]
-        public async Task<IActionResult> ConfirmPayment([FromQuery] string sessionId, [FromQuery] int invoiceId, [FromServices] PaymentService paymentService)
+        public async Task<ActionResult> ConfirmPayment([FromQuery] string sessionId, [FromQuery] int invoiceId, [FromServices] PaymentService paymentService)
         {
             try
             {
@@ -86,24 +104,6 @@ namespace FleetlyBackend.Controllers
                 await _service.ConfirmPayment(invoiceId, method);
 
                 return Ok(true);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
-
-        [HttpPost("{id:int}/pay-online")]
-        [Authorize(Roles = "Client")]
-        public async Task<ActionResult<string>> InitPayment(int id, [FromServices] PaymentService paymentService)
-        {
-            try
-            {
-                var domain = "http://localhost:5251";
-
-                var paymentUrl = await paymentService.CreateCheckoutSession(id, domain);
-
-                return Ok(new { Url = paymentUrl });
             }
             catch (Exception ex)
             {
