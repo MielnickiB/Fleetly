@@ -1,5 +1,6 @@
 ﻿using Fleetly.Shared.Dto.InvoiceDtos;
 using FleetlyBackend.Services.InvoiceService;
+using FleetlyBackend.Services.PaymentService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -55,7 +56,7 @@ namespace FleetlyBackend.Controllers
             }
         }
 
-        [HttpPut("{id:int}")]
+        [HttpPut("{id:int}/pay")]
         [Authorize(Roles = "Admin")]
         public async Task<ActionResult> Update(int id, InvoiceUpdateDto dto)
         {
@@ -67,18 +68,46 @@ namespace FleetlyBackend.Controllers
             catch (ArgumentException ex) { return NotFound(ex.Message); }
         }
 
-        [HttpPost("{id:int}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult> Delete(int id, InvoicePayDto dto)
+        [HttpPost("confirm-payment")]
+        [Authorize(Roles = "Client, Admin")]
+        public async Task<IActionResult> ConfirmPayment([FromQuery] string sessionId, [FromQuery] int invoiceId, [FromServices] PaymentService paymentService)
         {
-            try 
-            { 
-                await _service.Pay(id, dto);
-                return Ok(true); 
+            try
+            {
+                var isPaid = await paymentService.VerifySessionPayment(sessionId);
+
+                if (!isPaid)
+                {
+                    return BadRequest("Płatność nie została jeszcze potwierdzona przez Stripe.");
+                }
+
+                var method = await paymentService.GetSessionPaymentMethod(sessionId);
+
+                await _service.ConfirmPayment(invoiceId, method);
+
+                return Ok(true);
             }
-            catch (ArgumentException ex) 
-            { 
-                return NotFound(ex.Message); 
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("{id:int}/pay-online")]
+        [Authorize(Roles = "Client")]
+        public async Task<ActionResult<string>> InitPayment(int id, [FromServices] PaymentService paymentService)
+        {
+            try
+            {
+                var domain = "http://localhost:5251";
+
+                var paymentUrl = await paymentService.CreateCheckoutSession(id, domain);
+
+                return Ok(new { Url = paymentUrl });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
         }
     }

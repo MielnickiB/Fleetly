@@ -127,19 +127,26 @@ namespace FleetlyBackend.Services.InvoiceService
             await _context.SaveChangesAsync();
         }
 
-        public async Task Pay(int id, InvoicePayDto dto)
+        public async Task ConfirmPayment(int invoiceId, string methodString)
         {
-            var invoice = await _context.Invoices.FindAsync(id) ??
-                throw new ArgumentException("Faktura nie istnieje.");
+            var invoice = await _context.Invoices.FindAsync(invoiceId)
+                          ?? throw new ArgumentException("Faktura nie istnieje.");
 
-            if (invoice.IsPaid)
-                throw new InvalidOperationException("Faktura została już opłacona.");
+            if (invoice.IsPaid) return;
 
             invoice.IsPaid = true;
             invoice.DateOfPayment = DateTime.UtcNow;
-            invoice.MethodOfPayment = dto.MethodOfPayment;
-            invoice.UpdatedAt = DateTime.UtcNow;
 
+            if (Enum.TryParse<MethodOfPayment>(methodString, true, out var methodEnum))
+            {
+                invoice.MethodOfPayment = methodEnum;
+            }
+            else
+            {
+                invoice.MethodOfPayment = MethodOfPayment.Card;
+            }
+
+            invoice.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
     }
