@@ -6,10 +6,10 @@ namespace FleetlyBackend.Helpers
     {
         public static (int skip, int take) Calculate(int page, int pageSize)
         {
-            if (page < PaginationOptions.DefaultPage)
+            if (page < 1)
                 page = PaginationOptions.DefaultPage;
 
-            if (pageSize < PaginationOptions.DefaultPageSize)
+            if (pageSize < 1)
                 pageSize = PaginationOptions.DefaultPageSize;
 
             var safe = Math.Min(pageSize, PaginationOptions.MaxPageSize);
