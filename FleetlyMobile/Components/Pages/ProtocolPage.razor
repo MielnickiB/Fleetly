@@ -5,7 +5,6 @@
 @inject IProtocolService ProtocolService
 @inject IOrderService OrderService
 @inject IGeolocation Geolocation
-@inject IDialogService DialogService
 
 <MudStack Class="pa-4 pb-16" Spacing="4">
 
@@ -54,8 +53,13 @@
                     }
                     else if (!string.IsNullOrEmpty(LocalFilePath))
                     {
-                        @* <MudImage Src="@LocalFilePath" Height="150" Class="rounded-lg" /> *@
-                        <MudButton StartIcon="@Icons.Material.Filled.Delete" OnClick="ClearFile" Color="Color.Error">Usuń i zrób nowe</MudButton>
+                        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
+                            <MudImage Src="@ImagePreviewUrl"
+                                      Height="150"
+                                      Class="rounded-lg"
+                                      Alt="@($"Zdjęcie {_currentSide.ToDescription()}")" />
+                            <MudButton StartIcon="@Icons.Material.Filled.Delete" OnClick="ClearFile" Color="Color.Error">Usuń i zrób nowe</MudButton>
+                        </MudStack>
                     }
                     else
                     {
@@ -89,17 +93,22 @@
                                     <MudText Typo="Typo.caption">@(damage.IsNew ? "Nowe" : "Z historii")</MudText>
                                 </MudStack>
                                 <MudSpacer />
-
-                                @if (damage.IsNew)
-                                {
-                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteDamage(damage.Id))" />
-                                }
-                                else
-                                {
-                                    <MudTooltip Text="Oznacz jako naprawione">
-                                        <MudIconButton Icon="@Icons.Material.Filled.Build" Color="Color.Success" OnClick="@(() => MarkAsFixed(damage.Id))" />
-                                    </MudTooltip>
-                                }
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                                   Size="Size.Small"
+                                                   Color="Color.Primary"
+                                                   OnClick="@(() => OpenImagePreviewAsync(damage.PhotoUrl))" />
+                                    @if (damage.IsNew)
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteDamage(damage.Id))" />
+                                    }
+                                    else
+                                    {
+                                        <MudTooltip Text="Oznacz jako naprawione">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Build" Color="Color.Success" OnClick="@(() => MarkAsFixed(damage.Id))" />
+                                        </MudTooltip>
+                                    }
+                                </MudStack>
                             </MudStack>
                         </MudPaper>
                     }
@@ -156,9 +165,9 @@
                     <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="HandlePreviousStep" FullWidth="true">
                         <MudText Typo="Typo.button">Wróć do oględzin</MudText>
                     </MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" FullWidth="true" OnClick="FinishProtocol">
-                    <MudText Typo="Typo.button">Zakończ protokół</MudText>
-                </MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Large" FullWidth="true" OnClick="FinishProtocol">
+                        <MudText Typo="Typo.button">Zakończ protokół</MudText>
+                    </MudButton>
                 </MudStack>
             </MudStack>
         }
@@ -285,7 +294,7 @@
         var dialog = await DialogService.ShowAsync<AddDamageDialog>("Zgłoś uszkodzenie", parameters, options);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is ProtocolResponseDto updatedProtocol)
+        if (result != null && !result.Canceled && result.Data is ProtocolResponseDto updatedProtocol)
         {
             _protocol = updatedProtocol;
             Snackbar.Add("Dodano uszkodzenie", Severity.Success);

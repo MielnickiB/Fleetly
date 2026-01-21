@@ -8,6 +8,7 @@ namespace FleetlyMobile.Services
 {
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
+
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
             try
@@ -21,7 +22,6 @@ namespace FleetlyMobile.Services
                 }
 
                 var user = JsonSerializer.Deserialize<UserResponseDto>(userJson);
-
                 if (user == null) return NotAuthorized();
 
                 var claims = new List<Claim>
@@ -48,8 +48,7 @@ namespace FleetlyMobile.Services
 
         public void NotifyUserLogout()
         {
-
-            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+            NotifyAuthenticationStateChanged(Task.FromResult(NotAuthorized()));
         }
 
         private static AuthenticationState NotAuthorized()

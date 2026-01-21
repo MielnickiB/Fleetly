@@ -62,7 +62,7 @@ namespace FleetlyMobile.Services.Protocol
 
         public async Task<ApiResponse<ProtocolResponseDto?>> DeleteDamageAsync(int damageId)
         {
-            return await _api.DeleteAsync<ProtocolResponseDto>($"api/Protocol/damages/{damageId}");
+            return await _api.DeleteAsync<ProtocolResponseDto>($"{BaseUrl}/damages/{damageId}");
         }
 
         public async Task<ApiResponse<ProtocolResponseDto?>> MarkDamageFixedAsync(int protocolId, int damageId)
@@ -100,9 +100,11 @@ namespace FleetlyMobile.Services.Protocol
         {
             if (File.Exists(filePath))
             {
-                using var fileStream = File.OpenRead(filePath);
+                var fileStream = File.OpenRead(filePath);
+
                 var fileContent = new StreamContent(fileStream);
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+
                 content.Add(fileContent, formKey, Path.GetFileName(filePath));
             }
         }

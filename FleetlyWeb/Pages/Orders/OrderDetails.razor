@@ -404,18 +404,11 @@
         if (string.IsNullOrWhiteSpace(fileName))
             return string.Empty;
 
-        var baseURL = Config["BaseURL"] ?? "http://localhost:5225/";
+        var baseURL = Config["BaseURL"];
 
         var safePath = fileName.Replace("\\", "/");
 
-        if (safePath.Contains("/"))
-        {
-            return $"{baseURL}Uploads/{safePath}";
-        }
-        else
-        {
-            return $"{baseURL}Uploads/Images/{safePath}";
-        }
+        return safePath;
     }
 
     private async Task OpenImagePreviewAsync(string fileName)

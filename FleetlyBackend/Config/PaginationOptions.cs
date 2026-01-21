@@ -3,7 +3,7 @@
     public static class PaginationOptions
     {
         public static int DefaultPage { get; } = 1;
-        public static int DefaultPageSize { get; } = 10;
-        public static int MaxPageSize { get; } = 100;
+        public static int DefaultPageSize { get; } = 1;
+        public static int MaxPageSize { get; } = 20;
     }
 }

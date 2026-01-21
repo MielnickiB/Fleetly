@@ -3,7 +3,6 @@
 @inherits BasePage
 @inject IAuthService AuthService
 @inject IUserService UserService
-@inject IDialogService DialogService
 @inject LayoutService LayoutService
 @inject AuthenticationStateProvider AuthStateProvider
 
@@ -144,7 +143,7 @@ else
         var dialogRef = await DialogService.ShowAsync<EditProfileDialog>("Edycja danych", parameters, DialogHelper.GetStandardFormOptions());
         var result = await dialogRef.Result;
 
-        if (!result.Canceled)
+        if (result != null && !result.Canceled)
         {
             await ExecuteSafeAsync(LoadDataAsync);
             Snackbar.Add("Dane użytkownika zostały zaktualizowane.", Severity.Success);

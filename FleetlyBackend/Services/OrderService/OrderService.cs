@@ -108,7 +108,7 @@ namespace FleetlyBackend.Services.OrderService
 
             var query = _context.Orders
                 .AsNoTracking()
-                .Where(o => o.Status == OrderStatus.Created && o.WorkerId == null && o.StartTime >= DateTime.UtcNow);
+                .Where(o => o.Status == OrderStatus.Created && o.WorkerId == null && o.StartTime.Date >= DateTime.UtcNow.Date);
 
             if (!string.IsNullOrWhiteSpace(search))
             {

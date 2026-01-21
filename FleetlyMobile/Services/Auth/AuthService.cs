@@ -1,7 +1,6 @@
 ﻿using Fleetly.Shared.Client;
 using Fleetly.Shared.Dto.AuthDtos;
 using FleetlyMobile.Constants;
-using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.Json;
 
 namespace FleetlyMobile.Services.Auth
@@ -37,9 +36,10 @@ namespace FleetlyMobile.Services.Auth
             return "Otrzymano nieprawidłowe dane z serwera.";
         }
 
-        public async Task LogoutAsync()
+        public Task LogoutAsync()
         {
-            if (_isLogoutInProgress) return;
+            if (_isLogoutInProgress)
+                return Task.CompletedTask;
 
             try
             {
@@ -54,6 +54,8 @@ namespace FleetlyMobile.Services.Auth
             {
                 _isLogoutInProgress = false;
             }
+
+            return Task.CompletedTask;
         }
     }
 }

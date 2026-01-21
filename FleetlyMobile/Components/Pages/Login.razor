@@ -3,6 +3,7 @@
 @inject IAuthService AuthService
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
 
 <MudPaper Elevation="5" Class="pa-6 rounded-lg">
     <EditForm Model="_model" OnValidSubmit="HandleLogin">
@@ -48,6 +49,17 @@
     private bool _isShowingPassword;
     InputType PasswordInput = InputType.Password;
     string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            Nav.NavigateTo("/");
+        }
+    }
 
     private async Task HandleLogin()
     {
