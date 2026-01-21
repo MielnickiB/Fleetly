@@ -15,15 +15,19 @@ namespace FleetlyBackend.Services.InvoiceService
         private readonly FleetlyContext _context = context;
         private readonly IHttpContextAccessor _http = http;
         public async Task<PagedResult<InvoiceResponseDto>> GetAll(
-            int page = 1, 
-            int pageSize = 10, 
-            bool showPaid = false, 
+            int page = 1,
+            int pageSize = 10,
+            bool showPaid = false,
             string? search = null)
         {
             var (skip, take) = PaginationHelper.Calculate(page, pageSize);
             var user = _http.CurrentUser();
 
             var query = _context.Invoices
+                .Include(i => i.Order)
+                .ThenInclude(o => o.Vehicle)
+                .ThenInclude(v => v.BrandModel)
+                .ThenInclude(bm => bm.CarBrand)
                 .AsNoTracking()
                 .AsQueryable();
 
