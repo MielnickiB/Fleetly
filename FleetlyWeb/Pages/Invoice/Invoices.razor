@@ -1,5 +1,145 @@
-﻿<h3>Invoices</h3>
+﻿@page "/test-payment"
+@using FleetlyWeb.Services.Invoices
+@using Microsoft.JSInterop
+@inject IInvoiceService InvoiceService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h5" Class="mb-4">Test Płatności (Web)</MudText>
+
+        <MudNumericField @bind-Value="InvoiceId" Label="ID Faktury" Variant="Variant.Outlined" Class="mb-4" />
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   FullWidth="true"
+                   OnClick="StartPayment"
+                   Disabled="IsProcessing">
+            @if (IsProcessing)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Generowanie...</MudText>
+            }
+            else
+            {
+                <MudText>1. Utwórz sesję płatności</MudText>
+            }
+        </MudButton>
+
+        @if (!string.IsNullOrEmpty(PaymentUrl))
+        {
+            <MudAlert Severity="Severity.Warning" Class="mt-4">
+                Jeśli strona płatności nie otworzyła się sama, kliknij poniżej:
+            </MudAlert>
+
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       Href="@PaymentUrl"
+                       Target="_blank"
+                       FullWidth="true"
+                       Class="mt-2">
+                Otwórz stronę płatności (Ręcznie)
+            </MudButton>
+        }
+
+        @if (!string.IsNullOrEmpty(SessionId))
+        {
+            <MudDivider Class="my-4" />
+            <MudAlert Severity="Severity.Info">
+                ID Sesji: <b>@SessionId</b>
+            </MudAlert>
+
+            <MudText Typo="Typo.caption" Class="mt-2 mb-2 d-block">
+                Po opłaceniu w nowej karcie, wróć tutaj i potwierdź:
+            </MudText>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Success"
+                       FullWidth="true"
+                       OnClick="ConfirmPayment"
+                       Disabled="IsProcessing">
+                2. Sprawdź czy zapłacono
+            </MudButton>
+        }
+    </MudPaper>
+</MudContainer>
 
 @code {
+    private int InvoiceId = 1;
+    private string? SessionId;
+    private string? PaymentUrl; // <-- Dodaliśmy zmienną na URL
+    private bool IsProcessing = false;
 
+    private async Task StartPayment()
+    {
+        IsProcessing = true;
+        SessionId = null;
+        PaymentUrl = null;
+
+        try
+        {
+            var result = await InvoiceService.InitOnlinePaymentAsync(InvoiceId);
+
+            if (result.Success && result.Data != null)
+            {
+                PaymentUrl = result.Data.Url;      // Zapisujemy URL
+                SessionId = result.Data.SessionId; // Zapisujemy ID
+
+                // Próbujemy otworzyć automatycznie
+                try
+                {
+                    await JS.InvokeVoidAsync("open", PaymentUrl, "_blank");
+                }
+                catch
+                {
+                    // Ignorujemy błąd JS, użytkownik ma teraz przycisk ręczny
+                    Console.WriteLine("Nie udało się otworzyć okna automatycznie.");
+                }
+            }
+            else
+            {
+                Snackbar.Add(result.Error ?? "Błąd generowania linku", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private async Task ConfirmPayment()
+    {
+        if (string.IsNullOrEmpty(SessionId)) return;
+
+        IsProcessing = true;
+        try
+        {
+            var result = await InvoiceService.ConfirmOnlinePaymentAsync(InvoiceId, SessionId);
+
+            if (result.Success)
+            {
+                Snackbar.Add("Sukces! Faktura opłacona.", Severity.Success);
+                // Opcjonalnie: wyczyść dane, żeby nie kliknąć 2 razy
+                SessionId = null;
+                PaymentUrl = null;
+            }
+            else
+            {
+                Snackbar.Add(result.Error ?? "Płatność niepotwierdzona.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
 }

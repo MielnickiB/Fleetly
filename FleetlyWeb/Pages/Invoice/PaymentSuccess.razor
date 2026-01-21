@@ -1,0 +1,93 @@
+﻿@page "/invoices/payment-success"
+@using FleetlyWeb.Services.Invoices
+@using FleetlyWeb.Base
+@inject IInvoiceService InvoiceService
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16 text-center">
+    <MudPaper Class="pa-8">
+        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
+            @if (_isProcessing)
+            {
+                <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" Class="mb-4" />
+                <MudText Typo="Typo.h5">Weryfikacja płatności...</MudText>
+                <MudText Typo="Typo.body2" Class="mt-2 text-muted">Proszę nie zamykać tego okna.</MudText>
+            }
+            else if (_isSuccess)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" Style="width: 80px; height: 80px;" Class="mb-4" />
+                <MudText Typo="Typo.h4" Color="Color.Success">Sukces!</MudText>
+                <MudText Typo="Typo.body1" Class="mt-2">Faktura została opłacona.</MudText>
+                <MudText Typo="Typo.caption" Class="mt-4">Za chwilę zostaniesz przekierowany...</MudText>
+            }
+            else
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" Style="width: 80px; height: 80px;" Class="mb-4" />
+                <MudText Typo="Typo.h5" Color="Color.Error">Coś poszło nie tak</MudText>
+                <MudText Typo="Typo.body1" Class="mt-2">@_errorMessage</MudText>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="GoBack">
+                    Wróć do listy faktur
+                </MudButton>
+            }
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery]
+    public int? InvoiceId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "session_id")]
+    public string? SessionId { get; set; }
+
+    private bool _isProcessing = true;
+    private bool _isSuccess = false;
+    private string _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ProcessPayment();
+    }
+
+    private async Task ProcessPayment()
+    {
+        if (InvoiceId == null || string.IsNullOrEmpty(SessionId))
+        {
+            _isProcessing = false;
+            _errorMessage = "Brak wymaganych danych transakcji.";
+            return;
+        }
+
+        try
+        {
+            var result = await InvoiceService.ConfirmOnlinePaymentAsync(InvoiceId.Value, SessionId);
+
+            _isProcessing = false;
+
+            if (result.Success)
+            {
+                _isSuccess = true;
+                StateHasChanged();
+
+                await Task.Delay(3000);
+                Nav.NavigateTo($"/invoices");
+            }
+            else
+            {
+                _errorMessage = result.Error ?? "Płatność nie została zatwierdzona przez bank.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _isProcessing = false;
+            _errorMessage = $"Błąd komunikacji: {ex.Message}";
+        }
+    }
+
+    private void GoBack()
+    {
+        Nav.NavigateTo("/invoices");
+    }
+}

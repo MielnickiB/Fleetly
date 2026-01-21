@@ -13,6 +13,7 @@ using FleetlyBackend.Services.InvoiceService;
 using FleetlyBackend.Services.LocationService;
 using FleetlyBackend.Services.NotificationService;
 using FleetlyBackend.Services.OrderService;
+using FleetlyBackend.Services.PaymentService;
 using FleetlyBackend.Services.PayrollService;
 using FleetlyBackend.Services.ProtocolService;
 using FleetlyBackend.Services.RouteService;
@@ -89,6 +90,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IPayrollService, PayrollService>();
 builder.Services.AddScoped<IProtocolService, ProtocolService>();
+builder.Services.AddScoped<PaymentService>();
 
 builder.Services.AddHttpClient<IRouteService, RouteService>(client =>
 {

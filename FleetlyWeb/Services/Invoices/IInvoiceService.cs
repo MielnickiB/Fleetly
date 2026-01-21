@@ -10,7 +10,7 @@ namespace FleetlyWeb.Services.Invoices
         Task<ApiResponse<InvoiceResponseDto?>> GetByIdAsync(int id);
         Task<ApiResponse<bool>> CreateAsync(InvoiceCreateDto dto);
         Task<ApiResponse<bool>> UpdateAsync(int id, InvoiceUpdateDto dto);
-        Task<ApiResponse<string?>> InitOnlinePaymentAsync(int id);
+        Task<ApiResponse<PaymentInitResponseDto?>> InitOnlinePaymentAsync(int id);
         Task<ApiResponse<bool>> ConfirmOnlinePaymentAsync(int invoiceId, string sessionId);
     }
 }

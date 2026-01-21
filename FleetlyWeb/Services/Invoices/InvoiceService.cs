@@ -40,9 +40,9 @@ namespace FleetlyWeb.Services.Invoices
             return await _api.PutAsync<InvoiceUpdateDto, bool>($"{BaseUrl}/{id}", dto);
         }
 
-        public async Task<ApiResponse<string?>> InitOnlinePaymentAsync(int id)
+        public async Task<ApiResponse<PaymentInitResponseDto?>> InitOnlinePaymentAsync(int id)
         {
-            return await _api.PostAsync<object, string>($"{BaseUrl}/{id}/pay-online", null!);
+            return await _api.PostAsync<object, PaymentInitResponseDto>($"{BaseUrl}/{id}/pay-online", null!);
         }
 
         public async Task<ApiResponse<bool>> ConfirmOnlinePaymentAsync(int invoiceId, string sessionId)

@@ -70,15 +70,13 @@ namespace FleetlyBackend.Controllers
 
         [HttpPost("{id:int}/pay-online")]
         [Authorize(Roles = "Client")]
-        public async Task<ActionResult<string>> InitPayment(int id, [FromServices] PaymentService paymentService)
+        public async Task<ActionResult<PaymentInitResponseDto>> InitPayment(int id, [FromServices] PaymentService paymentService)
         {
             try
             {
-                var domain = "http://localhost:5251/invoices";
+                var domain = "http://localhost:5251/invoices/payment-success";
 
-                var paymentUrl = await paymentService.CreateCheckoutSession(id, domain);
-
-                return Ok(paymentUrl);
+                return Ok(await paymentService.CreateCheckoutSession(id, domain));
             }
             catch (Exception ex)
             {

@@ -3,6 +3,7 @@ using FleetlyBackend.Data;
 using Microsoft.EntityFrameworkCore;
 using Stripe;
 using Stripe.Checkout;
+using Fleetly.Shared.Dto.InvoiceDtos;
 
 namespace FleetlyBackend.Services.PaymentService
 {
@@ -18,7 +19,7 @@ namespace FleetlyBackend.Services.PaymentService
             StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
         }
 
-        public async Task<string> CreateCheckoutSession(int invoiceId, string domain)
+        public async Task<PaymentInitResponseDto> CreateCheckoutSession(int invoiceId, string domain)
         {
             var invoice = await _context.Invoices.Include(i => i.Order).FirstOrDefaultAsync(i => i.Id == invoiceId);
 
@@ -44,7 +45,7 @@ namespace FleetlyBackend.Services.PaymentService
                             Currency = "pln",
                             ProductData = new SessionLineItemPriceDataProductDataOptions
                             {
-                                Name = $"Faktura #{invoice.Id} za zlecenie #{invoice.OrderId}",
+                                Name = $"Faktura za zlecenie #{invoice.OrderId}",
                             },
                         },
                         Quantity = 1,
@@ -61,7 +62,11 @@ namespace FleetlyBackend.Services.PaymentService
             invoice.StripeSessionId = session.Id;
             await _context.SaveChangesAsync();
 
-            return session.Url;
+            return new PaymentInitResponseDto
+            {
+                Url = session.Url,
+                SessionId = session.Id
+            };
         }
 
         public async Task<bool> VerifySessionPayment(string sessionId)
