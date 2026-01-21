@@ -15,6 +15,9 @@ namespace FleetlyBackend.Models
 
         public DateTime? DateOfPayment { get; set; }
 
+        public DateTime DueDate { get; set; }
+
         public MethodOfPayment? MethodOfPayment { get; set; }
+        public string? StripeSessionId { get; set; }
     }
 }

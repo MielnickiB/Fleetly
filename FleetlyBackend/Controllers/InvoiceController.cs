@@ -13,8 +13,12 @@ namespace FleetlyBackend.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin, Client")]
-        public async Task<ActionResult<List<InvoiceResponseDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-            => Ok(await _service.GetAll(page, pageSize));
+        public async Task<ActionResult<List<InvoiceResponseDto>>> GetAll(
+            [FromQuery] int page = 1, 
+            [FromQuery] int pageSize = 10, 
+            [FromQuery] bool showPaid = false,
+            [FromQuery] string? search = null)
+            => Ok(await _service.GetAll(page, pageSize, showPaid, search));
 
 
         [HttpGet("{id:int}")]
@@ -24,7 +28,7 @@ namespace FleetlyBackend.Controllers
             try
             {
                 var result = await _service.GetById(id);
-                return result is null ? NotFound("Podana faktura nie istnieje.") : Ok(result);
+                return result is null ? NotFound("Faktura nie istnieje.") : Ok(result);
             }
             catch (UnauthorizedAccessException)
             {
@@ -34,26 +38,48 @@ namespace FleetlyBackend.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<InvoiceResponseDto>> Create(InvoiceCreateDto dto)
+        public async Task<ActionResult> Create(InvoiceCreateDto dto)
         {
-            try { return Ok(await _service.Create(dto)); }
-            catch (ArgumentException ex) { return NotFound(ex.Message); }
+            try 
+            { 
+                await _service.Create(dto);
+                return Ok(true); 
+            }
+            catch (ArgumentException ex) 
+            { 
+                return NotFound(ex.Message); 
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPut("{id:int}")]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<InvoiceResponseDto>> Update(int id, InvoiceUpdateDto dto)
+        public async Task<ActionResult> Update(int id, InvoiceUpdateDto dto)
         {
-            try { return Ok(await _service.Update(id, dto)); }
+            try 
+            {
+                await _service.Update(id, dto);
+                return Ok(true); 
+            }
             catch (ArgumentException ex) { return NotFound(ex.Message); }
         }
 
-        [HttpDelete("{id:int}")]
+        [HttpPost("{id:int}")]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<bool>> Delete(int id)
+        public async Task<ActionResult> Delete(int id, InvoicePayDto dto)
         {
-            try { return Ok(await _service.Delete(id)); }
-            catch (ArgumentException ex) { return NotFound(ex.Message); }
+            try 
+            { 
+                await _service.Pay(id, dto);
+                return Ok(true); 
+            }
+            catch (ArgumentException ex) 
+            { 
+                return NotFound(ex.Message); 
+            }
         }
     }
 }
