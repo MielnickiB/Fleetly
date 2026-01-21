@@ -53,13 +53,7 @@
                     }
                     else if (!string.IsNullOrEmpty(LocalFilePath))
                     {
-                        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
-                            <MudImage Src="@ImagePreviewUrl"
-                                      Height="150"
-                                      Class="rounded-lg"
-                                      Alt="@($"Zdjęcie {_currentSide.ToDescription()}")" />
-                            <MudButton StartIcon="@Icons.Material.Filled.Delete" OnClick="ClearFile" Color="Color.Error">Usuń i zrób nowe</MudButton>
-                        </MudStack>
+                        <MudButton StartIcon="@Icons.Material.Filled.Delete" OnClick="ClearFile" Color="Color.Error">Usuń i zrób nowe</MudButton>
                     }
                     else
                     {

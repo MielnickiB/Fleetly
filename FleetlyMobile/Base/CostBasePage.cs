@@ -7,8 +7,6 @@ namespace FleetlyMobile.Base
         protected string? LocalFilePath;
         protected string? OriginalFileName;
 
-        protected string? ImagePreviewUrl;
-
         protected bool ShowFileError = false;
 
         protected async Task TakePhotoAsync()
@@ -79,14 +77,6 @@ namespace FleetlyMobile.Base
             OriginalFileName = fileResult.FileName;
             ShowFileError = false;
 
-            var bytes = await File.ReadAllBytesAsync(newFile);
-            var base64 = Convert.ToBase64String(bytes);
-
-            var extension = Path.GetExtension(newFile).ToLower();
-            var mimeType = extension == ".pdf" ? "application/pdf" : "image/jpeg";
-
-            ImagePreviewUrl = $"data:{mimeType};base64,{base64}";
-
             StateHasChanged();
         }
 
@@ -95,7 +85,6 @@ namespace FleetlyMobile.Base
             CleanUpOldFile();
             LocalFilePath = null;
             OriginalFileName = null;
-            ImagePreviewUrl = null;
             StateHasChanged();
         }
 

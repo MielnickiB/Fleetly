@@ -404,10 +404,12 @@
         if (string.IsNullOrWhiteSpace(fileName))
             return string.Empty;
 
-        var baseURL = Config["BaseURL"];
+        if (Uri.IsWellFormedUriString(fileName, UriKind.Absolute))
+        {
+            return fileName;
+        }
 
         var safePath = fileName.Replace("\\", "/");
-
         return safePath;
     }
 

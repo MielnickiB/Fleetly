@@ -44,6 +44,11 @@ namespace FleetlyMobile.Base
             if (string.IsNullOrWhiteSpace(fileName))
                 return string.Empty;
 
+            if (Uri.IsWellFormedUriString(fileName, UriKind.Absolute))
+            {
+                return fileName;
+            }
+
             var safePath = fileName.Replace("\\", "/");
             return safePath;
         }
