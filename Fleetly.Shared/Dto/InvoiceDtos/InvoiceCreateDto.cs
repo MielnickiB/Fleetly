@@ -10,7 +10,5 @@ namespace Fleetly.Shared.Dto.InvoiceDtos
 
         [Required]
         public decimal Sum { get; set; }
-
-        public MethodOfPayment? MethodOfPayment { get; set; }
     }
 }

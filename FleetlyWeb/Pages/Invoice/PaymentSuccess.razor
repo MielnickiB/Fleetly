@@ -1,6 +1,6 @@
 ﻿@page "/invoices/payment-success"
+@attribute [Authorize]
 @using FleetlyWeb.Services.Invoices
-@using FleetlyWeb.Base
 @inject IInvoiceService InvoiceService
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
@@ -28,7 +28,7 @@
                 <MudText Typo="Typo.body1" Class="mt-2">@_errorMessage</MudText>
 
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="GoBack">
-                    Wróć do listy faktur
+                    <MudText Typo="Typo.button">Wróć do listy faktur</MudText>
                 </MudButton>
             }
         </MudStack>
@@ -72,7 +72,7 @@
                 StateHasChanged();
 
                 await Task.Delay(3000);
-                Nav.NavigateTo($"/invoices");
+                GoBack();
             }
             else
             {

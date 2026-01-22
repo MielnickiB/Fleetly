@@ -64,8 +64,7 @@ namespace FleetlyBackend.Services.PaymentService
 
             return new PaymentInitResponseDto
             {
-                Url = session.Url,
-                SessionId = session.Id
+                Url = session.Url
             };
         }
 

@@ -24,12 +24,7 @@ namespace FleetlyBackend.Services.InvoiceService
             var user = _http.CurrentUser();
 
             var query = _context.Invoices
-                .Include(i => i.Order)
-                .ThenInclude(o => o.Vehicle)
-                .ThenInclude(v => v.BrandModel)
-                .ThenInclude(bm => bm.CarBrand)
-                .AsNoTracking()
-                .AsQueryable();
+                .AsNoTracking();
 
             if (user.IsClient())
             {
@@ -55,6 +50,10 @@ namespace FleetlyBackend.Services.InvoiceService
             var totalCount = await query.CountAsync();
 
             var items = await query
+                .Include(i => i.Order)
+                .ThenInclude(o => o.Vehicle)
+                .ThenInclude(v => v.BrandModel)
+                .ThenInclude(bm => bm.CarBrand)
                 .OrderByDescending(i => i.CreatedAt)
                 .Skip(skip)
                 .Take(take)
@@ -106,7 +105,6 @@ namespace FleetlyBackend.Services.InvoiceService
                 OrderId = dto.OrderId,
                 Sum = dto.Sum,
                 IsPaid = false,
-                MethodOfPayment = dto.MethodOfPayment,
                 DueDate = tenthOfNextMonth,
                 CreatedAt = now,
             };

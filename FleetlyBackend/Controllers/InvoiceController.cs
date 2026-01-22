@@ -74,7 +74,7 @@ namespace FleetlyBackend.Controllers
         {
             try
             {
-                var domain = "http://localhost:5251/invoices/payment-success";
+                var domain = "http://localhost:5251/invoices";
 
                 return Ok(await paymentService.CreateCheckoutSession(id, domain));
             }
