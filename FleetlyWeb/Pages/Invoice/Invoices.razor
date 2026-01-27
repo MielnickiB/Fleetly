@@ -10,6 +10,7 @@
 @inject IInvoiceService InvoiceService
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
+@inject IDialogService DialogService
 @inject AuthenticationStateProvider AuthStateProvider
 @inherits PageBase<InvoiceResponseDto>
 
@@ -23,7 +24,8 @@
             InactiveValueChanged="OnShowInactiveChanged"
             SearchPlaceholder="Szukaj (Nr Zlecenia / Nr Faktury / Nr Rej...)"
             IsLoading="@IsLoading" 
-            ShowAddButton="@_isAdmin"/>
+            ShowAddButton="@_isAdmin"
+            OnClick="OpenAddInvoiceDialog"/>
 
 <MudItem xs="12" Class="pb-4" Style="width:100%">
     @if (IsLoading)
@@ -209,5 +211,16 @@
         SearchString = text;
         CurrentPage = 1;
         await LoadDataAsync();
+    }
+
+    private async Task OpenAddInvoiceDialog()
+    {
+        var dialog = await DialogService.ShowAsync<AddInvoiceDialog>("Wystaw nową fakturę", DialogHelper.GetStandardFormOptions());
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await LoadDataAsync();
+        }
     }
 }
