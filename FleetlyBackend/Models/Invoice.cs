@@ -1,5 +1,6 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using Fleetly.Shared.Enums;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FleetlyBackend.Models
 {
@@ -15,6 +16,11 @@ namespace FleetlyBackend.Models
 
         public DateTime? DateOfPayment { get; set; }
 
+        public DateTime DueDate { get; set; }
+
         public MethodOfPayment? MethodOfPayment { get; set; }
+        public string? StripeSessionId { get; set; }
+        [Timestamp]
+        public byte[] Version { get; set; }
     }
 }

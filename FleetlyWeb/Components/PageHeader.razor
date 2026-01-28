@@ -19,12 +19,15 @@
     <MudItem xs="12" Class="d-flex flex-row align-center">
         @if (ShowInactiveSwitch)
         {
-            <MudSwitch Value="InactiveValue" ValueChanged="InactiveValueChanged" T="bool" Color="Color.Primary" Label="Pokaż nieaktywne" />
+            <MudSwitch Value="InactiveValue" ValueChanged="InactiveValueChanged" T="bool" Color="Color.Primary" Label="@InactiveLabel" />
         }
         <MudSpacer />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OnClick" Class="d-none d-sm-flex rounded-xl">
-            Dodaj
-        </MudButton>
+        @if (ShowAddButton)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OnClick" Class="d-none d-sm-flex rounded-xl">
+                <MudText Typo="Typo.button">Dodaj</MudText>
+            </MudButton>
+        }
     </MudItem>
 </MudGrid>
 
@@ -37,8 +40,10 @@
 
     [Parameter] public bool ShowInactiveSwitch { get; set; } = true;
     [Parameter] public bool InactiveValue { get; set; }
+    [Parameter] public string InactiveLabel { get; set; } = "Pokaż nieaktywne";
     [Parameter] public EventCallback<bool> InactiveValueChanged { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
 
+    [Parameter] public bool ShowAddButton { get; set; } = true;
     [Parameter] public RenderFragment? ActionButtons { get; set; }
 }

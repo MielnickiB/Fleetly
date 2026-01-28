@@ -6,19 +6,24 @@
     </MudText>
 
     <MudText Typo="Typo.body1" Align="Align.Center" Style="opacity: 0.5;">
-        Wygląda na to, że nie dodano jeszcze żadnych elementów. Możesz to zrobić, klikając w przycisk poniżej.
+        @Description
     </MudText>
 
-    <MudButton Variant="Variant.Filled"
-               Color="Color.Primary"
+    @if (ShowAddButton)
+    {
+        <MudButton Variant="Variant.Filled"
+        Color="Color.Primary"
                StartIcon="@Icons.Material.Filled.Add"
                OnClick="OnAddClicked"
                Class="mt-4 py-2 px-6 rounded-xl elevation-3">
         Dodaj element
     </MudButton>
+    }
 </MudStack>
 @code {
     [Parameter] public string ItemName { get; set; } = "elementów";
     [Parameter] public string Icon { get; set; } = Icons.Material.Filled.SearchOff;
+    [Parameter] public string Description { get; set; } = "Wygląda na to, że nie dodano jeszcze żadnych elementów. Możesz to zrobić, klikając w przycisk poniżej.";
     [Parameter] public EventCallback OnAddClicked { get; set; }
+    [Parameter] public bool ShowAddButton { get; set; } = true;
 }

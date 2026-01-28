@@ -1,0 +1,246 @@
+﻿@page "/invoices"
+@attribute [Authorize]
+@using FleetlyWeb.Services.Invoices
+@using Microsoft.JSInterop
+@using FleetlyWeb.Base
+@using FleetlyWeb.Components
+@using Fleetly.Shared.Dto.InvoiceDtos
+@using Microsoft.AspNetCore.Components.Authorization
+@using FleetlyWeb.Helpers
+@inject IInvoiceService InvoiceService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject IDialogService DialogService
+@inject AuthenticationStateProvider AuthStateProvider
+@inherits PageBase<InvoiceResponseDto>
+
+<PageTitle>Lista Faktur</PageTitle>
+
+<PageHeader Title="Lista Faktur"
+            SearchString="@SearchString"
+            SearchStringChanged="OnSearch"
+            InactiveLabel="Pokaż opłacone"
+            InactiveValue="ShowInactive"
+            InactiveValueChanged="OnShowInactiveChanged"
+            SearchPlaceholder="Szukaj (Nr Zlecenia / Nr Faktury / Nr Rej...)"
+            IsLoading="@IsLoading"
+            ShowAddButton="@_isAdmin"
+            OnClick="OpenAddInvoiceDialog" />
+
+<MudItem xs="12" Class="pb-4" Style="width:100%">
+    @if (IsLoading)
+    {
+        <MudProgressLinear Color="Color.Primary"
+                           Indeterminate="true"
+                           Class="my-7" />
+    }
+    else
+    {
+        @if (!Items.Any())
+        {
+            @if (string.IsNullOrWhiteSpace(SearchString))
+            {
+                <NoItems ItemName="Faktury"
+                         Icon="@Icons.Material.Filled.Receipt"
+                         ShowAddButton="@false"
+                         Description="Wygląda na to, że wszystko jest opłacone, albo jeszcze nie wygenerowano żadnych faktur." />
+            }
+            else
+            {
+                <NoSearchResult @bind-SearchString="SearchString" />
+            }
+        }
+        else
+        {
+            <MudGrid>
+                @foreach (var invoice in Items)
+                {
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <InvoiceCard Invoice="invoice"
+                                     IsAdmin="@_isAdmin"
+                                     OnPayClicked="() => StartPayment(invoice.Id)"
+                                     OnEditClicked="() => OpenEditDialog(invoice)"
+                                     PaymentLink="@GetPaymentUrl(invoice.Id)"
+                                     IsLoading="@IsCardLoading(invoice.Id)" />
+                    </MudItem>
+                }
+            </MudGrid>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="0">
+                    <MudSelect T="int"
+                               Value="PageSize"
+                               ValueChanged="OnPageSizeChanged"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="border-primary"
+                               FitContent="true"
+                               Dense="true">
+                        <MudSelectItem T="int" Value="5" />
+                        <MudSelectItem T="int" Value="10" />
+                        <MudSelectItem T="int" Value="20" />
+                        <MudSelectItem T="int" Value="50" />
+                    </MudSelect>
+                    @if (TotalItems == 0)
+                    {
+                        <MudText Typo="Typo.body2" Class="ml-2">
+                            Brak wyników
+                        </MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Class="ml-2">
+                            @StartItem - @EndItem z @TotalItems
+                        </MudText>
+                    }
+                </MudStack>
+                <MudPagination Count="@TotalPages"
+                               Selected="@CurrentPage"
+                               SelectedChanged="OnPageChanged"
+                               ShowLastButton="true"
+                               ShowFirstButton="true"
+                               Color="Color.Primary"
+                               ShowPageButtons="false"
+                               Variant="Variant.Filled"
+                               Size="Size.Medium" />
+            </MudStack>
+        }
+    }
+</MudItem>
+
+@if (TotalItems > 0)
+{
+    <MobileActionButton />
+}
+
+@code {
+    private int CurrentPage = 1;
+    private int PageSize = 10;
+    private int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalItems / PageSize) : 1;
+    protected int StartItem => TotalItems == 0 ? 0 : (CurrentPage - 1) * PageSize + 1;
+    protected int EndItem => Math.Min(CurrentPage * PageSize, TotalItems);
+
+    private readonly Dictionary<int, string> _generatedLinks = new();
+    private readonly HashSet<int> _processingInvoices = new();
+
+    private bool _isAdmin = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        _isAdmin = user.IsAdmin();
+
+        await LoadDataAsync();
+    }
+
+    protected override async Task LoadDataAsync()
+    {
+        IsLoading = true;
+
+        var response = await InvoiceService.GetAllAsync(CurrentPage, PageSize, ShowInactive, SearchString);
+
+        if (response.Success)
+        {
+            Items = response.Data?.Items ?? new List<InvoiceResponseDto>();
+            TotalItems = response.Data?.TotalCount ?? 0;
+        }
+        else
+        {
+            Snackbar.Add(response.Error ?? "Błąd pobierania danych", Severity.Error);
+        }
+        IsLoading = false;
+    }
+
+    private string? GetPaymentUrl(int id) => _generatedLinks.ContainsKey(id) ? _generatedLinks[id] : null;
+    private bool IsCardLoading(int id) => _processingInvoices.Contains(id);
+
+    private async Task StartPayment(int invoiceId)
+    {
+        _processingInvoices.Add(invoiceId);
+        StateHasChanged();
+
+        try
+        {
+            if (_generatedLinks.ContainsKey(invoiceId)) _generatedLinks.Remove(invoiceId);
+            var result = await InvoiceService.InitOnlinePaymentAsync(invoiceId);
+
+            if (result.Success && result.Data != null)
+            {
+                var url = result.Data.Url;
+                _generatedLinks[invoiceId] = url;
+
+                try
+                {
+                    await JS.InvokeVoidAsync("open", url);
+                }
+                catch
+                {
+                    Snackbar.Add("Okno płatności zablokowane. Kliknij przycisk 'Dokończ płatność' na karcie.", Severity.Info);
+                }
+            }
+            else
+            {
+                Snackbar.Add(result.Error ?? "Błąd generowania linku płatności", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _processingInvoices.Remove(invoiceId);
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnPageSizeChanged(int pageSize)
+    {
+        PageSize = pageSize;
+        CurrentPage = 1;
+        await LoadDataAsync();
+    }
+
+    protected async Task OnPageChanged(int page)
+    {
+        CurrentPage = page;
+        await LoadDataAsync();
+    }
+
+    protected async Task OnSearch(string text)
+    {
+        SearchString = text;
+        CurrentPage = 1;
+        await LoadDataAsync();
+    }
+
+    private async Task OpenAddInvoiceDialog()
+    {
+        var dialog = await DialogService.ShowAsync<AddInvoiceDialog>("Wystaw nową fakturę", DialogHelper.GetStandardFormOptions());
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task OpenEditDialog(InvoiceResponseDto invoice)
+    {
+        var parameters = new DialogParameters
+        {
+            { "InvoiceId", invoice.Id },
+            { "CurrentSum", invoice.Sum }
+        };
+
+        var dialog = await DialogService.ShowAsync<EditInvoiceDialog>("Edytuj fakturę", parameters, DialogHelper.GetStandardFormOptions());
+
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await LoadDataAsync();
+        }
+    }
+}

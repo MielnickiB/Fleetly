@@ -1,13 +1,18 @@
-﻿using Fleetly.Shared.Dto.InvoiceDtos;
+﻿using Fleetly.Shared.Dto;
+using Fleetly.Shared.Dto.InvoiceDtos;
 
 namespace FleetlyBackend.Services.InvoiceService
 {
     public interface IInvoiceService
     {
-        Task<List<InvoiceResponseDto>> GetAll(int page = 1, int pageSize = 10);
+        Task<PagedResult<InvoiceResponseDto>> GetAll(
+            int page = 1, 
+            int pageSize = 10, 
+            bool showPaid = false, 
+            string? search = null);
         Task<InvoiceResponseDto?> GetById(int id);
-        Task<InvoiceResponseDto> Create(InvoiceCreateDto dto);
-        Task<InvoiceResponseDto> Update(int id, InvoiceUpdateDto dto);
-        Task<bool> Delete(int id);
+        Task Create(InvoiceCreateDto dto);
+        Task Update(int id, InvoiceUpdateDto dto);
+        Task ConfirmPayment(string sessionId, string methodString);
     }
 }

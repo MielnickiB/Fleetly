@@ -2,8 +2,7 @@
 {
     public enum MethodOfPayment
     {
-        Cash = 0,
-        Transfer = 1,
-        Card = 2
+        Blik = 0,
+        Card = 1 
     }
 }

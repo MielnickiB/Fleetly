@@ -1,0 +1,97 @@
+﻿@using Fleetly.Shared.Dto.InvoiceDtos
+@using Fleetly.Shared.Dto.OrderDtos
+@using FleetlyWeb.Services.Invoices
+@using FleetlyWeb.Services.Orders
+@using FleetlyWeb.Base
+@inherits DialogBase<InvoiceCreateDto>
+@inject IInvoiceService InvoiceService
+@inject IOrderService OrderService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Style="font-weight:bold" Typo="Typo.h6">Dodaj fakturę</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="Model" @ref="EditForm">
+            <DataAnnotationsValidator />
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudAlert Icon="@Icons.Material.Filled.Info" Variant="Variant.Outlined" Severity="Severity.Info">
+                        <MudText Typo="Typo.body2">Dodawanie faktury jest możliwe tylko i wyłącznie dla aktywnych zleceń</MudText>
+                    </MudAlert>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudAutocomplete T="OrderResponseDto"
+                                     Label="Wybierz zlecenie"
+                                     Value="_selectedOrder"
+                                     ValueChanged="OnOrderChanged"
+                                     SearchFunc="@SearchOrders"
+                                     ToStringFunc="@(o => o == null ? null : $"#{o.Id} - {o.Client.Details?.Company}, {o.Vehicle.BrandModel.CarBrandName} {o.Vehicle.BrandModel.ModelName} ({o.Vehicle.RegistrationNumber}, {o.StartTime})")"
+                                     Variant="Variant.Outlined"
+                                     Required
+                                     Clearable
+                                     AdornmentIcon="@Icons.Material.Filled.Circle"
+                                     DebounceInterval="300"
+                                     AdornmentColor="Color.Success"
+                                     />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudNumericField @bind-Value="Model.Sum" Label="Kwota" AdornmentText="zł" Adornment="Adornment.End" For="@(() => Model.Sum)" Min="0.01M" Variant="Variant.Outlined" Required />
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="IsBusy" Color="Color.Default" Variant="Variant.Filled">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="IsBusy">
+            @if (IsBusy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            }
+            else
+            {
+                <MudText Typo="Typo.button">Dodaj</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<OrderResponseDto> _orders = new();
+    private OrderResponseDto? _selectedOrder;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await OrderService.GetAllOrdersAsync(false);
+        if (result.Success) _orders = result.Data?.Items.ToList() ?? new();
+    }
+
+    protected override async Task Submit()
+    {
+        var res = await InvoiceService.CreateAsync(Model);
+        if (res.Success)
+        {
+            Snackbar.Add("Faktura dodana!", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else Snackbar.Add(res.Error ?? "Nie udało się dodać faktury.", Severity.Error);
+    }
+
+    private Task<IEnumerable<OrderResponseDto>> SearchOrders(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return Task.FromResult<IEnumerable<OrderResponseDto>>(_orders);
+
+        return Task.FromResult(_orders.Where(x =>
+                    x.Id.ToString().Contains(value) ||
+                    x.Vehicle.RegistrationNumber.Contains(value, StringComparison.InvariantCultureIgnoreCase) ||
+                    (x.Client.Details?.Company?.Contains(value, StringComparison.InvariantCultureIgnoreCase) ?? false)
+                ));
+    }
+
+    private void OnOrderChanged(OrderResponseDto order)
+    {
+        _selectedOrder = order;
+        Model.OrderId = order?.Id ?? 0;
+    }
+}

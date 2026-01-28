@@ -554,7 +554,7 @@ namespace FleetlyBackend.Services.OrderService
                 var invoice = new InvoiceCreateDto
                 {
                     OrderId = order.Id,
-                    Sum = invoiceSum
+                    Sum = invoiceSum,
                 };
 
                 await _invoiceService.Create(invoice);

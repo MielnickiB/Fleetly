@@ -1,0 +1,139 @@
+﻿@using Fleetly.Shared.Dto.InvoiceDtos
+@using Fleetly.Shared.Enums
+@using FleetlyWeb.Services.Invoices
+
+<MudCard Elevation="3" Class="mb-4 d-flex flex-column" Style="@GetCardStyle">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">@Invoice.OrderTitle</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Default">
+                Data wystawienia: @Invoice.CreatedAt.ToString("dd.MM.yyyy")
+            </MudText>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            @if (Invoice.IsPaid)
+            {
+                <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">OPŁACONA</MudChip>
+            }
+            else
+            {
+                <MudChip T="string" Color="Color.Error" Size="Size.Small" Icon="@Icons.Material.Filled.AccessTime">DO ZAPŁATY</MudChip>
+            }
+        </CardHeaderActions>
+    </MudCardHeader>
+
+    <MudCardContent Class="py-2">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexStart">
+            <MudIcon Icon="@Icons.Material.Filled.DirectionsCar" Color="Color.Primary" />
+            <MudText Typo="Typo.subtitle2">@Invoice.VehicleName</MudText>
+        </MudStack>
+
+        <MudDivider Class="my-2" />
+
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudStack>
+                <MudText Typo="Typo.caption">@(Invoice.IsPaid ? "Płatności dokonano:" : "Termin płatności:")</MudText>
+                <MudText Typo="Typo.body2" Style="font-weight:bold" Color="@(Invoice.IsPaid? Color.Success: Color.Error)">
+                    @(Invoice.IsPaid? Invoice.DateOfPayment?.ToString("dd.MM.yyyy") : Invoice.DueDate.ToString("dd.MM.yyyy"))
+                </MudText>
+            </MudStack>
+            <MudStack>
+                <MudText Typo="Typo.caption">@(Invoice.IsPaid ? "Zapłacona kwota:" : "Kwota do zapłaty:")</MudText>
+                <MudText Typo="Typo.h5" Color="Color.Primary" Style="font-weight: 700;">
+                    @Invoice.Sum.ToString("C2", System.Globalization.CultureInfo.CreateSpecificCulture("pl-PL"))
+                </MudText>
+            </MudStack>
+        </MudStack>
+    </MudCardContent>
+
+    <MudCardActions>
+        @if (!Invoice.IsPaid)
+        {
+            @if (IsAdmin)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Info"
+                           StartIcon="@Icons.Material.Filled.Edit"
+                           OnClick="HandleEditClick"
+                           FullWidth="true"
+                           Class="ml-2 rounded-pill px-4">
+                    Edytuj Fakturę
+                </MudButton>
+            }
+            else
+            {
+                @if (!string.IsNullOrEmpty(PaymentLink))
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Warning"
+                               StartIcon="@Icons.Material.Filled.OpenInNew"
+                               Href="@PaymentLink"
+                               Target="_blank"
+                               FullWidth="true"
+                               Class="ml-2 rounded-pill px-4">
+                        <MudText Typo="Typo.button">Dokończ płatność</MudText>
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Payment"
+                               OnClick="HandlePayClick"
+                               Disabled="IsLoading"
+                               FullWidth="true"
+                               Class="ml-2 rounded-pill px-4">
+                        @if (IsLoading)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.button">Zapłać Online</MudText>
+                        }
+                    </MudButton>
+                }
+            }
+        }
+        else
+        {
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Success"
+                       StartIcon="@Icons.Material.Filled.Check"
+                       IconColor="Color.Success"
+                       FullWidth="true"
+                       Disabled="true"
+                       Class="ml-2 rounded-pill px-4">
+                <MudText Typo="Typo.button">Faktura opłacona</MudText>
+            </MudButton>
+        }
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter] public InvoiceResponseDto Invoice { get; set; } = default!;
+
+    [Parameter] public EventCallback OnPayClicked { get; set; }
+    [Parameter] public EventCallback OnEditClicked { get; set; }
+
+    [Parameter] public string? PaymentLink { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public bool IsAdmin { get; set; }
+
+    private async Task HandlePayClick()
+    {
+        if (OnPayClicked.HasDelegate)
+        {
+            await OnPayClicked.InvokeAsync();
+        }
+    }
+
+    private async Task HandleEditClick()
+    {
+        if (OnEditClicked.HasDelegate) await OnEditClicked.InvokeAsync();
+    }
+
+    private string GetCardStyle => Invoice.IsPaid
+    ? "border-left: 6px solid var(--mud-palette-success);"
+    : "border-left: 6px solid var(--mud-palette-error);";
+}

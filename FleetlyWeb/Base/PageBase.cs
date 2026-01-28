@@ -10,7 +10,6 @@ namespace FleetlyWeb.Base
         protected string ErrorMessage = string.Empty;
         protected string SearchString = string.Empty;
         protected bool ShowInactive = false;
-
         protected abstract Task LoadDataAsync();
 
         protected async Task OnShowInactiveChanged(bool value)
