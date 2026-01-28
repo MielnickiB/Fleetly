@@ -1,6 +1,6 @@
 ﻿using MudBlazor;
 
-namespace FleetlyWeb.Theme;
+namespace FleetlyMobile.Theme;
 
 public static class FleetlyTheme
 {
@@ -21,8 +21,8 @@ public static class FleetlyTheme
 
         PaletteDark = new PaletteDark()
         {
-            Primary = "#64B5F6",
-            Secondary = "#1E88E5",
+            Primary = "#1E88E5",
+            Secondary = "#64B5F6",
             Background = "#111827",
             Surface = "#1F2937",
             DrawerBackground = "#0F172A",
