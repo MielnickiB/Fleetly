@@ -98,14 +98,14 @@ namespace FleetlyBackend.Services.InvoiceService
                 throw new InvalidOperationException("Faktura już istnieje.");
 
             var now = DateTime.UtcNow;
-            var tenthOfNextMonth = new DateTime(now.Year, now.Month, 1).AddMonths(1).AddDays(9);
+            var thirtyDays = now.AddDays(30);
 
             var invoice = new Invoice
             {
                 OrderId = dto.OrderId,
                 Sum = dto.Sum,
                 IsPaid = false,
-                DueDate = tenthOfNextMonth,
+                DueDate = thirtyDays,
                 CreatedAt = now,
             };
 
@@ -136,14 +136,8 @@ namespace FleetlyBackend.Services.InvoiceService
             invoice.IsPaid = true;
             invoice.DateOfPayment = DateTime.UtcNow;
 
-            if (Enum.TryParse<MethodOfPayment>(methodString, true, out var methodEnum))
-            {
-                invoice.MethodOfPayment = methodEnum;
-            }
-            else
-            {
-                invoice.MethodOfPayment = MethodOfPayment.Card;
-            }
+            invoice.MethodOfPayment = (Enum.TryParse<MethodOfPayment>(methodString, true, out var methodEnum))
+                ? methodEnum : invoice.MethodOfPayment = MethodOfPayment.Card;
 
             invoice.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();

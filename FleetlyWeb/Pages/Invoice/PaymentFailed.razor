@@ -1,0 +1,25 @@
+﻿@page "/invoices/payment-failed"
+@attribute [Authorize("Client")]
+@inject NavigationManager Nav
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-16 text-center">
+    <MudPaper Class="pa-8">
+        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
+
+                <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" Style="width: 80px; height: 80px;" Class="mb-4" />
+                <MudText Typo="Typo.h5" Color="Color.Error">Coś poszło nie tak, spróbuj ponownie.</MudText>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="GoBack">
+                    <MudText Typo="Typo.button">Wróć do listy faktur</MudText>
+                </MudButton>
+            }
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private void GoBack()
+    {
+        Nav.NavigateTo("/invoices");
+    }
+}

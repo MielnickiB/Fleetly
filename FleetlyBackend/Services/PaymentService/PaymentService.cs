@@ -16,7 +16,12 @@ namespace FleetlyBackend.Services.PaymentService
         {
             _config = config;
             _context = context;
-            StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
+            var stripeApiKey = _config["Stripe:SecretKey"];
+            if (string.IsNullOrEmpty(stripeApiKey))
+            {
+                throw new Exception("Nie ma klucza do Stripe w konfiguracji.");
+            }
+            StripeConfiguration.ApiKey = stripeApiKey;
         }
 
         public async Task<PaymentInitResponseDto> CreateCheckoutSession(int invoiceId, string domain)

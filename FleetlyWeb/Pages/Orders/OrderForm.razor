@@ -115,7 +115,7 @@
             _selectedEndLocation = _locations.FirstOrDefault(x => x.Id == Model.EndLocationId);
 
         if (Model.StartTime == DateTime.MinValue) Model.StartTime = DateTime.Now.AddHours(1);
-        if (Model.Deadline == DateTime.MinValue) Model.Deadline = DateTime.Now.AddHours(2).AddDays(1);
+        if (Model.Deadline == DateTime.MinValue) Model.Deadline = Model.StartTime.AddDays(1);
     }
 
     private Task<IEnumerable<VehicleResponseDto>> SearchVehicles(string value, CancellationToken token)

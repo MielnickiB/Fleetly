@@ -42,8 +42,8 @@
             {
                 <NoItems ItemName="Faktury"
                          Icon="@Icons.Material.Filled.Receipt"
-                         ShowAddButton="false"
-                         Description="Wygląda na to, że wszystko jest opłacone, albo jeszcze nie wygenrowano żadnych faktur." />
+                         ShowAddButton="@false"
+                         Description="Wygląda na to, że wszystko jest opłacone, albo jeszcze nie wygenerowano żadnych faktur." />
             }
             else
             {
@@ -119,8 +119,8 @@
     protected int StartItem => TotalItems == 0 ? 0 : (CurrentPage - 1) * PageSize + 1;
     protected int EndItem => Math.Min(CurrentPage * PageSize, TotalItems);
 
-    private Dictionary<int, string> _generatedLinks = new();
-    private HashSet<int> _processingInvoices = new();
+    private readonly Dictionary<int, string> _generatedLinks = new();
+    private readonly HashSet<int> _processingInvoices = new();
 
     private bool _isAdmin = false;
 
@@ -176,7 +176,7 @@
                 }
                 catch
                 {
-                    Console.WriteLine("Nie udało się otworzyć okna automatycznie.");
+                    Snackbar.Add("Nie udało się otworzyć okna płatności automatycznie.", Severity.Error);
                 }
             }
             else

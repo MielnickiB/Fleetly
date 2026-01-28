@@ -74,7 +74,7 @@ namespace FleetlyBackend.Controllers
         {
             try
             {
-                var domain = "http://localhost:5251/invoices";
+                var domain = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/invoices";
 
                 return Ok(await paymentService.CreateCheckoutSession(id, domain));
             }
@@ -85,7 +85,7 @@ namespace FleetlyBackend.Controllers
         }
 
         [HttpPost("confirm-payment")]
-        [Authorize(Roles = "Client, Admin")]
+        [Authorize(Roles = "Client")]
         public async Task<ActionResult> ConfirmPayment([FromQuery] string sessionId, [FromQuery] int invoiceId, [FromServices] PaymentService paymentService)
         {
             try
