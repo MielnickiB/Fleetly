@@ -45,9 +45,9 @@ namespace FleetlyWeb.Services.Invoices
             return await _api.PostAsync<object, PaymentInitResponseDto>($"{BaseUrl}/{id}/pay-online", null!);
         }
 
-        public async Task<ApiResponse<bool>> ConfirmOnlinePaymentAsync(int invoiceId, string sessionId)
+        public async Task<ApiResponse<bool>> ConfirmOnlinePaymentAsync(string sessionId)
         {
-            var url = $"{BaseUrl}/confirm-payment?invoiceId={invoiceId}&sessionId={Uri.EscapeDataString(sessionId)}";
+            var url = $"{BaseUrl}/confirm-payment?sessionId={Uri.EscapeDataString(sessionId)}";
 
             return await _api.PostAsync<object, bool>(url, null!);
         }

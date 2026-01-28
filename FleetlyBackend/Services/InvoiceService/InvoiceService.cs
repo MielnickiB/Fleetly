@@ -126,21 +126,39 @@ namespace FleetlyBackend.Services.InvoiceService
             await _context.SaveChangesAsync();
         }
 
-        public async Task ConfirmPayment(int invoiceId, string methodString)
+        public async Task ConfirmPayment(string sessionId, string methodString)
         {
-            var invoice = await _context.Invoices.FindAsync(invoiceId)
-                          ?? throw new ArgumentException("Faktura nie istnieje.");
+            var user = _http.CurrentUser();
+
+            if (!user.IsClient())
+                throw new UnauthorizedAccessException("Tylko klienci mogą potwierdzać płatności za faktury.");
+
+            var invoice = await _context.Invoices.Include(i => i.Order).FirstOrDefaultAsync(i => i.StripeSessionId == sessionId)
+                          ?? throw new ArgumentException("Nie znaleziono faktury powiązanej z tą sesją płatności.");
+
+            if (invoice.Order.ClientId != user.GetUserId())
+                throw new UnauthorizedAccessException("Nie masz uprawnień do potwierdzania płatności za tę fakturę.");
 
             if (invoice.IsPaid) return;
 
-            invoice.IsPaid = true;
-            invoice.DateOfPayment = DateTime.UtcNow;
+            try
+            {
+                invoice.IsPaid = true;
+                invoice.DateOfPayment = DateTime.UtcNow;
 
-            invoice.MethodOfPayment = (Enum.TryParse<MethodOfPayment>(methodString, true, out var methodEnum))
-                ? methodEnum : invoice.MethodOfPayment = MethodOfPayment.Card;
+                invoice.MethodOfPayment = (Enum.TryParse<MethodOfPayment>(methodString, true, out var methodEnum))
+                    ? methodEnum : invoice.MethodOfPayment = MethodOfPayment.Card;
 
-            invoice.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+                invoice.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                await _context.Entry(invoice).ReloadAsync();
+                if (invoice.IsPaid) return;
+
+                throw new Exception("Wystąpił błąd współbieżności podczas przetwarzania płatności. Spróbuj odświeżyć.");
+            }
         }
     }
 }

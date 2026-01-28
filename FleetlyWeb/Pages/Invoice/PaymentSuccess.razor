@@ -1,5 +1,5 @@
 ﻿@page "/invoices/payment-success"
-@attribute [Authorize("Client")]
+@attribute [Authorize(Roles = "Client")]
 @using FleetlyWeb.Services.Invoices
 @inject IInvoiceService InvoiceService
 @inject NavigationManager Nav
@@ -36,9 +36,6 @@
 </MudContainer>
 
 @code {
-    [SupplyParameterFromQuery]
-    public int? InvoiceId { get; set; }
-
     [SupplyParameterFromQuery(Name = "session_id")]
     public string? SessionId { get; set; }
 
@@ -53,7 +50,7 @@
 
     private async Task ProcessPayment()
     {
-        if (InvoiceId == null || string.IsNullOrEmpty(SessionId))
+        if (string.IsNullOrEmpty(SessionId))
         {
             _isProcessing = false;
             _errorMessage = "Brak wymaganych danych transakcji.";
@@ -62,7 +59,7 @@
 
         try
         {
-            var result = await InvoiceService.ConfirmOnlinePaymentAsync(InvoiceId.Value, SessionId);
+            var result = await InvoiceService.ConfirmOnlinePaymentAsync(SessionId);
 
             _isProcessing = false;
 

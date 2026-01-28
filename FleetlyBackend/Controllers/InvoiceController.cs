@@ -74,7 +74,7 @@ namespace FleetlyBackend.Controllers
         {
             try
             {
-                var domain = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/invoices";
+                var domain = "http://localhost:5251/invoices";
 
                 return Ok(await paymentService.CreateCheckoutSession(id, domain));
             }
@@ -86,7 +86,7 @@ namespace FleetlyBackend.Controllers
 
         [HttpPost("confirm-payment")]
         [Authorize(Roles = "Client")]
-        public async Task<ActionResult> ConfirmPayment([FromQuery] string sessionId, [FromQuery] int invoiceId, [FromServices] PaymentService paymentService)
+        public async Task<ActionResult> ConfirmPayment([FromQuery] string sessionId, [FromServices] PaymentService paymentService)
         {
             try
             {
@@ -99,9 +99,13 @@ namespace FleetlyBackend.Controllers
 
                 var method = await paymentService.GetSessionPaymentMethod(sessionId);
 
-                await _service.ConfirmPayment(invoiceId, method);
+                await _service.ConfirmPayment(sessionId, method);
 
                 return Ok(true);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
             }
             catch (Exception ex)
             {

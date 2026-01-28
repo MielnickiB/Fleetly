@@ -57,7 +57,7 @@ namespace FleetlyBackend.Services.PaymentService
                     },
                 },
                 Mode = "payment",
-                SuccessUrl = $"{domain}/payment-success?invoiceId={invoiceId}&session_id={{CHECKOUT_SESSION_ID}}",
+                SuccessUrl = $"{domain}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
                 CancelUrl = $"{domain}/payment-failed",
             };
 

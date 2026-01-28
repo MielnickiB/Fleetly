@@ -13,6 +13,6 @@ namespace FleetlyBackend.Services.InvoiceService
         Task<InvoiceResponseDto?> GetById(int id);
         Task Create(InvoiceCreateDto dto);
         Task Update(int id, InvoiceUpdateDto dto);
-        Task ConfirmPayment(int invoiceId, string methodString);
+        Task ConfirmPayment(string sessionId, string methodString);
     }
 }
