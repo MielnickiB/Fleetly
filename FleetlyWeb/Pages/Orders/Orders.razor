@@ -47,7 +47,7 @@
                          Filterable="true"
                          FixedHeader="true"
                          SortMode="SortMode.Single"
-                         ColumnResizeMode="ResizeMode.Container"
+                         ColumnResizeMode="ResizeMode.Column"
                          Loading="@IsLoading"
                          FilterMode="@DataGridFilterMode.ColumnFilterMenu"
                          FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
@@ -87,14 +87,22 @@
                     <TemplateColumn Title="Akcje" StickyRight>
                         <CellTemplate>
                             <MudGrid Spacing="2" Justify="Justify.FlexEnd">
-                                <MudItem xs="4">
+                                <MudItem xs="6">
                                     <MudTooltip Placement="Placement.Bottom" Text="Anuluj zlecenie">
                                         <MudIconButton Disabled="!context.Item.IsActive || context.Item.Status > OrderStatus.OrderFinishedByWorker" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
                                     </MudTooltip>
                                 </MudItem>
+                                @if (context.Item.IsActive && context.Item.Status < OrderStatus.OrderStarted)
+                                {
+                                    <MudItem xs="6">
+                                        <MudTooltip Placement="Placement.Bottom" Text="Edytuj zlecenie">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                                        </MudTooltip>
+                                    </MudItem>
+                                }
                                 @if (_isAdmin && context.Item.Status == OrderStatus.PendingApproval)
                                 {
-                                    <MudItem xs="4">
+                                    <MudItem xs="6">
                                         <MudTooltip Placement="Placement.Bottom" Text="Zatwierdź do realizacji">
                                             <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" OnClick="@(() => OnAcceptClicked(context.Item))" />
                                         </MudTooltip>
@@ -102,17 +110,9 @@
                                 }
                                 @if (_isAdmin && context.Item.Status == OrderStatus.WaitingForCostApproval)
                                 {
-                                    <MudItem xs="4">
+                                    <MudItem xs="6">
                                         <MudTooltip Placement="Placement.Bottom" Text="Zatwierdź koszty i zakończ">
                                             <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Money" Color="Color.Success" Size="Size.Small" OnClick="@(() => Nav.NavigateTo($"/orders/{context.Item.Id}"))" />
-                                        </MudTooltip>
-                                    </MudItem>
-                                }
-                                @if (context.Item.IsActive && context.Item.Status < OrderStatus.OrderStarted)
-                                {
-                                    <MudItem xs="4">
-                                        <MudTooltip Placement="Placement.Bottom" Text="Edytuj zlecenie">
-                                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
                                         </MudTooltip>
                                     </MudItem>
                                 }

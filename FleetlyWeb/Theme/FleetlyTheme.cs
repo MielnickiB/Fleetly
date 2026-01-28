@@ -1,6 +1,6 @@
 ﻿using MudBlazor;
 
-namespace FleetlyMobile.Theme;
+namespace FleetlyWeb.Theme;
 
 public static class FleetlyTheme
 {
