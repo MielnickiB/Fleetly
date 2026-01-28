@@ -118,7 +118,7 @@ namespace FleetlyBackend.Services.InvoiceService
             var invoice = await _context.Invoices.FindAsync(id)
                 ?? throw new ArgumentException("Faktura nie istnieje.");
 
-            if (dto.Sum.HasValue && dto.Sum != invoice.Sum)
+            if (dto.Sum.HasValue && dto.Sum.Value > 0 && dto.Sum != invoice.Sum)
                 invoice.Sum = dto.Sum.Value;
 
             invoice.UpdatedAt = DateTime.UtcNow;
