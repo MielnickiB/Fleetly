@@ -1,0 +1,62 @@
+﻿@using Fleetly.Shared.Dto.InvoiceDtos
+@using FleetlyWeb.Services.Invoices
+@using FleetlyWeb.Base
+@inherits DialogBase<InvoiceUpdateDto>
+@inject IInvoiceService InvoiceService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Style="font-weight:bold" Typo="Typo.h6">Edytuj fakturę</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="Model" @ref="EditForm">
+            <DataAnnotationsValidator />
+            <MudText Class="mb-4">Edytujesz kwotę dla zlecenia.</MudText>
+
+            <MudNumericField @bind-Value="Model.Sum"
+                             Label="Nowa Kwota"
+                             Adornment="Adornment.End"
+                             AdornmentText="zł"
+                             Variant="Variant.Outlined"
+                             Min="0.01M"
+                             Required="true" />
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="IsBusy" Color="Color.Default" Variant="Variant.Filled">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitForm" Disabled="IsBusy">
+            @if (IsBusy)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+            }
+            else
+            {
+                <MudText Typo="Typo.button">Zapisz zmiany</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int InvoiceId { get; set; }
+    [Parameter] public decimal CurrentSum { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Model.Sum = CurrentSum;
+    }
+
+    protected override async Task Submit()
+    {
+        var result = await InvoiceService.UpdateAsync(InvoiceId, Model);
+        if (result.Success)
+        {
+            Snackbar.Add("Faktura zaktualizowana", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            Snackbar.Add(result.Error ?? "Błąd edycji", Severity.Error);
+        }
+    }
+}

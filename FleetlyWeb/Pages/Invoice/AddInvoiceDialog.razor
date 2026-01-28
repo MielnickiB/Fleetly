@@ -36,7 +36,7 @@
                                      />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudNumericField @bind-Value="Model.Sum" Label="Kwota" AdornmentText="zł" Adornment="Adornment.End" For="@(() => Model.Sum)" Min="1" Variant="Variant.Outlined" Required />
+                    <MudNumericField @bind-Value="Model.Sum" Label="Kwota" AdornmentText="zł" Adornment="Adornment.End" For="@(() => Model.Sum)" Min="0.01M" Variant="Variant.Outlined" Required />
                 </MudItem>
             </MudGrid>
         </EditForm>

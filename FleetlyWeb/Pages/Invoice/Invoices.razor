@@ -23,9 +23,9 @@
             InactiveValue="ShowInactive"
             InactiveValueChanged="OnShowInactiveChanged"
             SearchPlaceholder="Szukaj (Nr Zlecenia / Nr Faktury / Nr Rej...)"
-            IsLoading="@IsLoading" 
+            IsLoading="@IsLoading"
             ShowAddButton="@_isAdmin"
-            OnClick="OpenAddInvoiceDialog"/>
+            OnClick="OpenAddInvoiceDialog" />
 
 <MudItem xs="12" Class="pb-4" Style="width:100%">
     @if (IsLoading)
@@ -57,7 +57,9 @@
                 {
                     <MudItem xs="12" sm="6" md="4" lg="3">
                         <InvoiceCard Invoice="invoice"
+                                     IsAdmin="@_isAdmin"
                                      OnPayClicked="() => StartPayment(invoice.Id)"
+                                     OnEditClicked="() => OpenEditDialog(invoice)"
                                      PaymentLink="@GetPaymentUrl(invoice.Id)"
                                      IsLoading="@IsCardLoading(invoice.Id)" />
                     </MudItem>
@@ -216,6 +218,24 @@
     private async Task OpenAddInvoiceDialog()
     {
         var dialog = await DialogService.ShowAsync<AddInvoiceDialog>("Wystaw nową fakturę", DialogHelper.GetStandardFormOptions());
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task OpenEditDialog(InvoiceResponseDto invoice)
+    {
+        var parameters = new DialogParameters
+        {
+            { "InvoiceId", invoice.Id },
+            { "CurrentSum", invoice.Sum }
+        };
+
+        var dialog = await DialogService.ShowAsync<EditInvoiceDialog>("Edytuj fakturę", parameters, DialogHelper.GetStandardFormOptions());
+
         var result = await dialog.Result;
 
         if (result != null && !result.Canceled)
