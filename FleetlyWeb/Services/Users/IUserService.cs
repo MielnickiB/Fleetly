@@ -11,5 +11,6 @@ namespace FleetlyWeb.Services.Users
         Task<ApiResponse<UserResponseDto>> CreateUserAsync(UserCreateDto dto);
         Task<ApiResponse<UserResponseDto>> UpdateUserAsync(int id, UserUpdateDto dto);
         Task<ApiResponse<bool>> DeactivateUserAsync(int id);
+        Task<ApiResponse<bool>> ChangePasswordAsync(ChangePasswordDto dto);
     }
 }

@@ -64,5 +64,16 @@ namespace FleetlyWeb.Services.Users
             }
             return resp;
         }
+
+        public async Task<ApiResponse<bool>> ChangePasswordAsync(ChangePasswordDto dto)
+        {
+            var resp = await _api.PutAsync<ChangePasswordDto, bool>($"{BaseUrl}/change-password", dto)
+                ?? throw new Exception("Brak odpowiedzi z serwera.");
+            if (!resp.Success)
+            {
+                throw new Exception(resp.Error ?? "Nie udało się zmienić hasła.");
+            }
+            return resp;
+        }
     }
 }

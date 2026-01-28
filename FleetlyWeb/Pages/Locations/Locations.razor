@@ -106,8 +106,18 @@
                     <PropertyColumn Property="x => x.UpdatedAt" Title="Zaaktualizowano" />
                     <TemplateColumn Title="Akcje" StickyRight>
                         <CellTemplate>
-                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
-                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+                            <MudGrid Spacing="2" Justify="Justify.FlexEnd">
+                                <MudItem xs="6">
+                                    <MudTooltip Placement="Placement.Bottom" Text="Edytuj lokalizację">
+                                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                                    </MudTooltip>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudTooltip Placement="Placement.Bottom" Text="Dezaktywuj lokalizację">
+                                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+                                    </MudTooltip>
+                                </MudItem>
+                            </MudGrid>
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
@@ -210,7 +220,7 @@
             { x => x.Location, location },
             { x => x.OnLocationUpdated, new EventCallback(this, LoadDataAsync)  }
         };
-        
+
         var dialogRef = await DialogService.ShowAsync<EditLocationDialog>("Edytuj lokalizację", parameters, DialogHelper.GetStandardFormOptions());
         await dialogRef.Result;
     }

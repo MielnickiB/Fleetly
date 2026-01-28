@@ -126,30 +126,48 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        try
+        {
+            IsLoading = true;
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
 
-        _isAdmin = user.IsAdmin();
+            _isAdmin = user.IsAdmin();
+        }
+        finally
+        {
+            IsLoading = false;
+        }
 
         await LoadDataAsync();
     }
 
     protected override async Task LoadDataAsync()
     {
-        IsLoading = true;
-
-        var response = await InvoiceService.GetAllAsync(CurrentPage, PageSize, ShowInactive, SearchString);
-
-        if (response.Success)
+        try
         {
-            Items = response.Data?.Items ?? new List<InvoiceResponseDto>();
-            TotalItems = response.Data?.TotalCount ?? 0;
+            IsLoading = true;
+
+            var response = await InvoiceService.GetAllAsync(CurrentPage, PageSize, ShowInactive, SearchString);
+
+            if (response.Success)
+            {
+                Items = response.Data?.Items ?? new List<InvoiceResponseDto>();
+                TotalItems = response.Data?.TotalCount ?? 0;
+            }
+            else
+            {
+                Snackbar.Add(response.Error ?? "Błąd ładowania faktur", Severity.Error);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            Snackbar.Add(response.Error ?? "Błąd pobierania danych", Severity.Error);
+            Snackbar.Add($"Błąd ładowania faktur: {ex.Message}", Severity.Error);
         }
-        IsLoading = false;
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private string? GetPaymentUrl(int id) => _generatedLinks.ContainsKey(id) ? _generatedLinks[id] : null;

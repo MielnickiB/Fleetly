@@ -1,21 +1,17 @@
 ﻿@using FleetlyWeb.Components
+@using Blazored.LocalStorage
 @inherits LayoutComponentBase
+@inject ILocalStorageService LocalStorage
 
-<MudThemeProvider Theme="@FleetlyWeb.Theme.FleetlyTheme.Default" />
+<MudThemeProvider Theme="@FleetlyWeb.Theme.FleetlyTheme.Default" @bind-IsDarkMode="_isDarkMode" />
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="5" Color="Color.Surface">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleOpen" Color="Color.Inherit" />
-        <MudText Typo="Typo.h5" Class="ml-2">Fleetly</MudText>
-
-        <MudSpacer />
-
-        <NotificationBell />
-        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
-    </MudAppBar>
+    <AppBar OnDrawerToggle="ToggleOpen"
+            IsDarkMode="_isDarkMode"
+            IsDarkModeChanged="OnThemeChanged" />
 
     <MudDrawer @bind-Open="_open"
                Variant="DrawerVariant.Mini"
@@ -38,5 +34,22 @@
 
 @code {
     private bool _open = false;
+    private bool _isDarkMode = false;
+    private const string ThemeKey = "isDarkMode";
     private void ToggleOpen() => _open = !_open;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await LocalStorage.ContainKeyAsync(ThemeKey))
+        {
+            _isDarkMode = await LocalStorage.GetItemAsync<bool>(ThemeKey);
+        }
+    }
+
+    private async Task OnThemeChanged(bool isDarkMode)
+    {
+        _isDarkMode = isDarkMode;
+
+        await LocalStorage.SetItemAsync(ThemeKey, _isDarkMode);
+    }
 }

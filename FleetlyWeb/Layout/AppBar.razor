@@ -1,0 +1,83 @@
+﻿@using FleetlyWeb.Components
+@using FleetlyWeb.Components.Dialogs
+@using FleetlyWeb.Services.Authorization
+@using Blazored.LocalStorage
+@using FleetlyWeb.Helpers
+@inject IDialogService DialogService
+@inject NavigationManager Nav
+@inject IAuthService Auth
+@inject ILocalStorageService LocalStorage
+
+<MudAppBar Elevation="5" Color="Color.Surface">
+    <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                   OnClick="OnDrawerToggle"
+                   Color="Color.Inherit" />
+
+    <MudText Typo="Typo.h5" Class="ml-2">Fleetly</MudText>
+
+    <MudSpacer />
+
+    <NotificationBell />
+
+    <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+        <MudMenuItem Icon="@Icons.Material.Filled.Person" OnClick="OpenEditProfileDialog">
+            Edytuj profil
+        </MudMenuItem>
+
+        <MudMenuItem Icon="@Icons.Material.Filled.VpnKey" OnClick="OpenChangePasswordDialog">
+            Zmień hasło
+        </MudMenuItem>
+
+        <MudMenuItem Icon="@(IsDarkMode? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                     OnClick="ToggleDarkMode">
+            @(IsDarkMode ? "Tryb jasny" : "Tryb ciemny")
+        </MudMenuItem>
+
+        <MudDivider />
+
+        <MudMenuItem Icon="@Icons.Material.Filled.Logout" IconColor="Color.Error" OnClick="LogoutAsync">
+            Wyloguj się
+        </MudMenuItem>
+    </MudMenu>
+</MudAppBar>
+
+@code {
+    [Parameter] public EventCallback OnDrawerToggle { get; set; }
+    [Parameter] public bool IsDarkMode { get; set; }
+    [Parameter] public EventCallback<bool> IsDarkModeChanged { get; set; }
+    private bool _isLoggingOut = false;
+
+    private async Task OpenEditProfileDialog()
+    {
+        await DialogService.ShowAsync<EditProfileDialog>("Edytuj dane", DialogHelper.GetStandardFormOptions());
+    }
+
+    private async Task OpenChangePasswordDialog()
+    {
+        await DialogService.ShowAsync<ChangePasswordDialog>("Zmień hasło", DialogHelper.GetStandardFormOptions());
+    }
+
+    private async Task ToggleDarkMode()
+    {
+        await IsDarkModeChanged.InvokeAsync(!IsDarkMode);
+    }
+
+    private async Task LogoutAsync()
+    {
+        _isLoggingOut = true;
+        try
+        {
+            await Auth.Logout();
+            Nav.NavigateTo("/", replace: true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            _isLoggingOut = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,6 +1,8 @@
-﻿@inherits LayoutComponentBase
+﻿@using Blazored.LocalStorage
+@inject ILocalStorageService LocalStorage
+@inherits LayoutComponentBase
 
-<MudThemeProvider Theme="@FleetlyWeb.Theme.FleetlyTheme.Default" />
+<MudThemeProvider Theme="@FleetlyWeb.Theme.FleetlyTheme.Default" @bind-IsDarkMode="_isDarkMode" />
 
 <MudLayout>
 
@@ -19,3 +21,16 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudPopoverProvider />
+
+@code {
+    private bool _isDarkMode = false;
+    private const string ThemeKey = "isDarkMode";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await LocalStorage.ContainKeyAsync(ThemeKey))
+        {
+            _isDarkMode = await LocalStorage.GetItemAsync<bool>(ThemeKey);
+        }
+    }
+}
