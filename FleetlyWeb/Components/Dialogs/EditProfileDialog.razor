@@ -46,6 +46,13 @@
                                   InputMode="InputMode.tel"
                                   Placeholder="123 456 789" />
                 </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="Model.Details.Company"
+                                  For="@(() => Model.Details.Company)"
+                                  Label="Firma"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" />
+                </MudItem>
             </MudGrid>
         </EditForm>
     </DialogContent>
@@ -99,7 +106,7 @@
                         Name = User.Details.Name,
                         Surname = User.Details.Surname,
                         PhoneNumber = User.Details.PhoneNumber,
-                        Company = User.Details?.Company
+                        Company = User.Details.Company
                     }
                 };
             }
@@ -125,7 +132,6 @@
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         _userId = ClaimsPrincipalHelper.GetUserId(authState.User);
-        Console.WriteLine($"Zalogowany user ID: {_userId}");
     }
 
     protected override async Task Submit()

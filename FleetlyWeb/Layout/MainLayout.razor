@@ -48,7 +48,6 @@
 
     private async Task OnThemeChanged(bool isDarkMode)
     {
-
         _isDarkMode = isDarkMode;
 
         await LocalStorage.SetItemAsync(ThemeKey, _isDarkMode);
