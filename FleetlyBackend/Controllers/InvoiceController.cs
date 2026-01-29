@@ -8,16 +8,10 @@ namespace FleetlyBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class InvoiceController : ControllerBase
+    public class InvoiceController(IInvoiceService service, IConfiguration config) : ControllerBase
     {
-        private readonly IInvoiceService _service;
-        private readonly IConfiguration _config; 
-
-        public InvoiceController(IInvoiceService service, IConfiguration config)
-        {
-            _service = service;
-            _config = config;
-        }
+        private readonly IInvoiceService _service = service;
+        private readonly IConfiguration _config = config;
 
         [HttpGet]
         [Authorize(Roles = "Admin, Client")]
@@ -81,7 +75,7 @@ namespace FleetlyBackend.Controllers
         {
             try
             {
-                var clientUrl = _config.GetConnectionString("ClientUrl") ?? "http://localhost:5251";
+                var clientUrl = _config.GetValue<string>("AppSettings:ClientUrl") ?? "http://localhost:5251";
 
                 var domain = $"{clientUrl}/invoices";
 
