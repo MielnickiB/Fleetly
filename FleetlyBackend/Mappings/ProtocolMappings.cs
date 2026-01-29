@@ -34,5 +34,11 @@ namespace FleetlyBackend.Mappings
                 PhotoUrl = pp.PhotoUrl
             };
 
+        public static ProtocolLiteDto ToLiteDto(this Protocol p)
+            => new()
+            {
+                Id = p.Id,
+                Type = p.Type
+            };
     }
 }

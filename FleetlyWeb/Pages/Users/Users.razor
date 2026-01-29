@@ -1,11 +1,5 @@
 ﻿@page "/users"
 @attribute [Authorize(Roles = "Admin")]
-@using FleetlyWeb.Components
-@using FleetlyWeb.Services.Users
-@using FleetlyWeb.Base
-@using FleetlyWeb.Helpers
-@using Fleetly.Shared.Dto
-@using Fleetly.Shared.Dto.UserDtos
 @inject IUserService UserService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService

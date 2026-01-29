@@ -1,0 +1,14 @@
+﻿<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+    <MudText Typo="Typo.body1">@Label</MudText>
+    <MudIcon Icon="@(Value? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)"
+             Color="@(Value ? Color.Success : Color.Error)"
+             Size="Size.Small" />
+</MudStack>
+
+@code {
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Value { get; set; }
+}

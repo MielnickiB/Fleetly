@@ -122,7 +122,7 @@ namespace FleetlyBackend.Data
             // Order 1:N Protocol
             modelBuilder.Entity<Protocol>()
                 .HasOne(p => p.Order)
-                .WithMany()
+                .WithMany(o => o.Protocols)
                 .HasForeignKey(p => p.OrderId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);

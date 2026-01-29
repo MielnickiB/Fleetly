@@ -1,12 +1,5 @@
 ﻿@page "/locations"
 @attribute [Authorize(Roles = "Admin, Client")]
-@using Fleetly.Shared.Dto
-@using Fleetly.Shared.Dto.LocationDtos
-@using FleetlyWeb.Base
-@using FleetlyWeb.Components
-@using FleetlyWeb.Helpers
-@using FleetlyWeb.Services.Authorization
-@using FleetlyWeb.Services.Locations
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IAuthService Auth
 @inject ILocationService LocationService

@@ -665,6 +665,7 @@ namespace FleetlyBackend.Services.OrderService
                 .Include(o => o.Vehicle).ThenInclude(v => v.BrandModel).ThenInclude(bm => bm.CarBrand)
                 .Include(o => o.Vehicle).ThenInclude(v => v.User).ThenInclude(u => u.Details)
                 .Include(o => o.CostLimit)
+                .Include(o => o.Protocols)
                 .Include(o => o.StartLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
                 .Include(o => o.EndLocation).ThenInclude(l => l.User).ThenInclude(u => u.Details)
                 .Include(o => o.Expenses);

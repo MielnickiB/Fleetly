@@ -1,12 +1,5 @@
 ﻿@page "/orders"
 @attribute [Authorize(Roles = "Admin, Client")]
-@using Fleetly.Shared.Dto.OrderDtos
-@using FleetlyWeb.Services.Orders
-@using FleetlyWeb.Components
-@using Fleetly.Shared.Enums
-@using FleetlyWeb.Helpers
-@using FleetlyWeb.Base
-@using FleetlyWeb.Extensions
 @inject IOrderService OrderService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService

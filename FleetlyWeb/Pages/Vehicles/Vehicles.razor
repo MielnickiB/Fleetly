@@ -1,12 +1,5 @@
 ﻿@page "/vehicles"
 @attribute [Authorize(Roles = "Admin, Client")]
-@using Fleetly.Shared.Dto
-@using Fleetly.Shared.Dto.VehicleDtos
-@using Fleetly.Shared.Enums
-@using FleetlyWeb.Base
-@using FleetlyWeb.Components
-@using FleetlyWeb.Helpers
-@using FleetlyWeb.Services.Vehicles
 @inject IVehicleService vehicleService
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
