@@ -8,9 +8,16 @@ namespace FleetlyBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class InvoiceController(IInvoiceService service) : ControllerBase
+    public class InvoiceController : ControllerBase
     {
-        private readonly IInvoiceService _service = service;
+        private readonly IInvoiceService _service;
+        private readonly IConfiguration _config; 
+
+        public InvoiceController(IInvoiceService service, IConfiguration config)
+        {
+            _service = service;
+            _config = config;
+        }
 
         [HttpGet]
         [Authorize(Roles = "Admin, Client")]
@@ -74,7 +81,9 @@ namespace FleetlyBackend.Controllers
         {
             try
             {
-                var domain = "http://localhost:5251/invoices";
+                var clientUrl = _config.GetConnectionString("ClientUrl") ?? "http://localhost:5251";
+
+                var domain = $"{clientUrl}/invoices";
 
                 return Ok(await paymentService.CreateCheckoutSession(id, domain));
             }
