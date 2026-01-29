@@ -55,7 +55,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("WorkerId");
 
-                    b.ToTable("Availabilities");
+                    b.ToTable("Availabilities", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.BrandModel", b =>
@@ -87,7 +87,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("CarBrandId");
 
-                    b.ToTable("BrandModels");
+                    b.ToTable("BrandModels", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.CarBrand", b =>
@@ -114,7 +114,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CarBrands");
+                    b.ToTable("CarBrands", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.CostLimit", b =>
@@ -151,7 +151,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CostLimits");
+                    b.ToTable("CostLimits", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.Damage", b =>
@@ -207,7 +207,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("VehicleId");
 
-                    b.ToTable("Damages");
+                    b.ToTable("Damages", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.Expense", b =>
@@ -241,7 +241,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("Expenses");
+                    b.ToTable("Expenses", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.Invoice", b =>
@@ -289,7 +289,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("Invoices");
+                    b.ToTable("Invoices", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.Location", b =>
@@ -349,7 +349,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Locations");
+                    b.ToTable("Locations", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.Notification", b =>
@@ -398,7 +398,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.Order", b =>
@@ -488,7 +488,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("WorkerId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.Payroll", b =>
@@ -521,7 +521,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("WorkerId");
 
-                    b.ToTable("Payrolls");
+                    b.ToTable("Payrolls", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.Protocol", b =>
@@ -602,7 +602,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("WorkerId");
 
-                    b.ToTable("Protocols");
+                    b.ToTable("Protocols", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.ProtocolPhoto", b =>
@@ -634,7 +634,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("ProtocolId");
 
-                    b.ToTable("ProtocolPhotos");
+                    b.ToTable("ProtocolPhotos", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.User", b =>
@@ -674,7 +674,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.UserDetails", b =>
@@ -718,7 +718,7 @@ namespace FleetlyBackend.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("UserDetails");
+                    b.ToTable("UserDetails", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.UserRole", b =>
@@ -742,7 +742,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserRoles");
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.Vehicle", b =>
@@ -799,7 +799,7 @@ namespace FleetlyBackend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Vehicles");
+                    b.ToTable("Vehicles", (string)null);
                 });
 
             modelBuilder.Entity("FleetlyBackend.Models.Availability", b =>

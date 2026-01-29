@@ -32,6 +32,7 @@ namespace FleetlyBackend.Models
         public decimal AdditionalCosts { get; set; } = 0m;
         public decimal FuelCosts { get; set; } = 0m;
         public List<Expense> Expenses { get; set; } = [];
+        public ICollection<Protocol> Protocols { get; set; } = [];
 
         public string EndContactName { get; set; } = null!;
         public string EndContactPhone { get; set; } = null!;

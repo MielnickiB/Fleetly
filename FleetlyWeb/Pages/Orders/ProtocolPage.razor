@@ -1,10 +1,224 @@
-﻿@page "/orders/{orderId:int}/protocol/{protocolType:string}"
+﻿@page "/orders/{orderId:int}/protocol/{protocolType}"
+@attribute [Authorize(Roles = "Admin, Client")]
 @inherits PageBase<ProtocolResponseDto>
 @inject IProtocolService ProtocolService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+<PageTitle>@_title</PageTitle>
+
+<MudContainer Class="mb-6">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack" Color="Color.Inherit" />
+        <MudText Typo="Typo.h5" Style="font-weight: bold">@_title</MudText>
+        <MudSpacer />
+        @if (Item != null)
+        {
+            <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined">
+                @Item.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+            </MudChip>
+        }
+    </MudStack>
+
+    @if (IsLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else if (Item == null)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Class="my-4">
+            Nie znaleziono protokołu tego typu dla wybranego zlecenia.
+        </MudAlert>
+        <MudButton Variant="Variant.Text" OnClick="GoBack" StartIcon="@Icons.Material.Filled.ArrowBack">Wróć do szczegółów zlecenia</MudButton>
+    }
+    else
+    {
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="3" Class="h-100">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Stan pojazdu</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudIcon Icon="@Icons.Material.Filled.Speed" Size="Size.Large" Color="Color.Primary" />
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption">Przebieg</MudText>
+                                <MudText Typo="Typo.h5">@Item.Mileage km</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption">Liczba kluczyków</MudText>
+                                <MudText Typo="Typo.h5">@Item.NumberOfKeys szt.</MudText>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudText Typo="Typo.caption" Class="mb-1 d-block">Poziom paliwa (@Item.FuelLevel%)</MudText>
+                                <MudProgressLinear Color="Color.Success" Size="Size.Large" Value="@((double)Item.FuelLevel)" Rounded="true" Striped="true">
+                                    <MudText Typo="Typo.subtitle2" Color="Color.Dark">
+                                        @Item.FuelLevel%
+                                    </MudText>
+                                </MudProgressLinear>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <MudCard Elevation="3" Class="h-100">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Dokumenty i Wyposażenie</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Large" Color="Color.Secondary" />
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Spacing="2">
+                            <ProtocolBoolParameter Label="Dowód rejestracyjny" Value="@Item.HasRegistrationDocument" />
+                            <ProtocolBoolParameter Label="Polisa ubezpieczeniowa" Value="@Item.HasInsurancePolicy" />
+                            <ProtocolBoolParameter Label="Książka serwisowa" Value="@Item.HasServiceBook" />
+                        </MudStack>
+
+                        @if (!string.IsNullOrEmpty(Item.Notes))
+                        {
+                            <MudDivider Class="my-3" />
+                            <MudText Typo="Typo.caption">Uwagi do protokołu:</MudText>
+                            <MudText Typo="Typo.body2" Style="font-style: italic;">"@Item.Notes"</MudText>
+                        }
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudText Typo="Typo.h5" Class="mt-4 mb-2">Uszkodzenia</MudText>
+                <MudDivider Class="mb-4" />
+
+                @if (Item.Damages != null && Item.Damages.Any())
+                {
+                    <MudGrid>
+                        @foreach (var damage in Item.Damages)
+                        {
+                            <MudItem xs="12" sm="6" md="4">
+                                <MudCard Outlined="true" Style="border-color: var(--mud-palette-error);">
+                                    @if (!string.IsNullOrEmpty(damage.PhotoUrl))
+                                    {
+                                        <MudCardMedia Image="@damage.PhotoUrl" Height="200" Style="cursor: zoom-in;" @onclick="() => OpenImagePreview(damage.PhotoUrl)" />
+                                    }
+                                    else
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.ImageNotSupported" Size="Size.Large" />
+                                    }
+                                    <MudCardContent>
+                                        <MudText Typo="Typo.subtitle1" Color="Color.Error"><b>@damage.Part.ToDescription()</b></MudText>
+                                        <MudText Typo="Typo.body2">@damage.Type.ToDescription()</MudText>
+                                        @if (!string.IsNullOrEmpty(damage.Description)) {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Text" Class="mt-2">@damage.Description</MudChip>
+                                        }
+                                    </MudCardContent>
+                                </MudCard>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Success">Brak zgłoszonych uszkodzeń w tym protokole.</MudAlert>
+                }
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudText Typo="Typo.h5" Class="mt-4 mb-2">Zdjęcia pojazdu</MudText>
+                <MudDivider Class="mb-4" />
+
+                @if (_protocolType == ProtocolType.Pickup && Item.Photos != null && Item.Photos.Any())
+                {
+                    <MudGrid>
+                        @foreach (var photo in Item.Photos)
+                        {
+                            <MudItem xs="12" sm="6" md="3">
+                                <MudPaper Elevation="2" Class="overflow-hidden rounded-lg">
+                                    <MudImage Src="@photo.PhotoUrl"
+                                              ObjectFit="ObjectFit.Cover"
+                                              Fluid="true"
+                                              Class="d-block"
+                                              Style="cursor: zoom-in;"
+                                              @onclick="() => OpenImagePreview(photo.PhotoUrl)" />
+                                </MudPaper>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info">Protokół zdania, brak zdjęć pojazdu.</MudAlert>
+                }
+            </MudItem>
+
+            @if (!string.IsNullOrEmpty(Item.SignatureUrl))
+            {
+                <MudItem xs="12" md="4">
+                    <MudText Typo="Typo.h6" Class="mt-4 mb-2">Podpis Klienta/Odbierającego</MudText>
+                    <MudPaper Class="pa-4" Outlined="true">
+                        <MudImage Src="@Item.SignatureUrl" Fluid="true" Alt="Podpis" />
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudContainer>
 
 @code {
+    [Parameter] public int OrderId { get; set; }
+    [Parameter] public string protocolType { get; set; } = default!;
+
+    private ProtocolType _protocolType;
+    private string _title => _protocolType == ProtocolType.Pickup ? "Protokół Odbioru" : "Protokół Zdania";
+
+    protected override async Task OnParametersSetAsync()
+    {
+
+        if (Enum.TryParse<ProtocolType>(protocolType, true, out var result))
+        {
+            _protocolType = result;
+        }
+        else
+        {
+            _protocolType = ProtocolType.Pickup;
+        }
+
+        await LoadDataAsync();
+    }
+
     protected override async Task LoadDataAsync()
     {
-        
+        IsLoading = true;
+        var response = await ProtocolService.GetProtocolByOrderIdAsync(OrderId, _protocolType);
+
+        if (response.Success && response.Data is not null)
+        {
+            Item = response.Data;
+        }
+        else
+        {
+            Snackbar.Add("Błąd pobierania protokołu", Severity.Error);
+        }
+        IsLoading = false;
+    }
+
+    private void OpenImagePreview(string url)
+    {
+        var parameters = new DialogParameters { ["ImageUrl"] = url };
+        DialogService.ShowAsync<ImagePreviewDialog>("Podgląd", parameters, DialogHelper.GetImagePreviewOptions());
+    }
+
+    private void GoBack()
+    {
+        Nav.NavigateTo($"/orders/{OrderId}");
     }
 }

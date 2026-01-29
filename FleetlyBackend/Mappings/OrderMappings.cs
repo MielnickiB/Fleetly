@@ -29,6 +29,7 @@ namespace FleetlyBackend.Mappings
                 MaxSalary = o.CostLimit.MaxSalary,
 
                 Expenses = o.Expenses?.Select(e => e.ToResponseDto()).ToList() ?? [],
+                Protocols = o.Protocols?.Select(p => p.ToLiteDto()).ToList() ?? [],
 
                 EndContactName = o.EndContactName,
                 EndContactPhone = o.EndContactPhone,

@@ -205,6 +205,24 @@
                                 <span>Brak dodatkowych informacji.</span>
                             }
                         </div>
+                        @if (_order.Protocols is not null && _order.Protocols.Any())
+                        {
+                            <MudDivider />
+                            @foreach (var protocol in _order.Protocols)
+                            {
+                                <div class="row-line">
+                                    <MudButton Variant="Variant.Text"
+                                               Color="Color.Primary"
+                                               Size="Size.Small"
+                                               OnClick="@(() => Nav.NavigateTo($"/orders/{_order.Id}/protocol/{protocol.Type.ToString().ToLower()}"))"
+                                               EndIcon="@Icons.Material.Filled.ArrowForward">
+                                        <MudText Typo="Typo.button">@(protocol.Type == ProtocolType.Pickup ? "Protokół pobrania" : "Protokół zdania")</MudText>
+                                    </MudButton>
+                                </div>
+                                <MudDivider />
+                            }
+                        }
+                        <MudDivider />
                     </MudCardContent>
                 </MudCard>
             </MudItem>
@@ -304,7 +322,7 @@
             {
                 <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.Check" OnClick="ApproveCostsAsync">Zatwierdź koszty</MudButton>
             }
-            <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Nav.NavigateTo("/orders", true))">Wróć do listy</MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => Nav.NavigateTo("/orders"))">Wróć do listy</MudButton>
         </div>
     }
     else

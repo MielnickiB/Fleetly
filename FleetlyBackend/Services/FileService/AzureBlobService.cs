@@ -109,12 +109,14 @@ namespace FleetlyBackend.Services.FileService
             }
         }
 
-        private async Task CompressImageToStream(IFormFile file, Stream outputStream, string extension)
+        private static async Task CompressImageToStream(IFormFile file, Stream outputStream, string extension)
         {
             await using var inputStream = file.OpenReadStream();
             if (inputStream.CanSeek) inputStream.Position = 0;
 
             using var img = await Image.LoadAsync(inputStream);
+
+            img.Mutate(x => x.AutoOrient());
 
             img.Metadata.ExifProfile = null;
 

@@ -4,6 +4,7 @@ namespace FleetlyWeb.Base
 {
     public abstract class PageBase<TItem> : ComponentBase
     {
+        protected TItem? Item = default!;
         protected IEnumerable<TItem> Items = [];
         protected int TotalItems = 0;
         protected bool IsLoading = false;

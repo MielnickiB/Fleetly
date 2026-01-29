@@ -2,6 +2,7 @@
 using Fleetly.Shared.Dto.LocationDtos;
 using Fleetly.Shared.Dto.VehicleDtos;
 using Fleetly.Shared.Dto.UserDtos;
+using Fleetly.Shared.Dto.ProtocolDtos;
 using Fleetly.Shared.Enums;
 
 namespace Fleetly.Shared.Dto.OrderDtos
@@ -30,6 +31,7 @@ namespace Fleetly.Shared.Dto.OrderDtos
         public decimal MaxProjectedValue => MaxSalary * 0.3m + MaxSalary + MaxNonFuelCosts;
 
         public List<ExpenseResponseDto> Expenses { get; set; } = [];
+        public List<ProtocolLiteDto> Protocols { get; set; } = [];
 
         public string EndContactName { get; set; } = null!;
         public string EndContactPhone { get; set; } = null!;
