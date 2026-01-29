@@ -65,8 +65,18 @@
                     <PropertyColumn Property="x => x.UpdatedAt" Title="Zaaktualizowano" />
                     <TemplateColumn Title="Akcje" StickyRight>
                         <CellTemplate>
-                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
-                            <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+                            <MudGrid>
+                                <MudItem xs="6">
+                                    <MudTooltip Placement="Placement.Bottom" Text="Edytuj użytkownika">
+                                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => OpenEditDialogAsync(context.Item))" />
+                                    </MudTooltip>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudTooltip Placement="Placement.Bottom" Text="Dezaktywuj użytkownika">
+                                        <MudIconButton Disabled="!context.Item.IsActive" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => OnDeleteClicked(context.Item))" />
+                                    </MudTooltip>
+                                </MudItem>
+                            </MudGrid>
                         </CellTemplate>
                     </TemplateColumn>
                 </Columns>
@@ -132,12 +142,12 @@
 
     private Func<UserResponseDto, int, string> _rowStyleFunc => (x, i) =>
     {
-    if (x.IsActive)
-    {
-        return "";
-    }
+        if (x.IsActive)
+        {
+            return "";
+        }
 
-    return "background-color: #f8d7da; color: #721c24;";
+        return "background-color: #f8d7da; color: #721c24;";
     };
 
     private async Task OpenAddDialogAsync()
