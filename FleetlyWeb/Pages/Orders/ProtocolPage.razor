@@ -211,10 +211,10 @@
         IsLoading = false;
     }
 
-    private void OpenImagePreview(string url)
+    private async void OpenImagePreview(string url)
     {
-        var parameters = new DialogParameters { ["ImageUrl"] = url };
-        DialogService.ShowAsync<ImagePreviewDialog>("Podgląd", parameters, DialogHelper.GetImagePreviewOptions());
+        var parameters = new DialogParameters<ImagePreviewDialog> { ["ImageUrl"] = url };
+        await DialogService.ShowAsync<ImagePreviewDialog>("Podgląd", parameters, DialogHelper.GetImagePreviewOptions());
     }
 
     private void GoBack()

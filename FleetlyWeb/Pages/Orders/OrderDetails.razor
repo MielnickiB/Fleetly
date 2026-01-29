@@ -216,7 +216,7 @@
                                                Size="Size.Small"
                                                OnClick="@(() => Nav.NavigateTo($"/orders/{_order.Id}/protocol/{protocol.Type.ToString().ToLower()}"))"
                                                EndIcon="@Icons.Material.Filled.ArrowForward">
-                                        <MudText Typo="Typo.button">@(protocol.Type == ProtocolType.Pickup ? "Protokół pobrania" : "Protokół zdania")</MudText>
+                                        <MudText Typo="Typo.button">@(protocol.Type == ProtocolType.Pickup ? "Protokół odbioru" : "Protokół zdania")</MudText>
                                     </MudButton>
                                 </div>
                                 <MudDivider />
