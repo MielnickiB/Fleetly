@@ -1,7 +1,4 @@
-﻿@using Fleetly.Shared.Dto.NotificationDtos
-@using FleetlyWeb.Services.Notifications
-@using Fleetly.Shared.Enums
-@implements IDisposable
+﻿@implements IDisposable
 @inject INotificationService NotiService
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
@@ -115,7 +112,7 @@
         _timer = new System.Threading.Timer(_ =>
         {
             _ = LoadNotificationsSafe();
-        }, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
+        }, null, TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10));
     }
 
     private async Task LoadNotificationsSafe()

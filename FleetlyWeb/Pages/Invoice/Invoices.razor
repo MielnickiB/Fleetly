@@ -1,12 +1,5 @@
 ﻿@page "/invoices"
 @attribute [Authorize]
-@using FleetlyWeb.Services.Invoices
-@using Microsoft.JSInterop
-@using FleetlyWeb.Base
-@using FleetlyWeb.Components
-@using Fleetly.Shared.Dto.InvoiceDtos
-@using Microsoft.AspNetCore.Components.Authorization
-@using FleetlyWeb.Helpers
 @inject IInvoiceService InvoiceService
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS

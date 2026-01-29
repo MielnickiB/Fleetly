@@ -1,6 +1,5 @@
 ﻿@page "/invoices/payment-success"
 @attribute [Authorize(Roles = "Client")]
-@using FleetlyWeb.Services.Invoices
 @inject IInvoiceService InvoiceService
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar

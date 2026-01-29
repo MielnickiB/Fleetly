@@ -1,10 +1,5 @@
 ﻿@page "/home"
 @attribute [Authorize(Roles = "Admin, Client")]
-@using FleetlyWeb.Services
-@using FleetlyWeb.Services.Dashboard
-@using Fleetly.Shared.Dto.DashboardDtos
-@using FleetlyWeb.Components
-@using FleetlyWeb.Extensions
 @inject IDashboardService DashboardService
 @inject ISnackbar Snackbar
 
