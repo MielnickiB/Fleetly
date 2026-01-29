@@ -1,5 +1,10 @@
-﻿@page "/orders/{orderId:int}/protocol/{protocolId:int}"
+﻿@page "/orders/{orderId:int}/protocol/{protocolType:string}"
+@inherits PageBase<ProtocolResponseDto>
+@inject IProtocolService ProtocolService
 
 @code {
-
+    protected override async Task LoadDataAsync()
+    {
+        
+    }
 }
