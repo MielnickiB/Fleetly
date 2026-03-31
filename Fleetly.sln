@@ -11,17 +11,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FleetlyWeb", "FleetlyWeb\Fl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FleetlyMobile", "FleetlyMobile\FleetlyMobile.csproj", "{8019D71F-728A-4429-9BA4-71CEF6C8DED7}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{5C46BF18-5948-4204-AE3E-DE007A0BF09D}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{8DB360DF-4560-4E2A-BCC9-41D9E11B8152}"
-	ProjectSection(SolutionItems) = preProject
-		\\192.168.0.130\Zrzut\Bartek\Politechnika\Inżynierka\Zrzuty ekranu\Dashboard_mobile.png = \\192.168.0.130\Zrzut\Bartek\Politechnika\Inżynierka\Zrzuty ekranu\Dashboard_mobile.png
-		\\192.168.0.130\Zrzut\Bartek\Politechnika\Inżynierka\Zrzuty ekranu\Google_route.jpg = \\192.168.0.130\Zrzut\Bartek\Politechnika\Inżynierka\Zrzuty ekranu\Google_route.jpg
-		\\192.168.0.130\Zrzut\Bartek\Politechnika\Inżynierka\Zrzuty ekranu\Job_board.jpg = \\192.168.0.130\Zrzut\Bartek\Politechnika\Inżynierka\Zrzuty ekranu\Job_board.jpg
-		\\192.168.0.130\Zrzut\Bartek\Politechnika\Inżynierka\Zrzuty ekranu\Notifications.png = \\192.168.0.130\Zrzut\Bartek\Politechnika\Inżynierka\Zrzuty ekranu\Notifications.png
-		\\192.168.0.130\Zrzut\Bartek\Politechnika\Inżynierka\Zrzuty ekranu\Order_details_mobile.jpg = \\192.168.0.130\Zrzut\Bartek\Politechnika\Inżynierka\Zrzuty ekranu\Order_details_mobile.jpg
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,9 +38,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{8DB360DF-4560-4E2A-BCC9-41D9E11B8152} = {5C46BF18-5948-4204-AE3E-DE007A0BF09D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {07AF8B00-DEBB-42F6-B704-99864D76C183}
